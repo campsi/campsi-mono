@@ -1,6 +1,16 @@
 language: node_js
 node_js:
   - 6
+services:
+  - mongodb
+addons:
+  apt:
+    sources:
+    - mongodb-3.2-precise
+    packages:
+    - mongodb-org-server
+before_script:
+  - sleep 15
 script:
   - npm run lint
   - npm run depcheck

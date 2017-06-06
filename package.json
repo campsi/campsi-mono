@@ -1,0 +1,36 @@
+{
+  "name": "campsi-service-auth",
+  "version": "1.0.0",
+  "description": "",
+  "main": "lib/index.js",
+  "dependencies": {
+    "campsi": "git://github.com/campsi/campsi.git",
+    "crypto-js": "^3.1.9-1",
+    "debug": "^2.6.8",
+    "edit-url": "^1.0.1",
+    "for-in": "^1.0.2",
+    "passport": "^0.3.2",
+    "passport-facebook": "^2.1.1",
+    "passport-github2": "^0.1.10",
+    "passport-google-oauth20": "^1.0.0",
+    "passport-local": "^1.0.0",
+    "passport-twitter": "^1.0.4",
+    "uuid": "^3.0.1"
+  },
+  "devDependencies": {
+    "eslint": "^3.19.0",
+    "eslint-plugin-indexof": "^0.1.1"
+  },
+  "scripts": {
+    "depcheck": "depcheck",
+    "lint": "./node_modules/eslint/bin/eslint.js --cache lib/**",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "MIT",
+  "files": [
+    "LICENSE",
+    "README.md",
+    "lib/"
+  ]
+}

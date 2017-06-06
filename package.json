@@ -8,7 +8,6 @@
     "url": "git://github.com/campsi/campsi-service-docs.git"
   },
   "dependencies": {
-    "campsi": "git://github.com/campsi/campsi.git",
     "campsi-base-components": "^1.0.1",
     "campsi-core": "^0.1.5",
     "campsi-find-references": "^1.0.2",
@@ -17,6 +16,7 @@
   },
   "devDependencies": {
     "async": "^2.4.1",
+    "campsi": "git://github.com/campsi/campsi.git",
     "chai": "^4.0.1",
     "chai-http": "^3.0.0",
     "config": "^1.26.1",

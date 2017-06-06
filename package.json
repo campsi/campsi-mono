@@ -4,7 +4,6 @@
   "description": "",
   "main": "lib/index.js",
   "dependencies": {
-    "campsi": "git://github.com/campsi/campsi.git",
     "crypto-js": "^3.1.9-1",
     "debug": "^2.6.8",
     "edit-url": "^1.0.1",
@@ -18,6 +17,7 @@
     "uuid": "^3.0.1"
   },
   "devDependencies": {
+    "campsi": "git://github.com/campsi/campsi.git",
     "eslint": "^3.19.0",
     "eslint-plugin-indexof": "^0.1.1"
   },

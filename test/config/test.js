@@ -1,3 +1,7 @@
+const path = require('path');
+
+const docsOptions = './docs.json';
+
 module.exports = {
     port: 3000,
     host: 'http://localhost:3000',
@@ -21,9 +25,8 @@ module.exports = {
         docs: {
             title: 'Contenus',
             description: 'Données sur les pizzas',
-            options: {
-                schema: require('../schema/test.json')
-            }
+            options: require(docsOptions),
+            optionsBasePath: path.dirname(path.join(__dirname, docsOptions))
         },
     }
 };

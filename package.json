@@ -8,9 +8,9 @@
     "url": "git://github.com/campsi/campsi-service-docs.git"
   },
   "dependencies": {
-    "campsi-base-components": "^1.0.1",
-    "campsi-core": "^0.1.5",
+    "ajv": "^5.2.2",
     "campsi-find-references": "^1.0.2",
+    "json-schema-deref": "^0.3.5",
     "mongodb": "^2.2.27",
     "request": "^2.81.0"
   },
@@ -26,10 +26,11 @@
     "eslint-plugin-indexof": "^0.1.1",
     "for-in": "^1.0.2",
     "mocha": "^3.4.2",
+    "path": "^0.12.7",
     "string-format": "^0.5.0"
   },
   "scripts": {
-    "depcheck": "depcheck",
+    "depcheck": "depcheck --ignores=path",
     "lint": "./node_modules/eslint/bin/eslint.js --cache lib/** test/**",
     "test": "mocha"
   },

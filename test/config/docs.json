@@ -14,7 +14,7 @@
             "auth": true
         }
     },
-    "types": {
+    "classes": {
         "collection": {
             "defaultState": "published",
             "states": {
@@ -116,109 +116,22 @@
     "resources": {
         "pizzas": {
             "label": "La carte des pizzas",
-            "type": "collection",
-            "fields": [
-                {
-                    "name": "name",
-                    "label": "Nom",
-                    "type": "text",
-                    "required": true
-                },
-                {
-                    "name": "base",
-                    "label": "Base",
-                    "type": "select/dropdown",
-                    "options": [
-                        {
-                            "value": "cream",
-                            "label": "Crême"
-                        },
-                        {
-                            "value": "tomato",
-                            "label": "Tomate"
-                        },
-                        {
-                            "value": "rosé",
-                            "label": "Rosé"
-                        }
-                    ]
-                },
-                {
-                    "name": "ingredients",
-                    "label": "Ingrédients",
-                    "type": "array",
-                    "hide": true,
-                    "items": {
-                        "type": "text"
-                    }
-                },
-                {
-                    "name": "price",
-                    "label": "Prix",
-                    "type": "number"
-                }
-            ]
+            "class": "collection",
+            "schema": {"$ref": "./schema/pizza.schema.json"}
         },
         "contact": {
             "label": "Formulaire de contact du site web",
-            "type": "form",
-            "fields": [
-                {
-                    "name": "email",
-                    "label": "email",
-                    "type": "text"
-                },
-                {
-                    "name": "message",
-                    "label": "message",
-                    "type": "text/area"
-                }
-            ]
+            "class": "form",
+            "schema": {"$ref": "./schema/contact.schema.json"}
         },
         "opening_hours": {
             "label": "Jours et horaires de contact",
-            "type": "document",
-            "fields": [
-                {
-                    "name": "days",
-                    "label": "Jours d'ouverture",
-                    "type": "checkbox/group",
-                    "values": [
-                        {
-                            "label": "Lundi",
-                            "value": "monday"
-                        },
-                        {
-                            "label": "Mardi",
-                            "value": "tuesday"
-                        },
-                        {
-                            "label": "Mercredi",
-                            "value": "wednesday"
-                        },
-                        {
-                            "label": "Jeudi",
-                            "value": "thursday"
-                        },
-                        {
-                            "label": "Vendredi",
-                            "value": "friday"
-                        },
-                        {
-                            "label": "Samedi",
-                            "value": "saturday"
-                        },
-                        {
-                            "label": "Dimanche",
-                            "value": "sunday"
-                        }
-                    ]
-                }
-            ]
+            "class": "document",
+            "schema": {"$ref": "./schema/opening_hours.schema.json"}
         },
         "categories": {
-            "type": "collection",
             "label": "Categories",
+            "class": "collection",
             "webhooks": [
                 {
                     "on": "POST,PUT,DELETE",
@@ -235,18 +148,11 @@
                     }
                 }
             ],
-            "fields": [
-                {
-                    "type": "text",
-                    "name": "label",
-                    "label": "label",
-                    "required": true
-                }
-            ]
+            "schema": {"$ref": "./schema/category.schema.json"}
         },
         "articles": {
-            "type": "collection",
             "label": "Articles",
+            "class": "collection",
             "rels": {
                 "parent_category": {
                     "path": "rels.oneToOneRelationship",
@@ -262,32 +168,7 @@
                     "embed": false
                 }
             },
-            "fields": [
-                {
-                    "type": "text",
-                    "name": "title",
-                    "label": "Title",
-                    "required": "true"
-                },
-                {
-                    "type": "form",
-                    "name": "rels",
-                    "label": "Relationship example",
-                    "fields": [
-                        {
-                            "type": "array",
-                            "name": "oneToManyRelationship",
-                            "items": {
-                                "type": "text"
-                            }
-                        },
-                        {
-                            "type": "text",
-                            "name": "oneToOneRelationship"
-                        }
-                    ]
-                }
-            ]
+            "schema": {"$ref": "./schema/article.schema.json"}
         }
     }
 }

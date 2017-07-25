@@ -1,6 +1,7 @@
 //During the test the env variable is set to private
 process.env.NODE_CONFIG_DIR = './test/config';
 process.env.NODE_ENV = 'test';
+process.env.DEBUG='campsi, campsi:docs, campsi:test';
 
 //Require the dev-dependencies
 const debug = require('debug')('campsi:test');
@@ -24,7 +25,7 @@ const services = {
 // Helpers
 function createPizza(data, state) {
     return new Promise(function (resolve, reject) {
-        let resource = campsi.services.docs.options.schema.resources['pizzas'];
+        let resource = campsi.services.docs.options.resources['pizzas'];
         builder.create({
             user: null,
             body: data,

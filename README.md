@@ -4,7 +4,7 @@
 
 Add documents service to campsi
 
-##TODO
+## TODO
  - [X] Use JsonSchema in place of campsi components
  - [ ] Add hidden flags to not serve specific fields
  - [ ] Add ObjectId links

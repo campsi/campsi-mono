@@ -8,4 +8,4 @@ Add documents service to campsi
  - [X] Use JsonSchema in place of campsi components
  - [ ] Add hidden flags to not serve specific fields
  - [ ] Add ObjectId links
- - [ ] Evaluate using of json-schema-ref-parser in place of json-shema-deref
+ - [X] Evaluate using of json-schema-ref-parser in place of json-shema-deref

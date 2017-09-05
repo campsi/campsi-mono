@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "description": "",
   "main": "lib/index.js",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/campsi/campsi-service-auth.git"
+  },
   "dependencies": {
     "crypto-js": "^3.1.9-1",
     "debug": "^2.6.8",
@@ -21,8 +25,10 @@
     "chai": "^4.0.1",
     "chai-http": "^3.0.0",
     "config": "^1.26.1",
+    "depcheck": "^0.6.7",
     "eslint": "^3.19.0",
     "eslint-plugin-indexof": "^0.1.1",
+    "mocha": "^3.5.0",
     "string-format": "^0.5.0"
   },
   "scripts": {

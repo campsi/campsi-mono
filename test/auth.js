@@ -15,6 +15,7 @@ const CampsiServer = require('campsi');
 const config = require('config');
 const CryptoJS = require('crypto-js');
 const uuid = require('uuid');
+const {MongoClient} = require('mongodb');
 
 let should = chai.should();
 let expect = chai.expect;
@@ -72,18 +73,24 @@ function createUser(data, connect) {
 
 // Our parent block
 describe('Auth', () => {
-    beforeEach((done) => { //Before each test we empty the database
-        campsi = new CampsiServer(config.campsi);
+    beforeEach((done) => {
+        //Before each test we empty the database
+        MongoClient.connect(config.campsi.mongoURI).then((db) => {
+            db.dropDatabase(() => {
+                db.close();
+                campsi = new CampsiServer(config.campsi);
+                campsi.mount('auth', new services.Auth(config.services.auth));
 
-        campsi.mount('auth', new services.Auth(config.services.auth));
-        campsi.on('ready', () => {
-            campsi.db.dropDatabase();
-            done();
-        });
-        campsi.start()
-            .catch((err) => {
-                debug('Error: %s', err);
+                campsi.on('ready', () => {
+                    done();
+                });
+
+                campsi.start()
+                    .catch((err) => {
+                        debug('Error: %s', err);
+                    });
             });
+        });
     });
     /*
      * Test the /GET providers route
@@ -222,9 +229,9 @@ describe('Auth', () => {
                     .post('/auth/local/signup')
                     .set('content-type', 'application/json')
                     .send({
-                        displayName: 'Glenda Bennett',
+                        displayName: 'Glenda Bennett 2',
                         email: 'glenda@agilitation.fr',
-                        username: 'christophe',
+                        username: 'glenda',
                         password: 'signup!'
                     })
                     .end((err, res) => {

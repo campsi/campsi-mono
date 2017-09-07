@@ -1,5 +1,5 @@
 # campsi-service-docs
-[![Build Status](https://travis-ci.org/campsi/campsi-service-docs.svg?branch=master)](https://travis-ci.org/campsi/campsi-service-docs) [![Coverage Status](https://coveralls.io/repos/github/campsi/campsi-service-docs/badge.svg?branch=master)](https://coveralls.io/github/campsi/campsi-service-docs?branch=master) [![Known Vulnerabilities](https://snyk.io/test/github/campsi/campsi-service-docs/badge.svg)](https://snyk.io/test/github/campsi/campsi-service-docs)
+[![Build Status][build-image]][build-url] [![Coverage Status][coverage-image]][coverage-url] [![Known Vulnerabilities][vulnerabilities-image]][vulnerabilities-url]
 
 
 Add documents service to campsi
@@ -9,3 +9,12 @@ Add documents service to campsi
  - [ ] Add hidden flags to not serve specific fields
  - [ ] Add ObjectId links
  - [X] Evaluate using of json-schema-ref-parser in place of json-shema-deref
+
+[build-image]: https://travis-ci.org/campsi/campsi-service-docs.svg?branch=master
+[build-url]: https://travis-ci.org/campsi/campsi-service-docs
+
+[coverage-image]: https://coveralls.io/repos/github/campsi/campsi-service-docs/badge.svg?branch=master
+[coverage-url]: https://coveralls.io/github/campsi/campsi-service-docs?branch=master
+
+[vulnerabilities-image]: https://snyk.io/test/github/campsi/campsi-service-docs/badge.svg
+[vulnerabilities-url]: https://snyk.io/test/github/campsi/campsi-service-docs

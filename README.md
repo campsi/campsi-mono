@@ -1,5 +1,5 @@
 # campsi-service-docs
-[![Build Status](https://travis-ci.org/campsi/campsi-service-docs.svg?branch=master)](https://travis-ci.org/campsi/campsi-service-docs)
+[![Build Status](https://travis-ci.org/campsi/campsi-service-docs.svg?branch=master)](https://travis-ci.org/campsi/campsi-service-docs) [![Coverage Status](https://coveralls.io/repos/github/campsi/campsi-service-docs/badge.svg?branch=master)](https://coveralls.io/github/campsi/campsi-service-docs?branch=master) [![Known Vulnerabilities](https://snyk.io/test/github/campsi/campsi-service-docs/badge.svg)](https://snyk.io/test/github/campsi/campsi-service-docs)
 
 
 Add documents service to campsi

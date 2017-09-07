@@ -4,7 +4,6 @@
 //During the test the env variable is set to private
 process.env.NODE_CONFIG_DIR = './test/config';
 process.env.NODE_ENV = 'test';
-process.env.DEBUG='campsi, campsi:auth, campsi:test';
 
 //Require the dev-dependencies
 const debug = require('debug')('campsi:test');
@@ -32,7 +31,7 @@ const services = {
 function createUser(data, connect) {
     connect = typeof connect  !== 'undefined' ? connect : false;
     return new Promise(function (resolve, reject) {
-        const localProvider = campsi.services['auth'].options.providers.local;
+        const localProvider = campsi.services.get('auth').options.providers.local;
         const encryptedPassword = CryptoJS.AES.encrypt(
             data.password,
             localProvider.options.salt

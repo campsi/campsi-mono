@@ -1,6 +1,7 @@
 # campsi-service-docs
-[![Build Status][build-image]][build-url] [![Coverage Status][coverage-image]][coverage-url] [![Known Vulnerabilities][vulnerabilities-image]][vulnerabilities-url]
-
+[![Build Status][build-image]][build-url]
+[![Coverage Status][coverage-image]][coverage-url]
+[![Known Vulnerabilities][vulnerabilities-image]][vulnerabilities-url]
 
 Add documents service to campsi
 

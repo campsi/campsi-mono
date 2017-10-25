@@ -3,6 +3,7 @@ process.env.NODE_CONFIG_DIR = './test/config';
 process.env.NODE_ENV = 'test';
 
 //Require the dev-dependencies
+const {MongoClient} = require('mongodb');
 const debug = require('debug')('campsi:test');
 const async = require('async');
 const chai = require('chai');
@@ -14,6 +15,7 @@ const builder = require('../lib/modules/queryBuilder');
 
 let should = chai.should();
 let campsi;
+let server;
 format.extend(String.prototype);
 chai.use(chaiHttp);
 
@@ -42,18 +44,31 @@ function createPizza(data, state) {
 
 // Our parent block
 describe('Docs', () => {
-    beforeEach((done) => { //Before each test we empty the database
-        campsi = new CampsiServer(config.campsi);
+    beforeEach((done) => {
 
-        campsi.mount('docs', new services.Docs(config.services.docs));
-        campsi.on('ready', () => {
-            campsi.db.dropDatabase();
-            done();
-        });
-        campsi.start()
-            .catch((err) => {
-                debug('Error: %s', err);
+        // Empty the database
+        MongoClient.connect(config.campsi.mongoURI).then((db) => {
+            db.dropDatabase(() => {
+                db.close();
+                campsi = new CampsiServer(config.campsi);
+                campsi.mount('docs', new services.Docs(config.services.docs));
+
+                campsi.on('ready', () => {
+                    server = campsi.listen(config.port);
+                    done();
+                });
+
+                campsi.start()
+                    .catch((err) => {
+                        debug('Error: %s', err);
+                    });
             });
+        });
+    });
+
+    afterEach((done) => {
+        server.close();
+        done();
     });
     /*
      * Test the /GET docs route
@@ -79,11 +94,11 @@ describe('Docs', () => {
                 .get('/docs/pizzas')
                 .end((err, res) => {
                     res.should.have.status(200);
+                    res.should.have.header('x-total-count', '0');
+                    res.should.have.header('link');
                     res.should.be.json;
-                    res.body.should.be.a('object');
-                    res.body.count.should.be.eq(0);
-                    res.body.docs.should.be.a('array');
-                    res.body.docs.length.should.be.eq(0);
+                    res.body.should.be.a('array');
+                    res.body.length.should.be.eq(0);
                     done();
                 });
         });

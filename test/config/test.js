@@ -25,6 +25,7 @@ module.exports = {
         docs: {
             title: 'Contenus',
             description: 'Données sur les pizzas',
+            namespace: 'test-docs',
             options: require(docsOptions),
             optionsBasePath: path.dirname(path.join(__dirname, docsOptions))
         },

@@ -13,6 +13,7 @@ const fs = require('fs');
 
 chai.should();
 let campsi;
+let server;
 format.extend(String.prototype);
 chai.use(chaiHttp);
 
@@ -26,12 +27,18 @@ describe('Trace', () => {
         campsi = new CampsiServer(config.campsi);
         campsi.mount('trace', new services.Trace(config.services.trace));
         campsi.on('campsi/ready', () => {
+            server = campsi.listen(config.port);
             done();
         });
         campsi.start()
             .catch((err) => {
                 debug('Error: %s', err);
             });
+    });
+
+    afterEach((done) => {
+        server.close();
+        done();
     });
     /*
      * Test the /GET trace route

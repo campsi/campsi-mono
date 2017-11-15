@@ -8,26 +8,26 @@
     "url": "git://github.com/campsi/campsi-service-docs.git"
   },
   "dependencies": {
-    "ajv": "^5.2.2",
+    "ajv": "^5.3.0",
     "campsi-find-references": "^1.0.2",
-    "json-schema-ref-parser": "^3.1.2",
-    "mongodb": "^2.2.27",
+    "json-schema-ref-parser": "^4.0.4",
+    "mongodb": "^2.2.33",
     "string-format": "^0.5.0"
   },
   "devDependencies": {
-    "async": "^2.4.1",
+    "async": "^2.6.0",
     "campsi": "git://github.com/campsi/campsi.git",
-    "chai": "^4.0.1",
+    "chai": "^4.1.2",
     "chai-http": "^3.0.0",
-    "config": "^1.26.1",
-    "coveralls": "^2.13.1",
-    "debug": "^2.6.8",
-    "depcheck": "^0.6.7",
-    "eslint": "^3.19.0",
+    "config": "^1.28.1",
+    "coveralls": "^3.0.0",
+    "debug": "^3.1.0",
+    "depcheck": "^0.6.8",
+    "eslint": "^4.11.0",
     "eslint-plugin-indexof": "^0.1.1",
     "for-in": "^1.0.2",
     "istanbul": "^0.4.5",
-    "mocha": "^3.4.2",
+    "mocha": "^4.0.1",
     "mocha-lcov-reporter": "^1.3.0",
     "path": "^0.12.7"
   },
@@ -43,11 +43,11 @@
     }
   },
   "scripts": {
-    "cover": "istanbul cover _mocha",
+    "cover": "istanbul cover _mocha \"./test/**/!(index).js\" -- --exit",
     "coveralls": "npm run cover -- --report lcovonly && cat ./coverage/lcov.info | coveralls",
     "depcheck": "depcheck --ignores=path,mocha-lcov-reporter",
     "lint": "./node_modules/eslint/bin/eslint.js --cache lib/** test/**",
-    "test": "mocha"
+    "test": "mocha \"./test/**/!(index).js\" --exit"
   },
   "author": "",
   "license": "MIT",

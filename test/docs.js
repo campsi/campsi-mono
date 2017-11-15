@@ -53,7 +53,7 @@ describe('Docs', () => {
                 campsi = new CampsiServer(config.campsi);
                 campsi.mount('docs', new services.Docs(config.services.docs));
 
-                campsi.on('ready', () => {
+                campsi.on('campsi/ready', () => {
                     server = campsi.listen(config.port);
                     done();
                 });

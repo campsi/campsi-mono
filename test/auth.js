@@ -12,66 +12,29 @@ const chaiHttp = require('chai-http');
 const format = require('string-format');
 const CampsiServer = require('campsi');
 const config = require('config');
-const CryptoJS = require('crypto-js');
-const uuid = require('uuid');
+const {btoa} = require('../lib/modules/base64');
 const {MongoClient} = require('mongodb');
+const {createUser} = require('./helpers/createUser');
 
-let should = chai.should();
 let expect = chai.expect;
-let assert = chai.assert;
 let campsi;
+let server;
 format.extend(String.prototype);
 chai.use(chaiHttp);
+chai.should();
 
 const services = {
     Auth: require('../lib'),
 };
 
-// Helpers
-function createUser(data, connect) {
-    connect = typeof connect  !== 'undefined' ? connect : false;
-    return new Promise(function (resolve, reject) {
-        const localProvider = campsi.services.get('auth').options.providers.local;
-        const encryptedPassword = CryptoJS.AES.encrypt(
-            data.password,
-            localProvider.options.salt
-        ).toString();
+const glenda = {
+    displayName: 'Glenda Bennett',
+    email: 'glenda@agilitation.fr',
+    username: 'glenda',
+    password: 'signup!'
+};
 
-        let user = {
-            displayName: data.displayName,
-            email: data.email || data.username,
-            identities: {
-                local: {
-                    id: data.username,
-                    username: data.username,
-                    password: encryptedPassword
-                }
-            }
-        };
-
-        let exp = new Date();
-        exp.setTime(exp.getTime() + 10 * 86400000);
-        var token = {
-            value: uuid(),
-            expiration: exp
-        };
-        if(connect) {
-            user.token = token;
-        }
-
-        campsi.db.collection('__users__').insertOne(user)
-            .then((result) => {
-            if(connect) {
-                resolve(token.value);
-            } else {
-                resolve(result.insertedId);
-            }
-        }).catch((err) => reject(err));
-    });
-}
-
-// Our parent block
-describe('Auth', () => {
+describe('Auth API', () => {
     beforeEach((done) => {
         //Before each test we empty the database
         MongoClient.connect(config.campsi.mongoURI).then((db) => {
@@ -80,7 +43,8 @@ describe('Auth', () => {
                 campsi = new CampsiServer(config.campsi);
                 campsi.mount('auth', new services.Auth(config.services.auth));
 
-                campsi.on('ready', () => {
+                campsi.on('campsi/ready', () => {
+                    server = campsi.listen(config.port);
                     done();
                 });
 
@@ -89,6 +53,12 @@ describe('Auth', () => {
                         debug('Error: %s', err);
                     });
             });
+        });
+    });
+
+    afterEach((done) => {
+        server.close(() => {
+            done();
         });
     });
     /*
@@ -129,12 +99,7 @@ describe('Auth', () => {
     });
     describe('/GET me [connected]', () => {
         it('it should return user when connected', (done) => {
-            createUser({
-                displayName: 'Glenda Bennett',
-                email: 'glenda@agilitation.fr',
-                username: 'glenda',
-                password: 'signup!'
-            }, true).then((token) => {
+            createUser(campsi, glenda, true).then((token) => {
                 chai.request(campsi.app)
                     .get('/auth/me')
                     .set('Authorization', 'Bearer ' + token)
@@ -169,12 +134,7 @@ describe('Auth', () => {
     });
     describe('/GET logout [connected]', () => {
         it('it should return success & token must disappear from database', (done) => {
-            createUser({
-                displayName: 'Glenda Bennett',
-                email: 'glenda@agilitation.fr',
-                username: 'glenda',
-                password: 'signup!'
-            }, true).then((token) => {
+            createUser(campsi, glenda, true).then((token) => {
                 chai.request(campsi.app)
                     .get('/auth/logout')
                     .set('Authorization', 'Bearer ' + token)
@@ -218,12 +178,7 @@ describe('Auth', () => {
     });
     describe('/POST local/signup [user already exists]', () => {
         it('it should return an error', (done) => {
-            createUser({
-                displayName: 'Glenda Bennett',
-                email: 'glenda@agilitation.fr',
-                username: 'glenda',
-                password: 'signup!'
-            }).then(() => {
+            createUser(campsi, glenda).then(() => {
                 chai.request(campsi.app)
                     .post('/auth/local/signup')
                     .set('content-type', 'application/json')
@@ -248,12 +203,7 @@ describe('Auth', () => {
             chai.request(campsi.app)
                 .post('/auth/local/signup')
                 .set('content-type', 'application/json')
-                .send({
-                    displayName: 'Glenda Bennett',
-                    email: 'glenda@agilitation.fr',
-                    username: 'glenda',
-                    password: 'signup!'
-                })
+                .send(glenda)
                 .end((err, res) => {
                     res.should.have.status(200);
                     res.should.be.json;
@@ -269,12 +219,7 @@ describe('Auth', () => {
      */
     describe('/POST local/signin [bad paramaters]', () => {
         it('it should return an error', (done) => {
-            createUser({
-                displayName: 'Glenda Bennett',
-                email: 'glenda@agilitation.fr',
-                username: 'glenda',
-                password: 'signup!'
-            }).then(() => {
+            createUser(campsi, glenda).then(() => {
                 chai.request(campsi.app)
                     .post('/auth/local/signin')
                     .set('content-type', 'application/json')
@@ -293,12 +238,7 @@ describe('Auth', () => {
     });
     describe('/POST local/signin [bad credentials]', () => {
         it('it should sign in the user', (done) => {
-            createUser({
-                displayName: 'Glenda Bennett',
-                email: 'glenda@agilitation.fr',
-                username: 'glenda',
-                password: 'signup!'
-            }).then(() => {
+            createUser(campsi, glenda).then(() => {
                 chai.request(campsi.app)
                     .post('/auth/local/signin')
                     .set('content-type', 'application/json')
@@ -318,12 +258,7 @@ describe('Auth', () => {
     });
     describe('/POST local/signin [default]', () => {
         it('it should sign in the user', (done) => {
-            createUser({
-                displayName: 'Glenda Bennett',
-                email: 'glenda@agilitation.fr',
-                username: 'glenda',
-                password: 'signup!'
-            }).then(() => {
+            createUser(campsi, glenda).then(() => {
                 chai.request(campsi.app)
                     .post('/auth/local/signin')
                     .set('content-type', 'application/json')
@@ -347,12 +282,7 @@ describe('Auth', () => {
      */
     describe('/POST local/reset-password [bad parameters]', () => {
         it('it should return an error with bad parameters', (done) => {
-            createUser({
-                displayName: 'Glenda Bennett',
-                email: 'glenda@agilitation.fr',
-                username: 'glenda',
-                password: 'signup!'
-            }, true).then((token) => {
+            createUser(campsi, glenda, true).then((token) => {
                 chai.request(campsi.app)
                     .post('/auth/local/reset-password')
                     .set('content-type', 'application/json')
@@ -389,12 +319,7 @@ describe('Auth', () => {
     });
     describe('/POST local/reset-password [default]', () => {
         it('it should sign in the user', (done) => {
-            createUser({
-                displayName: 'Glenda Bennett',
-                email: 'glenda@agilitation.fr',
-                username: 'glenda',
-                password: 'signup!'
-            }, true).then((token) => {
+            createUser(campsi, glenda, true).then((token) => {
                 chai.request(campsi.app)
                     .post('/auth/local/reset-password')
                     .set('content-type', 'application/json')
@@ -413,4 +338,34 @@ describe('Auth', () => {
             });
         });
     });
+    /*
+     * Test redirection
+     */
+    describe('redirection must redirect to correct page', () => {
+        it('it shoud redirect on /me page on successful connection', (done) => {
+            createUser(campsi, glenda).then(() => {
+                let state = btoa(JSON.stringify({
+                    redirectURI: '/auth/me'
+                }));
+                chai.request(campsi.app)
+                    .post('/auth/local/signin?state=' + state)
+                    .set('content-type', 'application/json')
+                    .send({
+                        username: 'glenda',
+                        password: 'signup!'
+                    })
+                    .end((err, res) => {
+                        res.should.have.status(200);
+                        res.should.be.json;
+                        res.body.should.be.a('object');
+                        res.body.should.have.property('displayName');
+                        res.body.should.have.property('email');
+                        res.body.should.have.property('identities');
+                        res.body.should.have.property('token');
+                        done();
+                    });
+            });
+        });
+    });
+
 });

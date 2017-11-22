@@ -22,6 +22,7 @@
     "uuid": "^3.1.0"
   },
   "devDependencies": {
+    "async": "^2.6.0",
     "campsi": "git://github.com/campsi/campsi.git",
     "chai": "^4.1.2",
     "chai-http": "^3.0.0",

@@ -15,6 +15,7 @@ const config = require('config');
 const {btoa} = require('../lib/modules/base64');
 const {MongoClient} = require('mongodb');
 const {createUser} = require('./helpers/createUser');
+const async = require('async');
 
 let expect = chai.expect;
 let campsi;
@@ -200,7 +201,8 @@ describe('Auth API', () => {
     });
     describe('/POST local/signup [default]', () => {
         it('it should do something', (done) => {
-            chai.request(campsi.app)
+            async.parallel([(cb)=>{
+                chai.request(campsi.app)
                 .post('/auth/local/signup')
                 .set('content-type', 'application/json')
                 .send(glenda)
@@ -210,8 +212,15 @@ describe('Auth API', () => {
                     res.body.should.be.a('object');
                     res.body.should.have.property('token');
                     res.body.token.should.be.a('string');
-                    done();
+                    cb();
                 });
+            }, (cb)=> {
+                campsi.on('auth/local/signup', (payload)=>{
+                    payload.should.have.property('token');
+                    payload.should.have.property('email');
+                    cb();
+                });
+            }], done);
         });
     });
     /*

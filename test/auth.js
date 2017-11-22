@@ -12,9 +12,9 @@ const chaiHttp = require('chai-http');
 const format = require('string-format');
 const CampsiServer = require('campsi');
 const config = require('config');
-const {btoa} = require('../lib/modules/base64');
-const {MongoClient} = require('mongodb');
-const {createUser} = require('./helpers/createUser');
+const { btoa, atob } = require('../lib/modules/base64');
+const { MongoClient } = require('mongodb');
+const { createUser } = require('./helpers/createUser');
 const async = require('async');
 
 let expect = chai.expect;
@@ -26,6 +26,7 @@ chai.should();
 
 const services = {
     Auth: require('../lib'),
+    Trace: require('campsi-service-trace')
 };
 
 const glenda = {
@@ -43,6 +44,7 @@ describe('Auth API', () => {
                 db.close();
                 campsi = new CampsiServer(config.campsi);
                 campsi.mount('auth', new services.Auth(config.services.auth));
+                campsi.mount('trace', new services.Trace(config.services.trace));
 
                 campsi.on('campsi/ready', () => {
                     server = campsi.listen(config.port);
@@ -201,26 +203,133 @@ describe('Auth API', () => {
     });
     describe('/POST local/signup [default]', () => {
         it('it should do something', (done) => {
-            async.parallel([(cb)=>{
+            async.parallel([(cb) => {
                 chai.request(campsi.app)
-                .post('/auth/local/signup')
-                .set('content-type', 'application/json')
-                .send(glenda)
-                .end((err, res) => {
-                    res.should.have.status(200);
-                    res.should.be.json;
-                    res.body.should.be.a('object');
-                    res.body.should.have.property('token');
-                    res.body.token.should.be.a('string');
-                    cb();
-                });
-            }, (cb)=> {
-                campsi.on('auth/local/signup', (payload)=>{
+                    .post('/auth/local/signup')
+                    .set('content-type', 'application/json')
+                    .send(glenda)
+                    .end((err, res) => {
+                        res.should.have.status(200);
+                        res.should.be.json;
+                        res.body.should.be.a('object');
+                        res.body.should.have.property('token');
+                        res.body.token.should.be.a('string');
+                        cb();
+                    });
+            }, (cb) => {
+                campsi.on('auth/local/signup', (payload) => {
                     payload.should.have.property('token');
                     payload.should.have.property('email');
                     cb();
                 });
             }], done);
+        });
+    });
+    /*
+     * Test the /GET local/validate route
+     */
+    describe('/GET local/validate [default]', () => {
+
+        it('it should validate the user', done => {
+
+            let signupPayload;
+            let signinToken;
+
+            async.parallel([
+                (cb) => {
+                    campsi.on('trace/request', (payload) => {
+                        payload.should.have.property('url');
+                        payload.url.should.eq('/local-signup-validate-redirect');
+                        cb();
+                    });
+                },
+                (cb) => {
+                    chai.request(campsi.app)
+                        .post('/auth/local/signup')
+                        .set('content-type', 'application/json')
+                        .send(glenda)
+                        .end(cb);
+                },
+                (cb) => {
+                    async.series([
+                        (serieCb) => {
+                            campsi.on('auth/local/signup', (payload) => {
+                                signupPayload = payload;
+                                serieCb();
+                            })
+                        },
+                        (serieCb) => {
+                            chai.request(campsi.app)
+                                .get('/auth/local/validate?token=' + encodeURIComponent(signupPayload.token) + '&redirectURI=' + encodeURIComponent('/trace/local-signup-validate-redirect'))
+                                .end(serieCb)
+                        },
+                        (serieCb) => {
+                            chai.request(campsi.app)
+                                .post('/auth/local/signin')
+                                .set('content-type', 'application/json')
+                                .send({
+                                    username: 'glenda',
+                                    password: 'signup!'
+                                })
+                                .end((err, res) => {
+                                    res.should.have.status(200);
+                                    signinToken = res.body.token;
+                                    serieCb();
+                                });
+                        },
+                        (serieCb) => {
+                            chai.request(campsi.app)
+                                .get('/auth/me')
+                                .set('Authorization', 'Bearer ' + JSON.parse(atob(signinToken)).value)
+                                .end((err, res) => {
+                                    res.should.have.status(200);
+                                    res.should.be.json;
+                                    res.body.should.be.a('object');
+                                    res.body.identities.local.validated.should.eq(true);
+                                    serieCb();
+                                });
+                        }
+                    ], cb)
+                },
+            ], done)
+        });
+    });
+    describe('/GET local/validate [bad parameter]', () => {
+        it('it should not validate the user', (done) => {
+            let validationToken;
+            let bearerToken;
+            async.series([
+                (cb) => {
+                    createUser(campsi, glenda, true).then((bearer, id, token) => {
+                        validationToken = token;
+                        bearerToken = bearer;
+                        cb();
+                    })
+                },
+                (cb) => {
+                    chai.request(campsi.app)
+                        .get('/auth/local/validate?token=differentFromValidationToken&redirectURI=' + encodeURIComponent('/trace/local-signup-validate-redirect'))
+                        .end((err, res) => {
+                            res.should.have.status(404);
+                            res.should.be.json;
+                            res.body.should.be.a('object');
+                            res.body.error.should.eq(true);
+                            cb();
+                        });
+                },
+                (cb) => {
+                    chai.request(campsi.app)
+                        .get('/auth/me')
+                        .set('Authorization', 'Bearer ' + bearerToken)
+                        .end((err, res) => {
+                            res.should.have.status(200);
+                            res.should.be.json;
+                            res.body.should.be.a('object');
+                            res.body.identities.local.validated.should.eq(false);
+                            cb();
+                        });
+                }
+            ], done);
         });
     });
     /*

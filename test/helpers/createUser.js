@@ -1,4 +1,3 @@
-const CryptoJS = require('crypto-js');
 const uuid = require('uuid');
 const local = require('../../lib/local');
 

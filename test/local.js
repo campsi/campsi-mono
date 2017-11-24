@@ -13,6 +13,9 @@ const config = require('config');
 const { atob } = require('../lib/modules/base64');
 const async = require('async');
 const { createUser } = require('./helpers/createUser');
+const CampsiServer = require('campsi');
+const { MongoClient } = require('mongodb');
+const debug = require('debug')('campsi:test');
 
 let campsi;
 let server;
@@ -27,10 +30,6 @@ const glenda = {
     username: 'glenda',
     password: 'signup!'
 };
-
-const CampsiServer = require('campsi');
-const { MongoClient } = require('mongodb');
-const debug = require('debug')('campsi:test');
 
 const services = {
     Auth: require('../lib'),
@@ -220,7 +219,6 @@ describe('Auth Local API', () => {
                             res.should.have.status(404);
                             res.should.be.json;
                             res.body.should.be.a('object');
-                            res.body.error.should.eq(true);
                             cb();
                         });
                 },

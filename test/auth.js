@@ -12,6 +12,9 @@ const format = require('string-format');
 const config = require('config');
 const { btoa } = require('../lib/modules/base64');
 const { createUser } = require('./helpers/createUser');
+const debug = require('debug')('campsi:test');
+const CampsiServer = require('campsi');
+const { MongoClient } = require('mongodb');
 
 let expect = chai.expect;
 let campsi;
@@ -26,10 +29,6 @@ const glenda = {
     username: 'glenda',
     password: 'signup!'
 };
-
-const CampsiServer = require('campsi');
-const { MongoClient } = require('mongodb');
-const debug = require('debug')('campsi:test');
 
 const services = {
     Auth: require('../lib'),

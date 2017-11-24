@@ -20,6 +20,9 @@ module.exports = {
         }
     },
     services: {
+        trace: {
+            title: 'trace'
+        },
         auth: {
             title: 'Authentification',
             kind: 'auth',

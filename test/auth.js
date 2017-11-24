@@ -6,15 +6,15 @@ process.env.NODE_CONFIG_DIR = './test/config';
 process.env.NODE_ENV = 'test';
 
 //Require the dev-dependencies
-const debug = require('debug')('campsi:test');
 const chai = require('chai');
 const chaiHttp = require('chai-http');
 const format = require('string-format');
-const CampsiServer = require('campsi');
 const config = require('config');
-const {btoa} = require('../lib/modules/base64');
-const {MongoClient} = require('mongodb');
-const {createUser} = require('./helpers/createUser');
+const { btoa } = require('../lib/modules/base64');
+const { createUser } = require('./helpers/createUser');
+const debug = require('debug')('campsi:test');
+const CampsiServer = require('campsi');
+const { MongoClient } = require('mongodb');
 
 let expect = chai.expect;
 let campsi;
@@ -23,10 +23,6 @@ format.extend(String.prototype);
 chai.use(chaiHttp);
 chai.should();
 
-const services = {
-    Auth: require('../lib'),
-};
-
 const glenda = {
     displayName: 'Glenda Bennett',
     email: 'glenda@agilitation.fr',
@@ -34,14 +30,19 @@ const glenda = {
     password: 'signup!'
 };
 
+const services = {
+    Auth: require('../lib'),
+    Trace: require('campsi-service-trace')
+};
+
 describe('Auth API', () => {
     beforeEach((done) => {
-        //Before each test we empty the database
         MongoClient.connect(config.campsi.mongoURI).then((db) => {
             db.dropDatabase(() => {
                 db.close();
                 campsi = new CampsiServer(config.campsi);
                 campsi.mount('auth', new services.Auth(config.services.auth));
+                campsi.mount('trace', new services.Trace(config.services.trace));
 
                 campsi.on('campsi/ready', () => {
                     server = campsi.listen(config.port);
@@ -152,188 +153,6 @@ describe('Auth API', () => {
                         }).catch((error) => {
                             done(new Error(error));
                         });
-                    });
-            });
-        });
-    });
-    /*
-     * Test the /POST local/signup route
-     */
-    describe('/POST local/signup [bad parameters]', () => {
-        it('it should return an error', (done) => {
-            chai.request(campsi.app)
-                .post('/auth/local/signup')
-                .set('content-type', 'application/json')
-                .send({
-                    bad: 'parameters'
-                })
-                .end((err, res) => {
-                    res.should.have.status(400);
-                    res.should.be.json;
-                    res.body.should.be.a('object');
-                    res.body.should.have.property('message');
-                    done();
-                });
-        });
-    });
-    describe('/POST local/signup [user already exists]', () => {
-        it('it should return an error', (done) => {
-            createUser(campsi, glenda).then(() => {
-                chai.request(campsi.app)
-                    .post('/auth/local/signup')
-                    .set('content-type', 'application/json')
-                    .send({
-                        displayName: 'Glenda Bennett 2',
-                        email: 'glenda@agilitation.fr',
-                        username: 'glenda',
-                        password: 'signup!'
-                    })
-                    .end((err, res) => {
-                        res.should.have.status(400);
-                        res.should.be.json;
-                        res.body.should.be.a('object');
-                        res.body.should.have.property('message');
-                        done();
-                    });
-            });
-        });
-    });
-    describe('/POST local/signup [default]', () => {
-        it('it should do something', (done) => {
-            chai.request(campsi.app)
-                .post('/auth/local/signup')
-                .set('content-type', 'application/json')
-                .send(glenda)
-                .end((err, res) => {
-                    res.should.have.status(200);
-                    res.should.be.json;
-                    res.body.should.be.a('object');
-                    res.body.should.have.property('token');
-                    res.body.token.should.be.a('string');
-                    done();
-                });
-        });
-    });
-    /*
-     * Test the /POST local/signin route
-     */
-    describe('/POST local/signin [bad paramaters]', () => {
-        it('it should return an error', (done) => {
-            createUser(campsi, glenda).then(() => {
-                chai.request(campsi.app)
-                    .post('/auth/local/signin')
-                    .set('content-type', 'application/json')
-                    .send({
-                        bad: 'parameters'
-                    })
-                    .end((err, res) => {
-                        res.should.have.status(400);
-                        res.should.be.json;
-                        res.body.should.be.a('object');
-                        res.body.should.have.property('message');
-                        done();
-                    });
-            });
-        });
-    });
-    describe('/POST local/signin [bad credentials]', () => {
-        it('it should sign in the user', (done) => {
-            createUser(campsi, glenda).then(() => {
-                chai.request(campsi.app)
-                    .post('/auth/local/signin')
-                    .set('content-type', 'application/json')
-                    .send({
-                        username: 'glenda',
-                        password: 'wrong!'
-                    })
-                    .end((err, res) => {
-                        res.should.have.status(400);
-                        res.should.be.json;
-                        res.body.should.be.a('object');
-                        res.body.should.have.property('message');
-                        done();
-                    });
-            });
-        });
-    });
-    describe('/POST local/signin [default]', () => {
-        it('it should sign in the user', (done) => {
-            createUser(campsi, glenda).then(() => {
-                chai.request(campsi.app)
-                    .post('/auth/local/signin')
-                    .set('content-type', 'application/json')
-                    .send({
-                        username: 'glenda',
-                        password: 'signup!'
-                    })
-                    .end((err, res) => {
-                        res.should.have.status(200);
-                        res.should.be.json;
-                        res.body.should.be.a('object');
-                        res.body.should.have.property('token');
-                        res.body.token.should.be.a('string');
-                        done();
-                    });
-            });
-        });
-    });
-    /*
-     * Test the /POST local/reset-password route
-     */
-    describe('/POST local/reset-password [bad parameters]', () => {
-        it('it should return an error with bad parameters', (done) => {
-            createUser(campsi, glenda, true).then((token) => {
-                chai.request(campsi.app)
-                    .post('/auth/local/reset-password')
-                    .set('content-type', 'application/json')
-                    .set('Authorization', 'Bearer ' + token)
-                    .send({
-                        bad: 'parameter'
-                    })
-                    .end((err, res) => {
-                        res.should.have.status(400);
-                        res.should.be.json;
-                        res.body.should.be.a('object');
-                        res.body.should.have.property('message');
-                        done();
-                    });
-            });
-        });
-    });
-    describe('/POST local/reset-password [bad credentials]', () => {
-        it('it should return an error with bad credentials', (done) => {
-            chai.request(campsi.app)
-                .post('/auth/local/reset-password')
-                .set('content-type', 'application/json')
-                .send({
-                    password: 'signup!'
-                })
-                .end((err, res) => {
-                    res.should.have.status(503);
-                    res.should.be.json;
-                    res.body.should.be.a('object');
-                    res.body.should.have.property('message');
-                    done();
-                });
-        });
-    });
-    describe('/POST local/reset-password [default]', () => {
-        it('it should sign in the user', (done) => {
-            createUser(campsi, glenda, true).then((token) => {
-                chai.request(campsi.app)
-                    .post('/auth/local/reset-password')
-                    .set('content-type', 'application/json')
-                    .set('Authorization', 'Bearer ' + token)
-                    .send({
-                        password: 'mypassword!'
-                    })
-                    .end((err, res) => {
-                        res.should.have.status(200);
-                        res.should.be.json;
-                        res.body.should.be.a('object');
-                        res.body.should.have.property('token');
-                        res.body.token.should.be.a('string');
-                        done();
                     });
             });
         });

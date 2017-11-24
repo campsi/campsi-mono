@@ -237,6 +237,41 @@ describe('Auth Local API', () => {
             ], done);
         });
     });
+    describe('/GET local/validate [missing parameter]', () => {
+        it('it should not validate the user', (done) => {
+            let bearerToken;
+            async.series([
+                (cb) => {
+                    createUser(campsi, glenda, true).then((bearer) => {
+                        bearerToken = bearer;
+                        cb();
+                    });
+                },
+                (cb) => {
+                    chai.request(campsi.app)
+                        .get('/auth/local/validate')
+                        .end((err, res) => {
+                            res.should.have.status(400);
+                            res.should.be.json;
+                            res.body.should.be.a('object');
+                            cb();
+                        });
+                },
+                (cb) => {
+                    chai.request(campsi.app)
+                        .get('/auth/me')
+                        .set('Authorization', 'Bearer ' + bearerToken)
+                        .end((err, res) => {
+                            res.should.have.status(200);
+                            res.should.be.json;
+                            res.body.should.be.a('object');
+                            res.body.identities.local.validated.should.eq(false);
+                            cb();
+                        });
+                }
+            ], done);
+        });
+    });
     /*
      * Test the /POST local/signin route
      */

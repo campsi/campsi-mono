@@ -5,7 +5,7 @@ const local = require('../../lib/local');
  * 
  * @param {CampsiServer} campsi 
  * @param {object} data 
- * @param {boolean=} connect 
+ * @param {boolean} connect
  * @returns {Promise}
  */
 module.exports.createUser = function(campsi, data, connect) {

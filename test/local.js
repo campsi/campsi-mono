@@ -10,11 +10,11 @@ const chai = require('chai');
 const chaiHttp = require('chai-http');
 const format = require('string-format');
 const config = require('config');
-const { atob } = require('../lib/modules/base64');
+const {atob} = require('../lib/modules/base64');
 const async = require('async');
-const { createUser } = require('./helpers/createUser');
+const {createUser} = require('./helpers/createUser');
 const CampsiServer = require('campsi');
-const { MongoClient } = require('mongodb');
+const {MongoClient} = require('mongodb');
 const debug = require('debug')('campsi:test');
 
 let campsi;
@@ -140,21 +140,21 @@ describe('Auth Local API', () => {
             let signinToken;
 
             async.parallel([
-                (cb) => {
+                (parallelCb) => {
                     campsi.on('trace/request', (payload) => {
                         payload.should.have.property('url');
                         payload.url.should.eq('/local-signup-validate-redirect');
-                        cb();
+                        parallelCb();
                     });
                 },
-                (cb) => {
+                (parallelCb) => {
                     chai.request(campsi.app)
                         .post('/auth/local/signup')
                         .set('content-type', 'application/json')
                         .send(glenda)
-                        .end(cb);
+                        .end(parallelCb);
                 },
-                (cb) => {
+                (parallelCb) => {
                     async.series([
                         (serieCb) => {
                             campsi.on('auth/local/signup', (payload) => {
@@ -164,8 +164,8 @@ describe('Auth Local API', () => {
                         },
                         (serieCb) => {
                             let validateUrl = '/auth/local/validate';
-                            validateUrl+= '?token=' + encodeURIComponent(signupPayload.token);
-                            validateUrl+= '&redirectURI=' + encodeURIComponent('/trace/local-signup-validate-redirect');
+                            validateUrl += '?token=' + encodeURIComponent(signupPayload.token);
+                            validateUrl += '&redirectURI=' + encodeURIComponent('/trace/local-signup-validate-redirect');
                             chai.request(campsi.app)
                                 .get(validateUrl)
                                 .end(serieCb);
@@ -183,22 +183,21 @@ describe('Auth Local API', () => {
                                     signinToken = res.body.token;
                                     serieCb();
                                 });
-                        },
-                        (serieCb) => {
-                            chai.request(campsi.app)
-                                .get('/auth/me')
-                                .set('Authorization', 'Bearer ' + JSON.parse(atob(signinToken)).value)
-                                .end((err, res) => {
-                                    res.should.have.status(200);
-                                    res.should.be.json;
-                                    res.body.should.be.a('object');
-                                    res.body.identities.local.validated.should.eq(true);
-                                    serieCb();
-                                });
                         }
-                    ], cb);
+                    ], parallelCb);
                 },
-            ], done);
+            ], () => {
+                chai.request(campsi.app)
+                    .get('/auth/me')
+                    .set('Authorization', 'Bearer ' + JSON.parse(atob(signinToken)).value)
+                    .end((err, res) => {
+                        res.should.have.status(200);
+                        res.should.be.json;
+                        res.body.should.be.a('object');
+                        res.body.identities.local.validated.should.eq(true);
+                        done();
+                    });
+            });
         });
     });
     describe('/GET local/validate [bad parameter]', () => {
@@ -213,8 +212,8 @@ describe('Auth Local API', () => {
                 },
                 (cb) => {
                     chai.request(campsi.app)
-                        .get('/auth/local/validate?token=differentFromValidationToken&redirectURI=' 
-                        + encodeURIComponent('/trace/local-signup-validate-redirect'))
+                        .get('/auth/local/validate?token=differentFromValidationToken&redirectURI='
+                            + encodeURIComponent('/trace/local-signup-validate-redirect'))
                         .end((err, res) => {
                             res.should.have.status(404);
                             res.should.be.json;

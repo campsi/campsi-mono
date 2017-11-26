@@ -190,7 +190,7 @@ describe('Auth API', () => {
     /*
      * Test redirection
      */
-    describe('signin should return when Ajax', () => {
+    describe('signin should return JSON when Ajax', () => {
         it('it should work', (done) => {
             createUser(campsi, glenda).then(() => {
                 chai.request(campsi.app)

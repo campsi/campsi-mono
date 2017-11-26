@@ -187,4 +187,29 @@ describe('Auth API', () => {
         });
     });
 
+    /*
+     * Test redirection
+     */
+    describe('signin should return when Ajax', () => {
+        it('it should work', (done) => {
+            createUser(campsi, glenda).then(() => {
+                chai.request(campsi.app)
+                    .post('/auth/local/signin')
+                    .set('content-type', 'application/json')
+                    .set('Referer', 'https://www.campsi.io')
+                    .set('X-Requested-With', 'XMLHttpRequest')
+                    .send({
+                        username: 'glenda',
+                        password: 'signup!'
+                    })
+                    .end((err, res) => {
+                        res.should.have.status(200);
+                        res.should.be.json;
+                        res.body.should.be.a('object');
+                        res.body.should.have.property('token');
+                        done();
+                    });
+            });
+        });
+    });
 });

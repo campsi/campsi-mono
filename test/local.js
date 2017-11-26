@@ -163,9 +163,10 @@ describe('Auth Local API', () => {
                             });
                         },
                         (serieCb) => {
+                            const toURL = encodeURIComponent;
                             let validateUrl = '/auth/local/validate';
-                            validateUrl += '?token=' + encodeURIComponent(signupPayload.token);
-                            validateUrl += '&redirectURI=' + encodeURIComponent('/trace/local-signup-validate-redirect');
+                            validateUrl += '?token=' + toURL(signupPayload.token);
+                            validateUrl += '&redirectURI=' + toURL('/trace/local-signup-validate-redirect');
                             chai.request(campsi.app)
                                 .get(validateUrl)
                                 .end(serieCb);

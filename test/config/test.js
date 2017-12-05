@@ -25,8 +25,10 @@ module.exports = {
         },
         auth: {
             title: 'Authentification',
-            kind: 'auth',
             options: {
+                session: {
+                    secret: 'sqkerhgtkusyd'
+                },
                 providers: {
                     local: require('../../lib/providers/local')({
                         baseUrl: host + '/auth',

@@ -1,0 +1,38 @@
+{
+    "roles": {
+        "public": {
+            "label": "Public",
+            "auth": false
+        }
+    },
+    "classes": {
+        "myClass": {
+            "defaultState": "published",
+            "states": {
+                "published": {
+                    "name": "published",
+                    "label": "En ligne",
+                    "validate": true
+                },
+                "draft": {
+                    "name": "draft",
+                    "label": "Brouillon",
+                    "validate": false
+                }
+            },
+            "permissions": {
+                "public": {
+                    "published": "*",
+                    "draft": "*"
+                }
+            }
+        }
+    },
+    "resources": {
+        "item": {
+            "label": "Données de test",
+            "class": "myClass",
+            "schema": {"$ref": "./schema/item.schema.json"}
+        }
+    }
+}

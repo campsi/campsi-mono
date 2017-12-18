@@ -10,11 +10,11 @@ const chai = require('chai');
 const chaiHttp = require('chai-http');
 const format = require('string-format');
 const config = require('config');
-const { btoa } = require('../lib/modules/base64');
-const { createUser } = require('./helpers/createUser');
+const {btoa} = require('../lib/modules/base64');
+const {createUser} = require('./helpers/createUser');
 const debug = require('debug')('campsi:test');
 const CampsiServer = require('campsi');
-const { MongoClient } = require('mongodb');
+const {MongoClient} = require('mongodb');
 
 let expect = chai.expect;
 let campsi;
@@ -207,6 +207,51 @@ describe('Auth API', () => {
                         res.should.be.json;
                         res.body.should.be.a('object');
                         res.body.should.have.property('token');
+                        done();
+                    });
+            });
+        });
+    });
+
+    describe('send a PUT on /me should update the user', () => {
+        it('it should modify the display name', (done) => {
+            createUser(campsi, glenda, true).then((token) => {
+                chai.request(campsi.app)
+                    .put('/auth/me')
+                    .set('content-type', 'application/json')
+                    .set('Authorization', 'Bearer ' + token)
+                    .send({
+                        displayName: 'Eric Thomas'
+                    })
+                    .end((err, res) => {
+                        res.should.have.status(200);
+                        res.should.be.json;
+                        res.should.be.a('object');
+                        res.body.should.have.property('displayName');
+                        res.body.displayName.should.equal('Eric Thomas');
+                        done();
+                    });
+            });
+        });
+
+        it('it should add a data property', (done) => {
+            createUser(campsi, glenda, true).then((token) => {
+                chai.request(campsi.app)
+                    .put('/auth/me')
+                    .set('content-type', 'application/json')
+                    .set('Authorization', 'Bearer ' + token)
+                    .send({
+                        data: {
+                            stuffThatILike: ['trains']
+                        }
+                    })
+                    .end((err, res) => {
+                        res.should.have.status(200);
+                        res.should.be.json;
+                        res.should.be.a('object');
+                        res.body.should.have.property('data');
+                        res.body.data.should.be.a('object');
+                        res.body.data.stuffThatILike.should.be.a('array');
                         done();
                     });
             });

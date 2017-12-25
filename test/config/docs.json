@@ -45,6 +45,11 @@
                     "working_draft": "*",
                     "archived": "*"
                 },
+                "owner": {
+                    "published": "*",
+                    "working_draft": "*",
+                    "archived": "*"
+                },
                 "public": {
                     "published": "GET",
                     "working_draft": "*"

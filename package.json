@@ -25,6 +25,7 @@
     "depcheck": "^0.6.8",
     "eslint": "^4.11.0",
     "eslint-plugin-indexof": "^0.1.1",
+    "fake-object-id": "0.0.3",
     "for-in": "^1.0.2",
     "istanbul": "^0.4.5",
     "mocha": "^4.0.1",

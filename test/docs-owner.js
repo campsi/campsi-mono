@@ -126,6 +126,7 @@ describe('Docs - Owner', () => {
                     .get('/docs/pizzas/{0}/archived'.format(id))
                     .end((err, res) => {
                         //TODO : res.should.have.status(200);
+                        res.should.be.json;
                         done();
                     });
             });

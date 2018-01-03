@@ -31,7 +31,7 @@
     "coveralls": "npm run cover -- --report lcovonly && cat ./coverage/lcov.info | coveralls",
     "depcheck": "depcheck --ignores=path,mocha-lcov-reporter",
     "lint": "./node_modules/eslint/bin/eslint.js --cache lib/** test/**",
-    "test": "mocha"
+    "test": "mocha \"./test/**/!(index).js\" --exit"
   },
   "author": "",
   "license": "MIT",

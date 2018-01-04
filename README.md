@@ -1,4 +1,6 @@
 # campsi-service-docs
+
+[![Greenkeeper badge](https://badges.greenkeeper.io/campsi/campsi-service-docs.svg)](https://greenkeeper.io/)
 [![Build Status][build-image]][build-url]
 [![Coverage Status][coverage-image]][coverage-url]
 [![Known Vulnerabilities][vulnerabilities-image]][vulnerabilities-url]

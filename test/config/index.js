@@ -10,7 +10,11 @@ module.exports = {
         version: '1.0.0',
         description: 'API de test manuel du service docs !',
         base_url: 'http://localhost:3000',
-        mongoURI: 'mongodb://localhost:27017/relationships',
+        mongo: {
+            host: 'localhost',
+            port: 27017,
+            name: 'relatioships'
+        },
         license: {
             name: 'MIT',
             url: 'https://opensource.org/licenses/mit-license.php'

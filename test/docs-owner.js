@@ -3,7 +3,7 @@ process.env.NODE_CONFIG_DIR = './test/config';
 process.env.NODE_ENV = 'test';
 
 //Require the dev-dependencies
-const {MongoClient} = require('mongodb');
+const {MongoClient, Server} = require('mongodb');
 const debug = require('debug')('campsi:test');
 const chai = require('chai');
 const chaiHttp = require('chai-http');
@@ -56,9 +56,11 @@ describe('Docs - Owner', () => {
     beforeEach((done) => {
 
         // Empty the database
-        MongoClient.connect(config.campsi.mongoURI).then((db) => {
+        let client = new MongoClient(new Server(config.campsi.mongo.host, config.campsi.mongo.port));
+        client.connect((error, mongoClient) => {
+            let db = mongoClient.db(config.campsi.mongo.name);
             db.dropDatabase(() => {
-                db.close();
+                client.close();
                 campsi = new CampsiServer(config.campsi);
                 campsi.mount('docs', new services.Docs(config.services.docs));
                 campsi.app.use((req, res, next) => {

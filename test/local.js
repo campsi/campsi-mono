@@ -1,6 +1,3 @@
-/**
- * Created by christophe on 23/08/17.
- */
 //During the test the env variable is set to private
 process.env.NODE_CONFIG_DIR = './test/config';
 process.env.NODE_ENV = 'test';
@@ -14,7 +11,7 @@ const {atob} = require('../lib/modules/base64');
 const async = require('async');
 const {createUser} = require('./helpers/createUser');
 const CampsiServer = require('campsi');
-const {MongoClient} = require('mongodb');
+const { MongoClient, Server } = require('mongodb');
 const debug = require('debug')('campsi:test');
 
 let campsi;
@@ -38,9 +35,11 @@ const services = {
 
 describe('Auth Local API', () => {
     beforeEach((done) => {
-        MongoClient.connect(config.campsi.mongoURI).then((db) => {
+        let client = new MongoClient(new Server(config.campsi.mongo.host, config.campsi.mongo.port));
+        client.connect((error, mongoClient) => {
+            let db = mongoClient.db(config.campsi.mongo.name);
             db.dropDatabase(() => {
-                db.close();
+                client.close();
                 campsi = new CampsiServer(config.campsi);
                 campsi.mount('auth', new services.Auth(config.services.auth));
                 campsi.mount('trace', new services.Trace(config.services.trace));

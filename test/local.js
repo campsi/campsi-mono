@@ -1,6 +1,3 @@
-/**
- * Created by christophe on 23/08/17.
- */
 //During the test the env variable is set to private
 process.env.NODE_CONFIG_DIR = './test/config';
 process.env.NODE_ENV = 'test';

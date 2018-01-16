@@ -9,9 +9,9 @@ module.exports = {
         description: 'API de test avec les pizzas Arezzo !',
         base_url: 'http://localhost:3000',
         mongo: {
-            'host': 'localhost',
-            'port': 27017,
-            'name': 'relationships'
+            host: 'localhost',
+            port: 27017,
+            database: 'relationships'
         },
         license: {
             name: 'MIT',

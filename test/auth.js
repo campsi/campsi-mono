@@ -14,7 +14,8 @@ const {btoa} = require('../lib/modules/base64');
 const {createUser} = require('./helpers/createUser');
 const debug = require('debug')('campsi:test');
 const CampsiServer = require('campsi');
-const { MongoClient, Server } = require('mongodb');
+const { MongoClient } = require('mongodb');
+const mongoUriBuilder = require('mongo-uri-builder');
 
 let expect = chai.expect;
 let campsi;
@@ -37,9 +38,9 @@ const services = {
 
 describe('Auth API', () => {
     beforeEach((done) => {
-        let client = new MongoClient(new Server(config.campsi.mongo.host, config.campsi.mongo.port));
-        client.connect((error, mongoClient) => {
-            let db = mongoClient.db(config.campsi.mongo.name);
+        const mongoUri = mongoUriBuilder(config.campsi.mongo);
+        MongoClient.connect(mongoUri, (err, client) => {
+            let db = client.db(config.campsi.mongo.database);
             db.dropDatabase(() => {
                 client.close();
                 campsi = new CampsiServer(config.campsi);

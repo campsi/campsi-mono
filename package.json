@@ -14,6 +14,7 @@
     "edit-url": "^1.0.1",
     "express-session": "^1.15.6",
     "for-in": "^1.0.2",
+    "mongo-uri-builder": "^1.0.3",
     "passport": "^0.4.0",
     "passport-facebook": "^2.1.1",
     "passport-github2": "^0.1.10",

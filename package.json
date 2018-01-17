@@ -1,6 +1,6 @@
 {
   "name": "campsi-service-auth",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "",
   "main": "lib/index.js",
   "repository": {
@@ -26,8 +26,8 @@
   },
   "devDependencies": {
     "async": "^2.6.0",
-    "campsi": "git://github.com/campsi/campsi.git",
-    "campsi-service-trace": "git://github.com/campsi/campsi-service-trace.git",
+    "campsi": "^1.0.1",
+    "campsi-service-trace": "^1.0.1",
     "chai": "^4.1.2",
     "chai-http": "^3.0.0",
     "config": "^1.28.1",

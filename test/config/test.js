@@ -11,7 +11,7 @@ module.exports = {
         mongo: {
             host: 'localhost',
             port: 27017,
-            database: 'relationships'
+            store: 'relationships'
         },
         license: {
             name: 'MIT',

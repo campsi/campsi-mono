@@ -40,7 +40,7 @@ describe('Auth API', () => {
     beforeEach((done) => {
         const mongoUri = mongoUriBuilder(config.campsi.mongo);
         MongoClient.connect(mongoUri, (err, client) => {
-            let db = client.db(config.campsi.mongo.store);
+            let db = client.db(config.campsi.mongo.database);
             db.dropDatabase(() => {
                 client.close();
                 campsi = new CampsiServer(config.campsi);

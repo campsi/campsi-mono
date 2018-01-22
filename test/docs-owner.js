@@ -148,7 +148,7 @@ describe('Docs - Owner', () => {
                     });
             });
         });
-        it('it should return an empty array if current user have not created any document', (done) => {
+        it('it should return an empty array if not on the good state', (done) => {
             let data = {name: 'test'};
             createEntry(data, not_me, 'state-private').then(() => {
                 chai.request(campsi.app)
@@ -157,6 +157,32 @@ describe('Docs - Owner', () => {
                         res.should.have.status(200);
                         res.body.should.be.an('array');
                         res.body.should.have.length(0);
+                        done();
+                    });
+            });
+        });
+        it('it should return an empty array if current user have not created any document', (done) => {
+            let data = {name: 'test'};
+            createEntry(data, not_me, 'state-private').then(() => {
+                chai.request(campsi.app)
+                    .get('/docs/simple?state=state-private')
+                    .end((err,res) => {
+                        res.should.have.status(200);
+                        res.body.should.be.an('array');
+                        res.body.should.have.length(0);
+                        done();
+                    });
+            });
+        });
+        it('it should not return an empty array if current user have created a document', (done) => {
+            let data = {name: 'test'};
+            createEntry(data, me, 'state-private').then(() => {
+                chai.request(campsi.app)
+                    .get('/docs/simple?state=state-private')
+                    .end((err,res) => {
+                        res.should.have.status(200);
+                        res.body.should.be.an('array');
+                        res.body.should.have.length(1);
                         done();
                     });
             });

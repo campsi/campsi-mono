@@ -98,7 +98,7 @@ describe('Docs', () => {
                 .end((err, res) => {
                     res.should.have.status(200);
                     res.should.have.header('x-total-count', '0');
-                    res.should.have.header('link');
+                    res.should.not.have.header('link');
                     res.should.be.json;
                     res.body.should.be.a('array');
                     res.body.length.should.be.eq(0);

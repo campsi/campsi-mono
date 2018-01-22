@@ -3,7 +3,8 @@ process.env.NODE_CONFIG_DIR = './test/config';
 process.env.NODE_ENV = 'test';
 
 //Require the dev-dependencies
-const {MongoClient, Server} = require('mongodb');
+const { MongoClient } = require('mongodb');
+const mongoUriBuilder = require('mongo-uri-builder');
 const debug = require('debug')('campsi:test');
 const chai = require('chai');
 const chaiHttp = require('chai-http');
@@ -32,9 +33,9 @@ let not_me = {
 };
 
 // Helpers
-function createPizza(data, owner, state) {
+function createEntry(data, owner, state) {
     return new Promise(function (resolve, reject) {
-        let resource = campsi.services.get('docs').options.resources['pizzas'];
+        let resource = campsi.services.get('docs').options.resources['simple'];
         builder.create({
             user: owner,
             data: data,
@@ -56,9 +57,9 @@ describe('Docs - Owner', () => {
     beforeEach((done) => {
 
         // Empty the database
-        let client = new MongoClient(new Server(config.campsi.mongo.host, config.campsi.mongo.port));
-        client.connect((error, mongoClient) => {
-            let db = mongoClient.db(config.campsi.mongo.name);
+        const mongoUri = mongoUriBuilder(config.campsi.mongo);
+        MongoClient.connect(mongoUri, (err, client) => {
+            let db = client.db(config.campsi.mongo.database);
             db.dropDatabase(() => {
                 client.close();
                 campsi = new CampsiServer(config.campsi);
@@ -93,14 +94,16 @@ describe('Docs - Owner', () => {
         it('it should create a doc with correct owner', (done) => {
             let data = {'name': 'test'};
             chai.request(campsi.app)
-                .post('/docs/pizzas/working_draft')
+                .post('/docs/simple/state-private')
                 .set('content-type', 'application/json')
                 .send(data)
                 .end((err, res) => {
                     res.should.have.status(200);
                     res.should.be.json;
                     res.body.should.be.a('object');
-                    res.body.state.should.be.eq('working_draft');
+                    res.body.should.have.property('id');
+                    res.body.should.have.property('state');
+                    res.body.state.should.be.eq('state-private');
                     res.body.should.have.property('id');
                     res.body.should.have.property('createdAt');
                     res.body.should.have.property('createdBy');
@@ -112,23 +115,74 @@ describe('Docs - Owner', () => {
         });
         it('it should not get a document not owned by current user', (done) => {
             let data = {'name': 'test'};
-            createPizza(data, not_me, 'archived').then((id) => {
+            createEntry(data, not_me, 'state-private').then((id) => {
                 chai.request(campsi.app)
-                    .get('/docs/pizzas/{0}/archived'.format(id))
+                    .get('/docs/simple/{0}/state-private'.format(id))
                     .end((err, res) => {
-                        res.should.have.status(403);
+                        res.should.have.status(404);
+                        res.should.be.json;
+                        res.body.should.be.an('object');
+                        res.body.should.have.property('message');
                         done();
                     });
             });
         });
         it('it should get a document owned by current user', (done) => {
             let data = {'name': 'test'};
-            createPizza(data, me, 'archived').then((id) => {
+            createEntry(data, me, 'state-private').then((id) => {
                 chai.request(campsi.app)
-                    .get('/docs/pizzas/{0}/archived'.format(id))
+                    .get('/docs/simple/{0}/state-private'.format(id))
                     .end((err, res) => {
-                        //TODO : res.should.have.status(200);
+                        res.should.have.status(200);
                         res.should.be.json;
+                        res.body.should.be.an('object');
+                        res.body.should.have.property('id');
+                        res.body.should.have.property('state');
+                        res.body.state.should.be.eq('state-private');
+                        res.body.should.have.property('createdAt');
+                        res.body.should.have.property('createdBy');
+                        res.body.createdBy.should.be.equal(me._id);
+                        res.body.should.have.property('data');
+                        res.body.data.should.be.eql(data);
+                        done();
+                    });
+            });
+        });
+        it('it should return an empty array if not on the good state', (done) => {
+            let data = {name: 'test'};
+            createEntry(data, not_me, 'state-private').then(() => {
+                chai.request(campsi.app)
+                    .get('/docs/simple')
+                    .end((err,res) => {
+                        res.should.have.status(200);
+                        res.body.should.be.an('array');
+                        res.body.should.have.length(0);
+                        done();
+                    });
+            });
+        });
+        it('it should return an empty array if current user have not created any document', (done) => {
+            let data = {name: 'test'};
+            createEntry(data, not_me, 'state-private').then(() => {
+                chai.request(campsi.app)
+                    .get('/docs/simple?state=state-private')
+                    .end((err,res) => {
+                        res.should.have.status(200);
+                        res.body.should.be.an('array');
+                        res.body.should.have.length(0);
+                        done();
+                    });
+            });
+        });
+        it('it should not return an empty array if current user have created a document', (done) => {
+            let data = {name: 'test'};
+            createEntry(data, me, 'state-private').then(() => {
+                chai.request(campsi.app)
+                    .get('/docs/simple?state=state-private')
+                    .end((err,res) => {
+                        res.should.have.status(200);
+                        res.body.should.be.an('array');
+                        res.body.should.have.length(1);
                         done();
                     });
             });

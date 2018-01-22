@@ -1,5 +1,5 @@
 process.env.NODE_CONFIG_DIR = './config';
-process.env.NODE_ENV = 'index';
+process.env.NODE_ENV = 'test';
 
 const CampsiServer = require('campsi');
 const config = require('config');
@@ -16,16 +16,6 @@ campsi.mount('docs', new services.Docs(config.services.docs));
 campsi.on('campsi/ready', () => {
     debug('ready');
     campsi.listen(config.port);
-});
-
-process.on('uncaughtException', function () {
-    debug('uncaughtException');
-});
-
-process.on('unhandledRejection', (reason) => {
-    debug('unhandledRejection');
-    debug(reason);
-    process.exit(1);
 });
 
 campsi.start()

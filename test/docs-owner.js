@@ -33,7 +33,7 @@ let not_me = {
 };
 
 // Helpers
-function createPizza(data, owner, state) {
+function createEntry(data, owner, state) {
     return new Promise(function (resolve, reject) {
         let resource = campsi.services.get('docs').options.resources['simple'];
         builder.create({
@@ -115,7 +115,7 @@ describe('Docs - Owner', () => {
         });
         it('it should not get a document not owned by current user', (done) => {
             let data = {'name': 'test'};
-            createPizza(data, not_me, 'state-private').then((id) => {
+            createEntry(data, not_me, 'state-private').then((id) => {
                 chai.request(campsi.app)
                     .get('/docs/simple/{0}/state-private'.format(id))
                     .end((err, res) => {
@@ -129,7 +129,7 @@ describe('Docs - Owner', () => {
         });
         it('it should get a document owned by current user', (done) => {
             let data = {'name': 'test'};
-            createPizza(data, me, 'state-private').then((id) => {
+            createEntry(data, me, 'state-private').then((id) => {
                 chai.request(campsi.app)
                     .get('/docs/simple/{0}/state-private'.format(id))
                     .end((err, res) => {
@@ -150,7 +150,7 @@ describe('Docs - Owner', () => {
         });
         it('it should return an empty array if current user have not created any document', (done) => {
             let data = {name: 'test'};
-            createPizza(data, not_me, 'state-private').then(() => {
+            createEntry(data, not_me, 'state-private').then(() => {
                 chai.request(campsi.app)
                     .get('/docs/simple')
                     .end((err,res) => {

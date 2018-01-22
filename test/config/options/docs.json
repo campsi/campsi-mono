@@ -12,6 +12,10 @@
         "publisher": {
             "label": "Publisher",
             "auth": true
+        },
+        "basic": {
+            "label": "Basic User",
+            "auth": true
         }
     },
     "classes": {
@@ -116,23 +120,59 @@
                     "submitted": "POST"
                 }
             }
+        },
+        "test-class": {
+            "defaultState": "state-public",
+            "states": {
+                "state-public": {
+                    "name": "public",
+                    "label": "Public",
+                    "validate": false
+                },
+                "state-basic": {
+                    "name": "basic",
+                    "label": "Basic",
+                    "validate": false
+                },
+                "state-private": {
+                    "name": "private",
+                    "label": "Private",
+                    "validate": false
+                }
+            },
+            "permissions": {
+                "admin": {
+                    "state-public": "*",
+                    "state-basic": "*",
+                    "state-private": "*"
+                },
+                "basic": {
+                    "state-basic": "*"
+                },
+                "owner": {
+                    "state-private": "*"
+                },
+                "public": {
+                    "state-public": "*"
+                }
+            }
         }
     },
     "resources": {
         "pizzas": {
             "label": "La carte des pizzas",
             "class": "collection",
-            "schema": {"$ref": "./schema/pizza.schema.json"}
+            "schema": {"$ref": "../schema/pizza.schema.json"}
         },
         "contact": {
             "label": "Formulaire de contact du site web",
             "class": "form",
-            "schema": {"$ref": "./schema/contact.schema.json"}
+            "schema": {"$ref": "../schema/contact.schema.json"}
         },
         "opening_hours": {
             "label": "Jours et horaires de contact",
             "class": "document",
-            "schema": {"$ref": "./schema/opening_hours.schema.json"}
+            "schema": {"$ref": "../schema/opening_hours.schema.json"}
         },
         "categories": {
             "label": "Categories",
@@ -153,7 +193,7 @@
                     }
                 }
             ],
-            "schema": {"$ref": "./schema/category.schema.json"}
+            "schema": {"$ref": "../schema/category.schema.json"}
         },
         "articles": {
             "label": "Articles",
@@ -173,7 +213,12 @@
                     "embed": false
                 }
             },
-            "schema": {"$ref": "./schema/article.schema.json"}
+            "schema": {"$ref": "../schema/article.schema.json"}
+        },
+        "simple": {
+            "label": "A Simple Document",
+            "class": "test-class",
+            "schema": {"$ref": "../schema/document.schema.json"}
         }
     }
 }

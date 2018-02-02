@@ -18,6 +18,10 @@ campsi.on('campsi/ready', () => {
     campsi.listen(config.port);
 });
 
+campsi.on('auth/local/passwordResetTokenCreated', user => {
+    debug('passwordResetTokenCreated', user.identities.local.passwordResetToken);
+});
+
 process.on('uncaughtException', function () {
     debug('uncaughtException');
 });

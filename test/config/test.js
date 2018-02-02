@@ -36,8 +36,7 @@ module.exports = {
                 providers: {
                     local: require('../../lib/providers/local')({
                         baseUrl: host + '/auth',
-                        salt: 'CNDygyeFC6536964425994',
-                        resetPasswordTokenExpiration: 10
+                        salt: 'CNDygyeFC6536964425994'
                     })
                 }
             }

@@ -13,7 +13,7 @@ module.exports.createUser = function(campsi, data, connect) {
     return new Promise(function (resolve, reject) {
         const localProvider = campsi.services.get('auth').options.providers.local;
         const encryptedPassword = local.encryptPassword(data.password, localProvider.options.salt);
-        const validationToken = local.createRandomToken(data.username, localProvider.options.salt);
+        const validationToken = local.createValidationToken(data.username, localProvider.options.salt);
 
         let user = {
             displayName: data.displayName,

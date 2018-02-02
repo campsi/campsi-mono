@@ -124,7 +124,6 @@ describe('Auth Local API', () => {
                 campsi.on('auth/local/signup', (payload) => {
                     payload.should.have.property('token');
                     payload.should.have.property('email');
-                    payload.should.have.property('data');
                     cb();
                 });
             }], done);

@@ -14,22 +14,12 @@ module.exports = {
             host: 'localhost',
             port: 27017,
             database: 'relationships'
-        },
-        license: {
-            name: 'MIT',
-            url: 'https://opensource.org/licenses/mit-license.php'
-        },
-        contact: {
-            name: 'Christophe Braud',
-            email: 'christophe@agilitation.fr',
-            url: 'http://agilitation.fr'
         }
     },
     services: {
         docs: {
             title: 'Contents',
             description: 'Tested Service',
-            namespace: 'test-docs',
             options: require(docsOptions),
             optionsBasePath: path.dirname(path.join(__dirname, docsOptions))
         },

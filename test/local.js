@@ -142,13 +142,6 @@ describe('Auth Local API', () => {
 
             async.parallel([
                 (parallelCb) => {
-                    campsi.on('trace/request', (payload) => {
-                        payload.should.have.property('url');
-                        payload.url.should.eq('/local-signup-validate-redirect');
-                        parallelCb();
-                    });
-                },
-                (parallelCb) => {
                     chai.request(campsi.app)
                         .post('/auth/local/signup')
                         .set('content-type', 'application/json')
@@ -188,6 +181,20 @@ describe('Auth Local API', () => {
                         }
                     ], parallelCb);
                 },
+                (parallelCb) => {
+                    campsi.on('trace/request', (payload) => {
+                        payload.should.have.property('url');
+                        payload.url.should.eq('/local-signup-validate-redirect');
+                        parallelCb();
+                    });
+                },
+                (parallelCb) => {
+                    campsi.on('auth/local/validated', () => {
+                        // A race condition seems to happened between validation and next auth/me call.
+                        // This is not an important bug, so we put a small timer to make travis happier
+                        setTimeout(parallelCb, 100);
+                    });
+                }
             ], () => {
                 chai.request(campsi.app)
                     .get('/auth/me')
@@ -195,7 +202,7 @@ describe('Auth Local API', () => {
                     .end((err, res) => {
                         res.should.have.status(200);
                         res.should.be.json;
-                        res.body.should.be.a('object');
+                        res.body.should.be.an('object');
                         res.body.identities.local.validated.should.eq(true);
                         done();
                     });

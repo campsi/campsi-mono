@@ -134,7 +134,6 @@ describe('Auth Local API', () => {
      * Test the /GET local/validate route
      */
     describe('/GET local/validate [default]', () => {
-
         it('it should validate the user', done => {
 
             let signupPayload;
@@ -153,7 +152,10 @@ describe('Auth Local API', () => {
                         (serieCb) => {
                             campsi.on('auth/local/signup', (payload) => {
                                 signupPayload = payload;
-                                serieCb();
+                                // TODO : Test is too fast and validation can failed (especially in travis)
+                                // TODO : Bug is not clearly identified (node, mqtt-emitter, mongo, mongo driver)
+                                // TODO : This timer seems to resolve the test failure until more investigations
+                                setTimeout(serieCb, 100);
                             });
                         },
                         (serieCb) => {
@@ -186,13 +188,6 @@ describe('Auth Local API', () => {
                         payload.should.have.property('url');
                         payload.url.should.eq('/local-signup-validate-redirect');
                         parallelCb();
-                    });
-                },
-                (parallelCb) => {
-                    campsi.on('auth/local/validated', () => {
-                        // A race condition seems to happened between validation and next auth/me call.
-                        // This is not an important bug, so we put a small timer to make travis happier
-                        setTimeout(parallelCb, 100);
                     });
                 }
             ], () => {

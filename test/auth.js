@@ -120,6 +120,21 @@ describe('Auth API', () => {
             });
         });
     });
+
+    describe('/GET anonymous', () => {
+        it('it should create an anonymous user with a token', (done) => {
+            chai.request(campsi.app)
+                .get('/auth/anonymous')
+                .end((err, res) => {
+                    res.should.have.status(200);
+                    res.should.be.json;
+                    res.body.should.be.a('object');
+                    res.body.should.have.property('token');
+                    done();
+                });
+        });
+    });
+
     /*
      * Test the /GET logout route
      */

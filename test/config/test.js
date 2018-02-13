@@ -1,7 +1,7 @@
 const host = 'http://localhost:3000';
 
 module.exports = {
-    port: 3000,
+    port: process.env.PORT || 3000,
     campsi: {
         title: 'Test Arezzo',
         publicURL: host,

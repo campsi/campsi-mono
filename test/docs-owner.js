@@ -1,9 +1,10 @@
-//During the test the env variable is set to private
+/* eslint-disable no-unused-expressions */
+// During the test the env variable is set to private
 process.env.NODE_CONFIG_DIR = './test/config';
 process.env.NODE_ENV = 'test';
 
-//Require the dev-dependencies
-const { MongoClient } = require('mongodb');
+// Require the dev-dependencies
+const {MongoClient} = require('mongodb');
 const mongoUriBuilder = require('mongo-uri-builder');
 const debug = require('debug')('campsi:test');
 const chai = require('chai');
@@ -22,170 +23,167 @@ format.extend(String.prototype);
 chai.use(chaiHttp);
 
 const services = {
-    Docs: require('../lib'),
+  Docs: require('../lib')
 };
 
 let me = {
-    _id: fakeId()
+  _id: fakeId()
 };
-let not_me = {
-    _id: fakeId()
+let notMe = {
+  _id: fakeId()
 };
 
 // Helpers
-function createEntry(data, owner, state) {
-    return new Promise(function (resolve, reject) {
-        let resource = campsi.services.get('docs').options.resources['simple'];
-        builder.create({
-            user: owner,
-            data: data,
-            resource: resource,
-            state: state
-        }).then((doc) => {
-            resource.collection.insert(doc, (err, result) => {
-                resolve(result.ops[0]._id);
-            });
-        }).catch((error) => {
-            reject(error);
-        });
+function createEntry (data, owner, state) {
+  return new Promise(function (resolve, reject) {
+    let resource = campsi.services.get('docs').options.resources['simple'];
+    builder.create({
+      user: owner,
+      data: data,
+      resource: resource,
+      state: state
+    }).then((doc) => {
+      resource.collection.insert(doc, (err, result) => {
+        resolve(result.ops[0]._id);
+      });
+    }).catch((error) => {
+      reject(error);
     });
-
+  });
 }
 
 // Our parent block
 describe('Docs - Owner', () => {
-    beforeEach((done) => {
+  beforeEach((done) => {
+    // Empty the database
+    const mongoUri = mongoUriBuilder(config.campsi.mongo);
+    MongoClient.connect(mongoUri, (err, client) => {
+      let db = client.db(config.campsi.mongo.database);
+      db.dropDatabase(() => {
+        client.close();
+        campsi = new CampsiServer(config.campsi);
+        campsi.mount('docs', new services.Docs(config.services.docs));
+        campsi.app.use((req, res, next) => {
+          req.user = me;
+          next();
+        });
 
-        // Empty the database
-        const mongoUri = mongoUriBuilder(config.campsi.mongo);
-        MongoClient.connect(mongoUri, (err, client) => {
-            let db = client.db(config.campsi.mongo.database);
-            db.dropDatabase(() => {
-                client.close();
-                campsi = new CampsiServer(config.campsi);
-                campsi.mount('docs', new services.Docs(config.services.docs));
-                campsi.app.use((req, res, next) => {
-                    req.user = me;
-                    next();
-                });
+        campsi.on('campsi/ready', () => {
+          server = campsi.listen(config.port);
+          done();
+        });
 
-                campsi.on('campsi/ready', () => {
-                    server = campsi.listen(config.port);
-                    done();
-                });
+        campsi.start().catch((err) => {
+          debug('Error: %s', err);
+        });
+      });
+    });
+  });
 
-                campsi.start()
-                    .catch((err) => {
-                        debug('Error: %s', err);
-                    });
-            });
+  afterEach((done) => {
+    server.close();
+    done();
+  });
+
+  /*
+   * Test owner role
+   */
+  describe('owner role', () => {
+    it('it should create a doc with correct owner', (done) => {
+      let data = {'name': 'test'};
+      chai.request(campsi.app)
+        .post('/docs/simple/state-private')
+        .set('content-type', 'application/json')
+        .send(data)
+        .end((err, res) => {
+          res.should.have.status(200);
+          res.should.be.json;
+          res.body.should.be.a('object');
+          res.body.should.have.property('id');
+          res.body.should.have.property('state');
+          res.body.state.should.be.eq('state-private');
+          res.body.should.have.property('id');
+          res.body.should.have.property('createdAt');
+          res.body.should.have.property('createdBy');
+          expect(res.body.createdBy).to.be.eql(me._id);
+          res.body.should.have.property('data');
+          res.body.data.should.be.eql(data);
+          done();
         });
     });
-
-    afterEach((done) => {
-        server.close();
-        done();
+    it('it should not get a document not owned by current user', (done) => {
+      let data = {'name': 'test'};
+      createEntry(data, notMe, 'state-private').then((id) => {
+        chai.request(campsi.app)
+          .get('/docs/simple/{0}/state-private'.format(id))
+          .end((err, res) => {
+            res.should.have.status(404);
+            res.should.be.json;
+            res.body.should.be.an('object');
+            res.body.should.have.property('message');
+            done();
+          });
+      });
     });
-
-    /*
-     * Test owner role
-     */
-    describe('owner role', () => {
-        it('it should create a doc with correct owner', (done) => {
-            let data = {'name': 'test'};
-            chai.request(campsi.app)
-                .post('/docs/simple/state-private')
-                .set('content-type', 'application/json')
-                .send(data)
-                .end((err, res) => {
-                    res.should.have.status(200);
-                    res.should.be.json;
-                    res.body.should.be.a('object');
-                    res.body.should.have.property('id');
-                    res.body.should.have.property('state');
-                    res.body.state.should.be.eq('state-private');
-                    res.body.should.have.property('id');
-                    res.body.should.have.property('createdAt');
-                    res.body.should.have.property('createdBy');
-                    expect(res.body.createdBy).to.be.eql(me._id);
-                    res.body.should.have.property('data');
-                    res.body.data.should.be.eql(data);
-                    done();
-                });
-        });
-        it('it should not get a document not owned by current user', (done) => {
-            let data = {'name': 'test'};
-            createEntry(data, not_me, 'state-private').then((id) => {
-                chai.request(campsi.app)
-                    .get('/docs/simple/{0}/state-private'.format(id))
-                    .end((err, res) => {
-                        res.should.have.status(404);
-                        res.should.be.json;
-                        res.body.should.be.an('object');
-                        res.body.should.have.property('message');
-                        done();
-                    });
-            });
-        });
-        it('it should get a document owned by current user', (done) => {
-            let data = {'name': 'test'};
-            createEntry(data, me, 'state-private').then((id) => {
-                chai.request(campsi.app)
-                    .get('/docs/simple/{0}/state-private'.format(id))
-                    .end((err, res) => {
-                        res.should.have.status(200);
-                        res.should.be.json;
-                        res.body.should.be.an('object');
-                        res.body.should.have.property('id');
-                        res.body.should.have.property('state');
-                        res.body.state.should.be.eq('state-private');
-                        res.body.should.have.property('createdAt');
-                        res.body.should.have.property('createdBy');
-                        res.body.createdBy.should.be.equal(me._id);
-                        res.body.should.have.property('data');
-                        res.body.data.should.be.eql(data);
-                        done();
-                    });
-            });
-        });
-        it('it should return an empty array if not on the good state', (done) => {
-            let data = {name: 'test'};
-            createEntry(data, not_me, 'state-private').then(() => {
-                chai.request(campsi.app)
-                    .get('/docs/simple')
-                    .end((err,res) => {
-                        res.should.have.status(200);
-                        res.body.should.be.an('array');
-                        res.body.should.have.length(0);
-                        done();
-                    });
-            });
-        });
-        it('it should return an empty array if current user have not created any document', (done) => {
-            let data = {name: 'test'};
-            createEntry(data, not_me, 'state-private').then(() => {
-                chai.request(campsi.app)
-                    .get('/docs/simple?state=state-private')
-                    .end((err,res) => {
-                        res.should.have.status(200);
-                        res.body.should.be.an('array');
-                        res.body.should.have.length(0);
-                        done();
-                    });
-            });
-        });
-        it('it should not return an empty array if current user have created a document', (done) => {
-            let data = {name: 'test'};
-            createEntry(data, me, 'state-private').then(() => {
-                chai.request(campsi.app)
-                    .get('/docs/simple?state=state-private')
-                    .end((err,res) => {
-                        res.should.have.status(200);
-                        res.body.should.be.an('array');
-                        res.body.should.have.length(1);
-                        done();
-                    });
-            });
-        });
+    it('it should get a document owned by current user', (done) => {
+      let data = {'name': 'test'};
+      createEntry(data, me, 'state-private').then((id) => {
+        chai.request(campsi.app)
+          .get('/docs/simple/{0}/state-private'.format(id))
+          .end((err, res) => {
+            res.should.have.status(200);
+            res.should.be.json;
+            res.body.should.be.an('object');
+            res.body.should.have.property('id');
+            res.body.should.have.property('state');
+            res.body.state.should.be.eq('state-private');
+            res.body.should.have.property('createdAt');
+            res.body.should.have.property('createdBy');
+            res.body.createdBy.should.be.equal(me._id);
+            res.body.should.have.property('data');
+            res.body.data.should.be.eql(data);
+            done();
+          });
+      });
     });
+    it('it should return an empty array if not on the good state', (done) => {
+      let data = {name: 'test'};
+      createEntry(data, notMe, 'state-private').then(() => {
+        chai.request(campsi.app)
+          .get('/docs/simple')
+          .end((err, res) => {
+            res.should.have.status(200);
+            res.body.should.be.an('array');
+            res.body.should.have.length(0);
+            done();
+          });
+      });
+    });
+    it('it should return an empty array if current user have not created any document', (done) => {
+      let data = {name: 'test'};
+      createEntry(data, notMe, 'state-private').then(() => {
+        chai.request(campsi.app)
+          .get('/docs/simple?state=state-private')
+          .end((err, res) => {
+            res.should.have.status(200);
+            res.body.should.be.an('array');
+            res.body.should.have.length(0);
+            done();
+          });
+      });
+    });
+    it('it should not return an empty array if current user have created a document', (done) => {
+      let data = {name: 'test'};
+      createEntry(data, me, 'state-private').then(() => {
+        chai.request(campsi.app)
+          .get('/docs/simple?state=state-private')
+          .end((err, res) => {
+            res.should.have.status(200);
+            res.body.should.be.an('array');
+            res.body.should.have.length(1);
+            done();
+          });
+      });
+    });
+  });
 });

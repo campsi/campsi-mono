@@ -1,5 +1,4 @@
 /* eslint-disable no-unused-expressions */
-// During the test the env variable is set to private
 process.env.NODE_CONFIG_DIR = './test/config';
 process.env.NODE_ENV = 'test';
 
@@ -44,6 +43,7 @@ function createEntry (data, owner, state) {
       state: state
     }).then((doc) => {
       resource.collection.insert(doc, (err, result) => {
+        if (err) return reject(err);
         resolve(result.ops[0]._id);
       });
     }).catch((error) => {
@@ -53,11 +53,12 @@ function createEntry (data, owner, state) {
 }
 
 // Our parent block
-describe('Docs - Owner', () => {
+describe('Owner', () => {
   beforeEach((done) => {
     // Empty the database
     const mongoUri = mongoUriBuilder(config.campsi.mongo);
     MongoClient.connect(mongoUri, (err, client) => {
+      if (err) throw err;
       let db = client.db(config.campsi.mongo.database);
       db.dropDatabase(() => {
         client.close();
@@ -96,6 +97,7 @@ describe('Docs - Owner', () => {
         .set('content-type', 'application/json')
         .send(data)
         .end((err, res) => {
+          if (err) debug(`received an error from chai: ${err.message}`);
           res.should.have.status(200);
           res.should.be.json;
           res.body.should.be.a('object');
@@ -117,6 +119,7 @@ describe('Docs - Owner', () => {
         chai.request(campsi.app)
           .get('/docs/simple/{0}/state-private'.format(id))
           .end((err, res) => {
+            if (err) debug(`received an error from chai: ${err.message}`);
             res.should.have.status(404);
             res.should.be.json;
             res.body.should.be.an('object');
@@ -131,6 +134,7 @@ describe('Docs - Owner', () => {
         chai.request(campsi.app)
           .get('/docs/simple/{0}/state-private'.format(id))
           .end((err, res) => {
+            if (err) debug(`received an error from chai: ${err.message}`);
             res.should.have.status(200);
             res.should.be.json;
             res.body.should.be.an('object');
@@ -152,6 +156,7 @@ describe('Docs - Owner', () => {
         chai.request(campsi.app)
           .get('/docs/simple')
           .end((err, res) => {
+            if (err) debug(`received an error from chai: ${err.message}`);
             res.should.have.status(200);
             res.body.should.be.an('array');
             res.body.should.have.length(0);
@@ -165,6 +170,7 @@ describe('Docs - Owner', () => {
         chai.request(campsi.app)
           .get('/docs/simple?state=state-private')
           .end((err, res) => {
+            if (err) debug(`received an error from chai: ${err.message}`);
             res.should.have.status(200);
             res.body.should.be.an('array');
             res.body.should.have.length(0);
@@ -178,6 +184,7 @@ describe('Docs - Owner', () => {
         chai.request(campsi.app)
           .get('/docs/simple?state=state-private')
           .end((err, res) => {
+            if (err) debug(`received an error from chai: ${err.message}`);
             res.should.have.status(200);
             res.body.should.be.an('array');
             res.body.should.have.length(1);

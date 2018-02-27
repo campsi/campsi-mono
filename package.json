@@ -8,10 +8,10 @@
     "url": "git://github.com/campsi/campsi-service-docs.git"
   },
   "dependencies": {
-    "ajv": "^6.0.0",
+    "ajv": "^6.2.0",
     "campsi-find-references": "^1.0.2",
-    "json-schema-ref-parser": "^4.0.4",
-    "mongodb": "^3.0.2",
+    "json-schema-ref-parser": "^4.1.1",
+    "mongodb": "^3.0.3",
     "string-format": "^0.5.0"
   },
   "devDependencies": {
@@ -19,15 +19,15 @@
     "campsi": "^1.0.5",
     "chai": "^4.1.2",
     "chai-http": "^3.0.0",
-    "config": "^1.29.4",
+    "config": "^1.30.0",
     "coveralls": "^3.0.0",
     "debug": "^3.1.0",
     "depcheck": "^0.6.8",
     "eslint": "^4.18.1",
     "eslint-config-standard": "^11.0.0",
-    "eslint-plugin-import": "^2.8.0",
+    "eslint-plugin-import": "^2.9.0",
     "eslint-plugin-indexof": "^0.1.1",
-    "eslint-plugin-node": "^6.0.0",
+    "eslint-plugin-node": "^6.0.1",
     "eslint-plugin-promise": "^3.6.0",
     "eslint-plugin-standard": "^3.0.1",
     "fake-object-id": "0.0.3",

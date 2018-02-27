@@ -6,7 +6,7 @@ const config = require('config');
 const debug = require('debug')('campsi:test');
 
 const services = {
-    Docs: require('../lib/index'),
+  Docs: require('../lib/index')
 };
 
 let campsi = new CampsiServer(config.campsi);
@@ -14,11 +14,11 @@ let campsi = new CampsiServer(config.campsi);
 campsi.mount('docs', new services.Docs(config.services.docs));
 
 campsi.on('campsi/ready', () => {
-    debug('ready');
-    campsi.listen(config.port);
+  debug('ready');
+  campsi.listen(config.port);
 });
 
 campsi.start()
-    .catch((error) => {
-        debug(error);
-    });
+  .catch((error) => {
+    debug(error);
+  });

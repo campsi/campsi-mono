@@ -11,7 +11,7 @@ const {atob} = require('../lib/modules/base64');
 const async = require('async');
 const {createUser} = require('./helpers/createUser');
 const CampsiServer = require('campsi');
-const { MongoClient } = require('mongodb');
+const {MongoClient} = require('mongodb');
 const mongoUriBuilder = require('mongo-uri-builder');
 const debug = require('debug')('campsi:test');
 
@@ -106,7 +106,7 @@ describe('Auth Local API', () => {
         });
     });
     describe('/POST local/signup [default]', () => {
-        it('it should do something', (done) => {
+        it('it should do something', done => {
             async.parallel([(cb) => {
                 chai.request(campsi.app)
                     .post('/auth/local/signup')
@@ -128,6 +128,23 @@ describe('Auth Local API', () => {
                     cb();
                 });
             }], done);
+        });
+    });
+    describe('/POST local/signup [merge account]', function () {
+        it('it should merge the existing user account', done => {
+            chai.request(campsi.app).get('/auth/anonymous').end((err, res) => {
+                res.body.token.should.be.a('object');
+
+                chai.request(campsi.app)
+                    .post('/auth/local/signup')
+                    .set('Authorization',  'Bearer ' + res.body.token.value)
+                    .send(glenda)
+                    .end((err, res) => {
+                        res.body.should.be.a('object');
+                        res.body.should.have.property('token');
+                        done();
+                    });
+            });
         });
     });
     /*

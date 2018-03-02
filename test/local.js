@@ -1,4 +1,4 @@
-// During the test the env variable is set to private
+/* eslint-disable no-unused-expressions */
 process.env.NODE_CONFIG_DIR = './test/config';
 process.env.NODE_ENV = 'test';
 
@@ -38,6 +38,7 @@ describe('Auth Local API', () => {
   beforeEach((done) => {
     const mongoUri = mongoUriBuilder(config.campsi.mongo);
     MongoClient.connect(mongoUri, (err, client) => {
+      if (err) throw err;
       let db = client.db(config.campsi.mongo.database);
       db.dropDatabase(() => {
         client.close();
@@ -75,6 +76,7 @@ describe('Auth Local API', () => {
           bad: 'parameters'
         })
         .end((err, res) => {
+          if (err) debug(`received an error from chai: ${err.message}`);
           res.should.have.status(400);
           res.should.be.json;
           res.body.should.be.a('object');
@@ -96,6 +98,7 @@ describe('Auth Local API', () => {
             password: 'signup!'
           })
           .end((err, res) => {
+            if (err) debug(`received an error from chai: ${err.message}`);
             res.should.have.status(400);
             res.should.be.json;
             res.body.should.be.a('object');
@@ -113,6 +116,7 @@ describe('Auth Local API', () => {
           .set('content-type', 'application/json')
           .send(glenda)
           .end((err, res) => {
+            if (err) debug(`received an error from chai: ${err.message}`);
             res.should.have.status(200);
             res.should.be.json;
             res.body.should.be.a('object');
@@ -133,13 +137,14 @@ describe('Auth Local API', () => {
   describe('/POST local/signup [merge account]', function () {
     it('it should merge the existing user account', done => {
       chai.request(campsi.app).get('/auth/anonymous').end((err, res) => {
+        if (err) debug(`received an error from chai: ${err.message}`);
         res.body.token.should.be.a('object');
-
         chai.request(campsi.app)
           .post('/auth/local/signup')
           .set('Authorization', 'Bearer ' + res.body.token.value)
           .send(glenda)
           .end((err, res) => {
+            if (err) debug(`received an error from chai: ${err.message}`);
             res.body.should.be.a('object');
             res.body.should.have.property('token');
             done();
@@ -192,6 +197,7 @@ describe('Auth Local API', () => {
                   password: 'signup!'
                 })
                 .end((err, res) => {
+                  if (err) debug(`received an error from chai: ${err.message}`);
                   res.should.have.status(200);
                   signinToken = res.body.token;
                   serieCb();
@@ -211,6 +217,7 @@ describe('Auth Local API', () => {
           .get('/auth/me')
           .set('Authorization', 'Bearer ' + JSON.parse(atob(signinToken)).value)
           .end((err, res) => {
+            if (err) debug(`received an error from chai: ${err.message}`);
             res.should.have.status(200);
             res.should.be.json;
             res.body.should.be.an('object');
@@ -235,6 +242,7 @@ describe('Auth Local API', () => {
             .get('/auth/local/validate?token=differentFromValidationToken&redirectURI=' +
                             encodeURIComponent('/trace/local-signup-validate-redirect'))
             .end((err, res) => {
+              if (err) debug(`received an error from chai: ${err.message}`);
               res.should.have.status(404);
               res.should.be.json;
               res.body.should.be.a('object');
@@ -246,6 +254,7 @@ describe('Auth Local API', () => {
             .get('/auth/me')
             .set('Authorization', 'Bearer ' + bearerToken)
             .end((err, res) => {
+              if (err) debug(`received an error from chai: ${err.message}`);
               res.should.have.status(200);
               res.should.be.json;
               res.body.should.be.a('object');
@@ -270,6 +279,7 @@ describe('Auth Local API', () => {
           chai.request(campsi.app)
             .get('/auth/local/validate')
             .end((err, res) => {
+              if (err) debug(`received an error from chai: ${err.message}`);
               res.should.have.status(400);
               res.should.be.json;
               res.body.should.be.a('object');
@@ -281,6 +291,7 @@ describe('Auth Local API', () => {
             .get('/auth/me')
             .set('Authorization', 'Bearer ' + bearerToken)
             .end((err, res) => {
+              if (err) debug(`received an error from chai: ${err.message}`);
               res.should.have.status(200);
               res.should.be.json;
               res.body.should.be.a('object');
@@ -304,6 +315,7 @@ describe('Auth Local API', () => {
             bad: 'parameters'
           })
           .end((err, res) => {
+            if (err) debug(`received an error from chai: ${err.message}`);
             res.should.have.status(400);
             res.should.be.json;
             res.body.should.be.a('object');
@@ -324,6 +336,7 @@ describe('Auth Local API', () => {
             password: 'wrong!'
           })
           .end((err, res) => {
+            if (err) debug(`received an error from chai: ${err.message}`);
             res.should.have.status(400);
             res.should.be.json;
             res.body.should.be.a('object');
@@ -344,6 +357,7 @@ describe('Auth Local API', () => {
             password: 'signup!'
           })
           .end((err, res) => {
+            if (err) debug(`received an error from chai: ${err.message}`);
             res.should.have.status(200);
             res.should.be.json;
             res.body.should.be.a('object');

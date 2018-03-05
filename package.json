@@ -1,6 +1,6 @@
 {
   "name": "campsi-service-trace",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "",
   "main": "lib/index.js",
   "repository": {
@@ -12,7 +12,7 @@
     "for-in": "^1.0.2"
   },
   "devDependencies": {
-    "campsi": "^1.0.5",
+    "campsi": "^1.0.6",
     "chai": "^4.0.1",
     "chai-http": "^3.0.0",
     "config": "^1.30.0",

@@ -12,13 +12,13 @@
     "for-in": "^1.0.2"
   },
   "devDependencies": {
-    "campsi": "^1.0.2",
+    "campsi": "^1.0.5",
     "chai": "^4.0.1",
     "chai-http": "^3.0.0",
-    "config": "^1.28.1",
+    "config": "^1.30.0",
     "coveralls": "^3.0.0",
-    "depcheck": "^0.6.8",
-    "eslint": "^4.11.0",
+    "depcheck": "^0.6.9",
+    "eslint": "^4.18.2",
     "eslint-plugin-indexof": "^0.1.1",
     "istanbul": "^0.4.5",
     "mocha": "^5.0.0",
@@ -29,7 +29,7 @@
   "scripts": {
     "cover": "istanbul --include-all-sources cover _mocha \"./test/**/!(index).js\" -- --exit",
     "coveralls": "npm run cover -- --report lcovonly && cat ./coverage/lcov.info | coveralls",
-    "depcheck": "depcheck --ignores=path,mocha-lcov-reporter",
+    "depcheck": "depcheck --ignores=path,mocha,mocha-lcov-reporter",
     "lint": "./node_modules/eslint/bin/eslint.js --cache lib/** test/**",
     "test": "mocha \"./test/**/!(index).js\" --exit"
   },

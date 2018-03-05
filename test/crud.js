@@ -119,7 +119,7 @@ describe('CRUD', () => {
         .send(data)
         .end((err, res) => {
           if (err) debug(`received an error from chai: ${err.message}`);
-          res.should.have.status(403);
+          res.should.have.status(401);
           res.should.be.json;
           res.body.should.be.a('object');
           res.body.should.have.property('message');

@@ -285,7 +285,7 @@ describe('State', () => {
    * Test the /PUT docs/pizzas/:id/state route
    */
   describe('/PUT docs/pizzas/:id/state', () => {
-    it('it should modify a document state by id', (done) => {
+    it('it should not modify a document state by id', (done) => {
       let data = {'name': 'test'};
       let stateData = {
         'from': 'working_draft',
@@ -299,7 +299,7 @@ describe('State', () => {
             .send(stateData)
             .end((err, res) => {
               if (err) debug(`received an error from chai: ${err.message}`);
-              res.should.have.status(403);
+              res.should.have.status(401);
               res.should.be.json;
               res.body.should.be.a('object');
               res.body.should.have.property('message');

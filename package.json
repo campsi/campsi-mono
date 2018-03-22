@@ -29,7 +29,7 @@
     "campsi": "^1.0.6",
     "campsi-service-trace": "^1.0.1",
     "chai": "^4.1.2",
-    "chai-http": "^3.0.0",
+    "chai-http": "^4.0.0",
     "config": "^1.29.4",
     "coveralls": "^3.0.0",
     "depcheck": "^0.6.8",

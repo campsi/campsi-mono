@@ -40,7 +40,10 @@ function createTokensProperty(collection, done) {
         async.forEach(users, (user, cb) => {
             collection.updateOne({_id: user._id}, {
                 $set: {
-                    [`tokens.${user.token.value}`]: user.token.expiration
+                    [`tokens.${user.token.value}`]: {
+                        expiration: user.token.expiration,
+                        grantedByProvider: user.identities.local ? 'local' : 'anonymous'
+                    }
                 }
             }, (err, cmdReturn) => {
                 debug(cmdReturn.result);

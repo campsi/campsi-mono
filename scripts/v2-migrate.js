@@ -36,7 +36,7 @@ function createEncryptedPassword(collection, salt, removeOldPassword, onComplete
 }
 
 function createTokensProperty(collection, done) {
-    collection.find({'token': {'$gt': new Date()}}).toArray((err, users) => {
+    collection.find({'token.expiration': {$gt: new Date()}}).toArray((err, users) => {
         async.forEach(users, (user, cb) => {
             collection.updateOne({_id: user._id}, {
                 $set: {

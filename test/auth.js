@@ -1,10 +1,5 @@
-/**
- * Created by christophe on 23/08/17.
- */
-//During the test the env variable is set to private
 process.env.NODE_CONFIG_DIR = './test/config';
 process.env.NODE_ENV = 'test';
-
 //Require the dev-dependencies
 const chai = require('chai');
 const chaiHttp = require('chai-http');
@@ -12,16 +7,8 @@ const format = require('string-format');
 const config = require('config');
 const {btoa} = require('../lib/modules/base64');
 const createUser = require('./helpers/createUser');
-const debug = require('debug')('campsi:test');
-const CampsiServer = require('campsi');
-const { MongoClient } = require('mongodb');
-const mongoUriBuilder = require('mongo-uri-builder');
-
 const setupBeforeEach = require('./helpers/setupBeforeEach');
-
 let expect = chai.expect;
-let campsi;
-let server;
 format.extend(String.prototype);
 chai.use(chaiHttp);
 chai.should();

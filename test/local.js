@@ -1,22 +1,13 @@
 /* eslint-disable no-unused-expressions */
 process.env.NODE_CONFIG_DIR = './test/config';
 process.env.NODE_ENV = 'test';
-
 //Require the dev-dependencies
 const chai = require('chai');
 const chaiHttp = require('chai-http');
 const format = require('string-format');
 const config = require('config');
 const async = require('async');
-const CampsiServer = require('campsi');
-const {MongoClient} = require('mongodb');
-const mongoUriBuilder = require('mongo-uri-builder');
-const debug = require('debug')('campsi:test');
 const setupBeforeEach = require('./helpers/setupBeforeEach');
-
-let campsi;
-let server;
-
 format.extend(String.prototype);
 chai.use(chaiHttp);
 chai.should();

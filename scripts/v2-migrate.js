@@ -2,9 +2,9 @@ const async = require('async');
 const debug = require('debug')('campsi:auth:local:generateEncryptedPasswords');
 const CryptoJS = require('crypto-js');
 const {ObjectId} = require('mongodb');
-const {encryptPassword}= require('../lib/local');
+const {encryptPassword} = require('../lib/local');
 
-function generateEncryptedPasswords(collection, salt, removeOldPassword, onComplete) {
+function createEncryptedPassword(collection, salt, removeOldPassword, onComplete) {
     let errors = [];
     let updates = [];
     collection.find({
@@ -35,7 +35,22 @@ function generateEncryptedPasswords(collection, salt, removeOldPassword, onCompl
     });
 }
 
-module.exports = generateEncryptedPasswords;
+function createTokensProperty(collection, done) {
+    collection.find({'token': {'$gt': new Date()}}).toArray((err, users) => {
+        async.forEach(users, (user, cb) => {
+            collection.updateOne({_id: user._id}, {
+                $set: {
+                    [`tokens.${user.token.value}`]: user.token.expiration
+                }
+            }, (err, cmdReturn) => {
+                debug(cmdReturn.result);
+                cb();
+            });
+        }, done);
+    });
+}
+
+module.exports = createEncryptedPassword;
 
 if (!process.argv[2]) {
     process.exit();
@@ -51,11 +66,13 @@ const authKey = process.argv[3] || 'auth';
 const mongoUri = mongoUriBuilder(config.campsi.mongo);
 MongoClient.connect(mongoUri, (err, client) => {
     const db = client.db(config.campsi.mongo.database);
-    const authConfig =config.services[authKey].options;
+    const authConfig = config.services[authKey].options;
     const salt = authConfig.providers.local.options.salt;
-
-    generateEncryptedPasswords(db.collection(authConfig.collectionName), salt, true, (result) => {
+    const collection = db.collection(authConfig.collectionName);
+    createEncryptedPassword(collection, salt, true, (result) => {
         debug(JSON.stringify(result, null, 2));
-        process.exit();
+        createTokensProperty(collection, () => {
+            process.exit();
+        });
     });
 });

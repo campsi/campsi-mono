@@ -15,7 +15,7 @@ function generateEncryptedPasswords(collection, salt, removeOldPassword, onCompl
             encryptPassword(decrypted).then(encryptedPassword => {
                 const ops = {$set: {'identities.local.encryptedPassword': encryptedPassword}};
                 if (removeOldPassword) {
-                    ops[$unset] = {'password': ''};
+                    ops.$unset = {'password': ''};
                 }
                 updates.push([{_id: ObjectId(user._id)}, ops]);
                 cb();

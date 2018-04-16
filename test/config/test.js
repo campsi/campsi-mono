@@ -18,6 +18,7 @@ module.exports = {
         auth: {
             title: 'Authentification',
             options: {
+                collectionName: '__users__',
                 session: {
                     secret: 'sqkerhgtkusyd'
                 },

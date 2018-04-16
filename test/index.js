@@ -23,7 +23,7 @@ campsi.on('auth/local/passwordResetTokenCreated', user => {
 });
 
 process.on('uncaughtException', function () {
-    debug('uncaughtException');
+    debug('uncaughtException', arguments);
 });
 
 process.on('unhandledRejection', (reason, p) => {

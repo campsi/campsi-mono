@@ -8,6 +8,7 @@
     "url": "git://github.com/campsi/campsi-service-auth.git"
   },
   "dependencies": {
+    "bcrypt": "^2.0.0",
     "connect-mongodb-session": "^1.4.0",
     "crypto-js": "^3.1.9-1",
     "debug": "^3.1.0",
@@ -26,19 +27,19 @@
   },
   "devDependencies": {
     "async": "^2.6.0",
-    "campsi": "^1.0.5",
-    "campsi-service-trace": "^1.0.1",
+    "campsi": "^1.0.7",
+    "campsi-service-trace": "^1.0.2",
     "chai": "^4.1.2",
     "chai-http": "^3.0.0",
-    "config": "^1.29.4",
+    "config": "^1.30.0",
     "coveralls": "^3.0.0",
-    "depcheck": "^0.6.8",
-    "eslint": "^4.17.0",
+    "depcheck": "^0.6.9",
+    "eslint": "^4.19.1",
     "eslint-plugin-indexof": "^0.1.1",
     "istanbul": "^0.4.5",
-    "mocha": "^5.0.0",
+    "mocha": "^5.1.0",
     "mocha-lcov-reporter": "^1.3.0",
-    "mongodb": "^3.0.2",
+    "mongodb": "^3.0.6",
     "string-format": "^0.5.0"
   },
   "altDependencies": {

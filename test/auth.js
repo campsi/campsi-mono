@@ -8,15 +8,10 @@ const chaiHttp = require('chai-http');
 const format = require('string-format');
 const config = require('config');
 const {btoa} = require('../lib/modules/base64');
-const {createUser} = require('./helpers/createUser');
+const createUser = require('./helpers/createUser');
 const debug = require('debug')('campsi:test');
-const CampsiServer = require('campsi');
-const { MongoClient } = require('mongodb');
-const mongoUriBuilder = require('mongo-uri-builder');
-
+const setupBeforeEach = require('./helpers/setupBeforeEach');
 let expect = chai.expect;
-let campsi;
-let server;
 format.extend(String.prototype);
 chai.use(chaiHttp);
 chai.should();
@@ -34,41 +29,15 @@ const services = {
 };
 
 describe('Auth API', () => {
-  beforeEach((done) => {
-    const mongoUri = mongoUriBuilder(config.campsi.mongo);
-    MongoClient.connect(mongoUri, (err, client) => {
-      if (err) throw err;
-      let db = client.db(config.campsi.mongo.database);
-      db.dropDatabase(() => {
-        client.close();
-        campsi = new CampsiServer(config.campsi);
-        campsi.mount('auth', new services.Auth(config.services.auth));
-        campsi.mount('trace', new services.Trace(config.services.trace));
-
-        campsi.on('campsi/ready', () => {
-          server = campsi.listen(config.port);
-          done();
-        });
-
-        campsi.start()
-          .catch((err) => {
-            debug('Error: %s', err);
-          });
-      });
-    });
-  });
-
-  afterEach((done) => {
-    server.close(() => {
-      done();
-    });
-  });
+  let context = {};
+  beforeEach(setupBeforeEach(config, services, context));
+  afterEach(done => context.server.close(done));
   /*
      * Test the /GET providers route
      */
   describe('/GET providers', () => {
     it('it should return a list of providers', (done) => {
-      chai.request(campsi.app)
+      chai.request(context.campsi.app)
         .get('/auth/providers')
         .end((err, res) => {
           if (err) debug(`received an error from chai: ${err.message}`);
@@ -89,7 +58,7 @@ describe('Auth API', () => {
      */
   describe('/GET me [not connected]', () => {
     it('it should return an error when not connected', (done) => {
-      chai.request(campsi.app)
+      chai.request(context.campsi.app)
         .get('/auth/me')
         .end((err, res) => {
           if (err) debug(`received an error from chai: ${err.message}`);
@@ -103,7 +72,8 @@ describe('Auth API', () => {
   });
   describe('/GET me [connected]', () => {
     it('it should return user when connected', (done) => {
-      createUser(campsi, glenda, true).then((token) => {
+      const campsi = context.campsi;
+      createUser(chai, campsi, glenda).then((token) => {
         chai.request(campsi.app)
           .get('/auth/me')
           .set('Authorization', 'Bearer ' + token)
@@ -124,6 +94,7 @@ describe('Auth API', () => {
 
   describe('/GET anonymous', () => {
     it('it should create an anonymous user with a token', (done) => {
+      const campsi = context.campsi;
       chai.request(campsi.app)
         .get('/auth/anonymous')
         .end((err, res) => {
@@ -142,6 +113,7 @@ describe('Auth API', () => {
      */
   describe('/GET logout [not connected]', () => {
     it('it should return error if not connected', (done) => {
+      const campsi = context.campsi;
       chai.request(campsi.app)
         .get('/auth/logout')
         .end((err, res) => {
@@ -156,7 +128,8 @@ describe('Auth API', () => {
   });
   describe('/GET logout [connected]', () => {
     it('it should return success & token must disappear from database', (done) => {
-      createUser(campsi, glenda, true).then((token) => {
+      const campsi = context.campsi;
+      createUser(chai, campsi, glenda).then((token) => {
         chai.request(campsi.app)
           .get('/auth/logout')
           .set('Authorization', 'Bearer ' + token)
@@ -184,7 +157,8 @@ describe('Auth API', () => {
      */
   describe('redirection must redirect to correct page', () => {
     it('it shoud redirect on /me page on successful connection', (done) => {
-      createUser(campsi, glenda).then(() => {
+      const campsi = context.campsi;
+      createUser(chai, campsi, glenda).then(() => {
         let state = btoa(JSON.stringify({
           redirectURI: '/auth/me'
         }));
@@ -215,7 +189,8 @@ describe('Auth API', () => {
      */
   describe('signin should return JSON when Ajax', () => {
     it('it should work', (done) => {
-      createUser(campsi, glenda).then(() => {
+      const campsi = context.campsi;
+      createUser(chai, campsi, glenda).then(() => {
         chai.request(campsi.app)
           .post('/auth/local/signin')
           .set('content-type', 'application/json')
@@ -239,7 +214,8 @@ describe('Auth API', () => {
 
   describe('send a PUT on /me should update the user', () => {
     it('it should modify the display name', (done) => {
-      createUser(campsi, glenda, true).then((token) => {
+      const campsi = context.campsi;
+      createUser(chai, campsi, glenda, true).then((token) => {
         chai.request(campsi.app)
           .put('/auth/me')
           .set('content-type', 'application/json')
@@ -260,7 +236,8 @@ describe('Auth API', () => {
     });
 
     it('it should add a data property', (done) => {
-      createUser(campsi, glenda, true).then((token) => {
+      const campsi = context.campsi;
+      createUser(chai, campsi, glenda, true).then((token) => {
         chai.request(campsi.app)
           .put('/auth/me')
           .set('content-type', 'application/json')

@@ -7,17 +7,9 @@ const chai = require('chai');
 const chaiHttp = require('chai-http');
 const format = require('string-format');
 const config = require('config');
-const {atob} = require('../lib/modules/base64');
 const async = require('async');
-const {createUser} = require('./helpers/createUser');
-const CampsiServer = require('campsi');
-const {MongoClient} = require('mongodb');
-const mongoUriBuilder = require('mongo-uri-builder');
+const setupBeforeEach = require('./helpers/setupBeforeEach');
 const debug = require('debug')('campsi:test');
-
-let campsi;
-let server;
-
 format.extend(String.prototype);
 chai.use(chaiHttp);
 chai.should();
@@ -34,42 +26,29 @@ const services = {
   Trace: require('campsi-service-trace')
 };
 
-describe('Auth Local API', () => {
-  beforeEach((done) => {
-    const mongoUri = mongoUriBuilder(config.campsi.mongo);
-    MongoClient.connect(mongoUri, (err, client) => {
-      if (err) throw err;
-      let db = client.db(config.campsi.mongo.database);
-      db.dropDatabase(() => {
-        client.close();
-        campsi = new CampsiServer(config.campsi);
-        campsi.mount('auth', new services.Auth(config.services.auth));
-        campsi.mount('trace', new services.Trace(config.services.trace));
-
-        campsi.on('campsi/ready', () => {
-          server = campsi.listen(config.port);
-          done();
-        });
-
-        campsi.start()
-          .catch((err) => {
-            debug('Error: %s', err);
-          });
+function createUser (campsi, user) {
+  return new Promise((resolve, reject) => {
+    chai.request(campsi.app)
+      .post('/auth/local/signup')
+      .set('content-type', 'application/json')
+      .send(user)
+      .end((err, res) => {
+        if (err) return reject(err);
+        resolve(res.body.token);
       });
-    });
   });
+}
 
-  afterEach((done) => {
-    server.close(() => {
-      done();
-    });
-  });
+describe('Auth Local API', () => {
+  let context = {};
+  beforeEach(setupBeforeEach(config, services, context));
+  afterEach(done => context.server.close(done));
   /*
      * Test the /POST local/signup route
      */
   describe('/POST local/signup [bad parameters]', () => {
     it('it should return an error', (done) => {
-      chai.request(campsi.app)
+      chai.request(context.campsi.app)
         .post('/auth/local/signup')
         .set('content-type', 'application/json')
         .send({
@@ -87,8 +66,8 @@ describe('Auth Local API', () => {
   });
   describe('/POST local/signup [user already exists]', () => {
     it('it should return an error', (done) => {
-      createUser(campsi, glenda).then(() => {
-        chai.request(campsi.app)
+      createUser(context.campsi, glenda).then(() => {
+        chai.request(context.campsi.app)
           .post('/auth/local/signup')
           .set('content-type', 'application/json')
           .send({
@@ -110,6 +89,7 @@ describe('Auth Local API', () => {
   });
   describe('/POST local/signup [default]', () => {
     it('it should do something', done => {
+      const campsi = context.campsi;
       async.parallel([(cb) => {
         chai.request(campsi.app)
           .post('/auth/local/signup')
@@ -136,12 +116,12 @@ describe('Auth Local API', () => {
   });
   describe('/POST local/signup [merge account]', function () {
     it('it should merge the existing user account', done => {
+      const campsi = context.campsi;
       chai.request(campsi.app).get('/auth/anonymous').end((err, res) => {
         if (err) debug(`received an error from chai: ${err.message}`);
-        res.body.token.should.be.a('object');
         chai.request(campsi.app)
           .post('/auth/local/signup')
-          .set('Authorization', 'Bearer ' + res.body.token.value)
+          .set('Authorization', 'Bearer ' + res.body.token)
           .send(glenda)
           .end((err, res) => {
             if (err) debug(`received an error from chai: ${err.message}`);
@@ -157,6 +137,7 @@ describe('Auth Local API', () => {
      */
   describe('/GET local/validate [default]', () => {
     it('it should validate the user', done => {
+      const campsi = context.campsi;
       let signupPayload;
       let signinToken;
 
@@ -176,7 +157,7 @@ describe('Auth Local API', () => {
                 // TODO : Test is too fast and validation can failed (especially in travis)
                 // TODO : Bug is not clearly identified (node, mqtt-emitter, mongo, mongo driver)
                 // TODO : This timer seems to resolve the test failure until more investigations
-                setTimeout(serieCb, 100);
+                setTimeout(serieCb, 500);
               });
             },
             (serieCb) => {
@@ -215,7 +196,7 @@ describe('Auth Local API', () => {
       ], () => {
         chai.request(campsi.app)
           .get('/auth/me')
-          .set('Authorization', 'Bearer ' + JSON.parse(atob(signinToken)).value)
+          .set('Authorization', 'Bearer ' + signinToken)
           .end((err, res) => {
             if (err) debug(`received an error from chai: ${err.message}`);
             res.should.have.status(200);
@@ -229,10 +210,11 @@ describe('Auth Local API', () => {
   });
   describe('/GET local/validate [bad parameter]', () => {
     it('it should not validate the user', (done) => {
+      const campsi = context.campsi;
       let bearerToken;
       async.series([
         (cb) => {
-          createUser(campsi, glenda, true).then((bearer) => {
+          createUser(campsi, glenda).then((bearer) => {
             bearerToken = bearer;
             cb();
           });
@@ -267,10 +249,11 @@ describe('Auth Local API', () => {
   });
   describe('/GET local/validate [missing parameter]', () => {
     it('it should not validate the user', (done) => {
+      const campsi = context.campsi;
       let bearerToken;
       async.series([
         (cb) => {
-          createUser(campsi, glenda, true).then((bearer) => {
+          createUser(campsi, glenda).then((bearer) => {
             bearerToken = bearer;
             cb();
           });
@@ -307,6 +290,7 @@ describe('Auth Local API', () => {
      */
   describe('/POST local/signin [bad paramaters]', () => {
     it('it should return an error', (done) => {
+      const campsi = context.campsi;
       createUser(campsi, glenda).then(() => {
         chai.request(campsi.app)
           .post('/auth/local/signin')
@@ -327,6 +311,7 @@ describe('Auth Local API', () => {
   });
   describe('/POST local/signin [bad credentials]', () => {
     it('it should sign in the user', (done) => {
+      const campsi = context.campsi;
       createUser(campsi, glenda).then(() => {
         chai.request(campsi.app)
           .post('/auth/local/signin')
@@ -348,6 +333,7 @@ describe('Auth Local API', () => {
   });
   describe('/POST local/signin [default]', () => {
     it('it should sign in the user', (done) => {
+      const campsi = context.campsi;
       createUser(campsi, glenda).then(() => {
         chai.request(campsi.app)
           .post('/auth/local/signin')

@@ -22,8 +22,9 @@ campsi.on('auth/local/passwordResetTokenCreated', user => {
   debug('passwordResetTokenCreated', user.identities.local.passwordResetToken);
 });
 
-process.on('uncaughtException', function () {
-  debug('uncaughtException');
+process.on('uncaughtException', function (reason, p) {
+  debug('Uncaught Rejection at:', p, 'reason:', reason);
+  process.exit(1);
 });
 
 process.on('unhandledRejection', (reason, p) => {

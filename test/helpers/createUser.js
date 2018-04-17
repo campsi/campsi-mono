@@ -1,51 +1,14 @@
-const uuid = require('uuid');
-const local = require('../../lib/local');
+const debug = require('debug')('campsi:test');
 
-/**
- *
- * @param {CampsiServer} campsi
- * @param {object} data
- * @param {boolean} connect
- * @returns {Promise}
- */
-module.exports.createUser = function (campsi, data, connect) {
-  connect = typeof connect !== 'undefined' ? connect : false;
-  return new Promise(function (resolve, reject) {
-    const localProvider = campsi.services.get('auth').options.providers.local;
-    const encryptedPassword = local.encryptPassword(data.password, localProvider.options.salt);
-    const validationToken = local.createRandomToken(data.username, localProvider.options.salt);
-
-    let user = {
-      displayName: data.displayName,
-      email: data.email || data.username,
-      identities: {
-        local: {
-          id: data.username,
-          username: data.username,
-          password: encryptedPassword,
-          validationToken: validationToken,
-          validated: data.validated || false
-        }
-      }
-    };
-
-    let exp = new Date();
-    exp.setTime(exp.getTime() + 10 * 86400000);
-    let token = {
-      value: uuid(),
-      expiration: exp
-    };
-    if (connect) {
-      user.token = token;
-    }
-
-    campsi.db.collection('__users__').insertOne(user)
-      .then((result) => {
-        if (connect) {
-          resolve(token.value, result.insertedId, validationToken);
-        } else {
-          resolve(result.insertedId, validationToken);
-        }
-      }).catch((err) => reject(err));
+module.exports = function createUser (chai, campsi, user) {
+  return new Promise(resolve => {
+    chai.request(campsi.app)
+      .post('/auth/local/signup')
+      .set('content-type', 'application/json')
+      .send(user)
+      .end((err, res) => {
+        if (err) debug(`received an error from chai: ${err.message}`);
+        resolve(res.body.token);
+      });
   });
 };

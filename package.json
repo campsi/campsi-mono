@@ -8,7 +8,7 @@
     "url": "git://github.com/campsi/campsi-service-auth.git"
   },
   "dependencies": {
-    "connect-mongodb-session": "^1.4.0",
+    "connect-mongodb-session": "^2.0.2",
     "crypto-js": "^3.1.9-1",
     "debug": "^3.1.0",
     "edit-url": "^1.0.1",

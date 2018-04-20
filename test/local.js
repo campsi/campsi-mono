@@ -26,7 +26,7 @@ const services = {
   Trace: require('campsi-service-trace')
 };
 
-function createUser(campsi, user) {
+function createUser (campsi, user) {
   return new Promise((resolve, reject) => {
     chai.request(campsi.app)
       .post('/auth/local/signup')

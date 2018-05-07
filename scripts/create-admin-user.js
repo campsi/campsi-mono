@@ -18,11 +18,11 @@ campsi.dbConnect().then(() => {
   });
   insert.roles = ['admin'];
   collection.insertOne(insert).then(res => {
-    process.stdout.write('Admin user created');
-    process.stdout.write(insertToken.value);
+    process.stdout.write('\nAdmin user created\n');
+    process.stdout.write(`  -> token : ${insertToken.value}\n`);
     process.exit();
   }).catch(err => {
-    process.stderr.write('Could not create the admin user\n');
+    process.stderr.write('\nCould not create the admin user\n');
     process.stderr.write('  -> ' + err.message);
     process.stderr.write('\n');
     process.exit();

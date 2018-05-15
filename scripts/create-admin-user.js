@@ -5,7 +5,7 @@ const builder = require('../lib/modules/queryBuilder');
 let campsi = new CampsiServer(config.campsi);
 
 campsi.dbConnect().then(() => {
-  const collectionName = config.services['auth'].options.collectionName || '__users__';
+  const collectionName = config.services['auth'].options.collectionName || '__users__';
   const collection = campsi.db.collection(collectionName);
   const email = process.argv[2] || 'admin@campsi.io';
   let {insert, insertToken} = builder.genInsert({

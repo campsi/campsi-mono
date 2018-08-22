@@ -260,4 +260,64 @@ describe('Auth API', () => {
       });
     });
   });
+
+  describe('invitation', () => {
+    it('should create a new user', (done) => {
+      const campsi = context.campsi;
+      createUser(chai, campsi, glenda, true).then((token) => {
+        chai.request(campsi.app)
+          .post('/auth/invitations')
+          .set('content-type', 'application/json')
+          .set('Authorization', 'Bearer ' + token)
+          .send({
+            email: 'invitee@campsi.io',
+            displayName: 'The user invited by glenda'
+          })
+          .end((err, res) => {
+            if (err) debug(`received an error from chai: ${err.message}`);
+            res.should.have.status(200);
+            res.should.be.json;
+            res.should.be.a('object');
+            res.body.should.have.property('id');
+            debug(res.body);
+            done();
+          });
+      });
+    });
+
+    it('should not create a new user', (done) => {
+      const campsi = context.campsi;
+      const robert = {
+        displayName: 'Robert Bennett',
+        email: 'robert@agilitation.fr',
+        username: 'robert',
+        password: 'signup!'
+      };
+      createUser(chai, campsi, robert).then(createUser(chai, campsi, glenda, true)).then((token) => {
+        chai.request(campsi.app)
+          .post('/auth/invitations')
+          .set('content-type', 'application/json')
+          .set('Authorization', 'Bearer ' + token)
+          .send({
+            email: 'robert@agilitation.fr'
+          })
+          .end((err, res) => {
+            if (err) debug(`received an error from chai: ${err.message}`);
+            res.should.have.status(200);
+            res.should.be.json;
+            res.should.be.a('object');
+            res.body.should.have.property('id');
+            debug(res.body);
+            campsi.db.collection('__users__').findOne({email: robert.email}, (err, doc) => {
+              if (err) {
+                return debug(`received an error from chai: ${err.message}`);
+              }
+              doc.should.be.a('object');
+              res.body.id.should.be.eq(doc._id.toString());
+              done();
+            });
+          });
+      });
+    });
+  });
 });

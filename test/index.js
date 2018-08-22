@@ -22,6 +22,10 @@ campsi.on('auth/local/passwordResetTokenCreated', user => {
   debug('passwordResetTokenCreated', user.identities.local.passwordResetToken);
 });
 
+campsi.on('auth/invitation', payload => {
+  debug('invitation', payload);
+});
+
 process.on('uncaughtException', function (reason, p) {
   debug('Uncaught Rejection at:', p, 'reason:', reason);
   process.exit(1);

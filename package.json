@@ -60,7 +60,7 @@
     }
   },
   "scripts": {
-    "cover": "istanbul --include-all-sources cover _mocha \"./test/**/!(index).js\" -- --exit",
+    "cover": "istanbul cover --include-all-sources --root \"./lib\" _mocha \"./test/**/!(index).js\" -- --exit",
     "coveralls": "npm run cover -- --report lcovonly && cat ./coverage/lcov.info | coveralls",
     "depcheck": "depcheck --ignores=mocha,mocha-lcov-reporter",
     "lint": "./node_modules/eslint/bin/eslint.js --cache lib/** test/** scripts/**",

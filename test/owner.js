@@ -6,14 +6,15 @@ const chai = require('chai');
 const initialize = require('./utils/initialization');
 const debug = require('debug')('campsi:test');
 const config = require('config');
-let { campsi, beforeEachCallback, afterEachCallback } = initialize(config, {docs: require('../lib/index')});
-
+const fakeId = require('fake-object-id');
 const users = {
   me: {_id: fakeId()},
   notMe: {_id: fakeId()},
   myFriend: {_id: fakeId()},
   friendButNotOwner: {_id: fakeId()}
 };
+
+let { campsi, beforeEachCallback, afterCallback } = initialize(config, {docs: require('../lib/index')});
 
 // Helpers
 function createEntry (data, owner, state) {
@@ -37,7 +38,7 @@ function createEntry (data, owner, state) {
 
 describe('Owner', () => {
   beforeEach(beforeEachCallback);
-  afterEach(afterEachCallback);
+  afterEach(afterCallback);
   /*
    * Test owner role
    */

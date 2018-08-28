@@ -7,8 +7,10 @@ const initialize = require('./utils/initialization');
 const debug = require('debug')('campsi:test');
 const config = require('config');
 const builder = require('../lib/modules/queryBuilder');
-let { campsi, beforeEachCallback, afterEachCallback } = initialize(config, {docs: require('../lib/index')});
+const should = chai.should();
+const async = require('async');
 
+let { campsi, beforeEachCallback, afterCallback } = initialize(config, {docs: require('../lib/index')});
 // Helpers
 function createPizza (data, state) {
   return new Promise(function (resolve, reject) {
@@ -31,7 +33,7 @@ function createPizza (data, state) {
 
 describe('State', () => {
   beforeEach(beforeEachCallback);
-  afterEach(afterEachCallback);
+  after(afterCallback);
   /*
    * Test the /POST docs/pizzas/:state route
    */

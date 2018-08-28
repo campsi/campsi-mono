@@ -8,7 +8,11 @@ const debug = require('debug')('campsi:test');
 const config = require('config');
 const builder = require('../lib/modules/queryBuilder');
 
-let { campsi, beforeEachCallback, afterEachCallback } = initialize(config, {docs: require('../lib/index')});
+let {
+  campsi,
+  beforeEachCallback,
+  afterCallback
+} = initialize(config, {docs: require('../lib/index')});
 
 // Helpers
 function createPizza (data, state) {
@@ -32,7 +36,7 @@ function createPizza (data, state) {
 
 describe('CRUD', () => {
   beforeEach(beforeEachCallback);
-  afterEach(afterEachCallback);
+  after(afterCallback);
   /*
    * Test the /GET docs route
    */

@@ -5,18 +5,21 @@ const debug = require('debug')('campsi-test');
 const format = require('string-format');
 const chai = require('chai');
 const chaiHttp = require('chai-http');
-let should = chai.should();
 format.extend(String.prototype);
 chai.use(chaiHttp);
+chai.should();
 
 module.exports = function initialize (config, services) {
   let campsi = new CampsiServer(config.campsi);
+  Object.keys(services).forEach(service => {
+    campsi.mount(service, new services[service](config.services[service]));
+  });
+  campsi.on('campsi/ready', () => {
+    campsi.server = campsi.listen(config.port);
+  });
+  campsi.start();
   return {
-    campsi: campsi,
-    afterEachCallback: (done) => {
-      campsi.server.close();
-      done();
-    },
+    campsi,
     beforeEachCallback: (done) => {
       // Empty the database
       const mongoUri = mongoUriBuilder(config.campsi.mongo);
@@ -25,19 +28,13 @@ module.exports = function initialize (config, services) {
         let db = client.db(config.campsi.mongo.database);
         db.dropDatabase(() => {
           client.close();
-          Object.keys(services).forEach(service => {
-            campsi.mount(service, new services[service](config.services[service]));
-          });
-          campsi.on('campsi/ready', () => {
-            campsi.server = campsi.listen(config.port);
-            done();
-          });
-
-          campsi.start().catch((err) => {
-            debug('Error: %s', err);
-          });
+          done();
         });
       });
+    },
+    afterCallback: (done) => {
+      campsi.server.close();
+      done();
     }
   };
 };

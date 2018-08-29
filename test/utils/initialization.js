@@ -24,7 +24,9 @@ module.exports = function initialize (config, services) {
       // Empty the database
       const mongoUri = mongoUriBuilder(config.campsi.mongo);
       MongoClient.connect(mongoUri, (err, client) => {
-        if (err) throw err;
+        if (err) {
+          debug('Error during the mongo connection', err);
+        }
         let db = client.db(config.campsi.mongo.database);
         db.dropDatabase(() => {
           client.close();

@@ -2,15 +2,28 @@
 process.env.NODE_CONFIG_DIR = './test/config';
 process.env.NODE_ENV = 'test';
 
-const chai = require('chai');
-const initialize = require('./utils/initialization');
+// Require the dev-dependencies
+const {MongoClient} = require('mongodb');
+const mongoUriBuilder = require('mongo-uri-builder');
 const debug = require('debug')('campsi:test');
+const async = require('async');
+const chai = require('chai');
+const chaiHttp = require('chai-http');
+const format = require('string-format');
+const CampsiServer = require('campsi');
 const config = require('config');
 const builder = require('../lib/modules/queryBuilder');
-const should = chai.should();
-const async = require('async');
 
-let { campsi, beforeEachCallback, afterCallback } = initialize(config, {docs: require('../lib/index')});
+let should = chai.should();
+let campsi;
+let server;
+format.extend(String.prototype);
+chai.use(chaiHttp);
+
+const services = {
+  Docs: require('../lib')
+};
+
 // Helpers
 function createPizza (data, state) {
   return new Promise(function (resolve, reject) {
@@ -32,8 +45,34 @@ function createPizza (data, state) {
 }
 
 describe('State', () => {
-  beforeEach(beforeEachCallback);
-  after(afterCallback);
+  beforeEach((done) => {
+    // Empty the database
+    const mongoUri = mongoUriBuilder(config.campsi.mongo);
+    MongoClient.connect(mongoUri, (err, client) => {
+      if (err) throw err;
+      let db = client.db(config.campsi.mongo.database);
+      db.dropDatabase(() => {
+        client.close();
+        campsi = new CampsiServer(config.campsi);
+        campsi.mount('docs', new services.Docs(config.services.docs));
+
+        campsi.on('campsi/ready', () => {
+          server = campsi.listen(config.port);
+          done();
+        });
+
+        campsi.start().catch((err) => {
+          debug('Error: %s', err);
+        });
+      });
+    });
+  });
+
+  afterEach((done) => {
+    server.close();
+    done();
+  });
+
   /*
    * Test the /POST docs/pizzas/:state route
    */
@@ -80,7 +119,6 @@ describe('State', () => {
               res.body.state.should.be.eq('working_draft');
               res.body.should.have.property('data');
               res.body.data.should.be.eql(data);
-              res.body.should.not.have.property('states');
               done();
             });
         })

@@ -44,7 +44,7 @@
                 }
             },
             "permissions": {
-                "admin": {
+                "publisher": {
                     "published": "*",
                     "working_draft": "*",
                     "archived": "*"

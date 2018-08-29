@@ -250,37 +250,6 @@ describe('State', () => {
     });
   });
   /*
-   * Test the /GET docs/pizzas/:id/state route
-  describe('/GET docs/pizzas/:id/state', () => {
-    it('it should return all documents states', (done) => {
-      let data = {'name': 'test'};
-      createPizza(data, 'working_draft')
-        .then((id) => {
-          chai.request(campsi.app)
-            .get('/docs/pizzas/{0}/state'.format(id))
-            .end((err, res) => {
-              if (err) debug(`received an error from chai: ${err.message}`);
-              res.should.have.status(200);
-              res.should.be.json;
-              res.body.should.be.a('object');
-              res.body.should.have.property('id');
-              res.body.id.should.be.eq(id.toString());
-              res.body.should.have.property('states');
-              res.body.states.should.be.a('object');
-              res.body.states.should.have.property('working_draft');
-              res.body.states.working_draft.should.have.property('createdAt');
-              res.body.states.working_draft.should.have.property('createdBy');
-              should.equal(res.body.states.working_draft.createdBy, null);
-              done();
-            });
-        })
-        .catch((err) => {
-          throw err;
-        });
-    });
-  });
-   */
-  /*
    * Test the /PUT docs/pizzas/:id/state route
    */
   describe('/PUT docs/pizzas/:id/state', () => {

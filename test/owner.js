@@ -194,5 +194,45 @@ describe('Owner', () => {
           });
       });
     });
+    it('it should return the list of users', (done) => {
+      let data = {name: 'test'};
+      createEntry(data, me, 'state-private').then(id => {
+        chai.request(campsi.app)
+          .get(`/docs/simple/${id}/users`)
+          .end((err, res) => {
+            if (err) debug(`received an error from chai: ${err.message}`);
+            res.should.have.status(200);
+            res.body.should.be.an('array');
+            res.body.should.have.length(1);
+            res.body[0].roles[0].should.eq('owner');
+            done();
+          });
+      });
+    });
+    it('it should add and remove users', (done) => {
+      let data = {name: 'test'};
+      createEntry(data, me, 'state-private').then(id => {
+        chai.request(campsi.app)
+          .post(`/docs/simple/${id}/users`)
+          .send({roles: ['owner'], userId: notMe._id, displayName: 'Not me', infos: {message: 'userInfo'}})
+          .end((err, res) => {
+            if (err) debug(`received an error from chai: ${err.message}`);
+            res.should.have.status(200);
+            res.body.should.be.an('array');
+            res.body.should.have.length(2);
+            res.body[1].roles[0].should.eq('owner');
+            res.body[1].should.have.property('infos');
+            chai.request(campsi.app)
+              .delete(`/docs/simple/${id}/users/${notMe._id}`)
+              .end((err, res) => {
+                if (err) debug(`received an error from chai: ${err.message}`);
+                res.should.have.status(200);
+                res.body.should.be.an('array');
+                res.body.should.have.length(1);
+                done();
+              });
+          });
+      });
+    });
   });
 });

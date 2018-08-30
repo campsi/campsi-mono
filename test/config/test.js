@@ -1,6 +1,6 @@
 const path = require('path');
 
-const docsOptions = './options/docs.json';
+const docsOptions = './options/docs.js';
 
 module.exports = {
   port: process.env.PORT || 3000,

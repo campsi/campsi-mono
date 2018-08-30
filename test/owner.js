@@ -42,7 +42,7 @@ function createEntry (data, owner, state) {
       resource: resource,
       state: state
     }).then((doc) => {
-      resource.collection.insert(doc, (err, result) => {
+      resource.collection.insertOne(doc, (err, result) => {
         if (err) return reject(err);
         resolve(result.ops[0]._id);
       });
@@ -119,6 +119,7 @@ describe('Owner', () => {
         chai.request(campsi.app)
           .get('/docs/simple/{0}/state-private'.format(id))
           .end((err, res) => {
+            debug(res.body, res.status);
             if (err) debug(`received an error from chai: ${err.message}`);
             res.should.have.status(404);
             res.should.be.json;
@@ -134,6 +135,7 @@ describe('Owner', () => {
         chai.request(campsi.app)
           .get('/docs/simple/{0}/state-private'.format(id))
           .end((err, res) => {
+            debug(res.status, res.body);
             if (err) debug(`received an error from chai: ${err.message}`);
             res.should.have.status(200);
             res.should.be.json;
@@ -189,6 +191,46 @@ describe('Owner', () => {
             res.body.should.be.an('array');
             res.body.should.have.length(1);
             done();
+          });
+      });
+    });
+    it('it should return the list of users', (done) => {
+      let data = {name: 'test'};
+      createEntry(data, me, 'state-private').then(id => {
+        chai.request(campsi.app)
+          .get(`/docs/simple/${id}/users`)
+          .end((err, res) => {
+            if (err) debug(`received an error from chai: ${err.message}`);
+            res.should.have.status(200);
+            res.body.should.be.an('array');
+            res.body.should.have.length(1);
+            res.body[0].roles[0].should.eq('owner');
+            done();
+          });
+      });
+    });
+    it('it should add and remove users', (done) => {
+      let data = {name: 'test'};
+      createEntry(data, me, 'state-private').then(id => {
+        chai.request(campsi.app)
+          .post(`/docs/simple/${id}/users`)
+          .send({roles: ['owner'], userId: notMe._id, displayName: 'Not me', infos: {message: 'userInfo'}})
+          .end((err, res) => {
+            if (err) debug(`received an error from chai: ${err.message}`);
+            res.should.have.status(200);
+            res.body.should.be.an('array');
+            res.body.should.have.length(2);
+            res.body[1].roles[0].should.eq('owner');
+            res.body[1].should.have.property('infos');
+            chai.request(campsi.app)
+              .delete(`/docs/simple/${id}/users/${notMe._id}`)
+              .end((err, res) => {
+                if (err) debug(`received an error from chai: ${err.message}`);
+                res.should.have.status(200);
+                res.body.should.be.an('array');
+                res.body.should.have.length(1);
+                done();
+              });
           });
       });
     });

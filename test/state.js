@@ -34,7 +34,7 @@ function createPizza (data, state) {
       resource: resource,
       state: state
     }).then((doc) => {
-      resource.collection.insert(doc, (err, result) => {
+      resource.collection.insertOne(doc, (err, result) => {
         if (err) return reject(err);
         resolve(result.ops[0]._id);
       });
@@ -119,7 +119,6 @@ describe('State', () => {
               res.body.state.should.be.eq('working_draft');
               res.body.should.have.property('data');
               res.body.data.should.be.eql(data);
-              res.body.should.not.have.property('states');
               done();
             });
         })
@@ -251,37 +250,6 @@ describe('State', () => {
     });
   });
   /*
-   * Test the /GET docs/pizzas/:id/state route
-   */
-  describe('/GET docs/pizzas/:id/state', () => {
-    it('it should return all documents states', (done) => {
-      let data = {'name': 'test'};
-      createPizza(data, 'working_draft')
-        .then((id) => {
-          chai.request(campsi.app)
-            .get('/docs/pizzas/{0}/state'.format(id))
-            .end((err, res) => {
-              if (err) debug(`received an error from chai: ${err.message}`);
-              res.should.have.status(200);
-              res.should.be.json;
-              res.body.should.be.a('object');
-              res.body.should.have.property('id');
-              res.body.id.should.be.eq(id.toString());
-              res.body.should.have.property('states');
-              res.body.states.should.be.a('object');
-              res.body.states.should.have.property('working_draft');
-              res.body.states.working_draft.should.have.property('createdAt');
-              res.body.states.working_draft.should.have.property('createdBy');
-              should.equal(res.body.states.working_draft.createdBy, null);
-              done();
-            });
-        })
-        .catch((err) => {
-          throw err;
-        });
-    });
-  });
-  /*
    * Test the /PUT docs/pizzas/:id/state route
    */
   describe('/PUT docs/pizzas/:id/state', () => {
@@ -299,10 +267,11 @@ describe('State', () => {
             .send(stateData)
             .end((err, res) => {
               if (err) debug(`received an error from chai: ${err.message}`);
-              res.should.have.status(401);
+              res.should.have.status(200);
               res.should.be.json;
               res.body.should.be.a('object');
-              res.body.should.have.property('message');
+              res.body.should.have.property('doc');
+              res.body.should.have.property('state');
               done();
             });
         })

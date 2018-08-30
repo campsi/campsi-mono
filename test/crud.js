@@ -33,7 +33,7 @@ function createPizza (data, state) {
       resource: resource,
       state: state
     }).then((doc) => {
-      resource.collection.insert(doc, (err, result) => {
+      resource.collection.insertOne(doc, (err, result) => {
         if (err) return reject(err);
         resolve(result.ops[0]._id);
       });

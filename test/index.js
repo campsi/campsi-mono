@@ -12,10 +12,16 @@ const services = {
 let campsi = new CampsiServer(config.campsi);
 
 campsi.mount('docs', new services.Docs(config.services.docs));
+campsi.app.use((req, res, next) => {
+  if (req.query && req.query.userId) {
+    req.user = {_id: req.query.userId};
+  }
+  next();
+});
 
 campsi.on('campsi/ready', () => {
   debug('ready');
-  campsi.listen(config.port);
+  campsi.listen(process.env.PORT || config.port);
 });
 
 campsi.start()

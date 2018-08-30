@@ -20,70 +20,58 @@ MongoClient.connect(mongoUri, (err, client) => {
     debug('migrate collection', collection);
     updateCollection(db, collection, cb);
   }, () => {
-    debug('complete');
+    debug('migration complete');
   });
 });
 
 function updateCollection (db, collection, done) {
-  db.collection(collection).find(
-    {ownedBy: {$exists: true}, users: {$exists: false}},
-    {$project: {ownedBy: 1, _id: 1}},
-    (err, cursor) => {
-      if (err) return debug(`an error occured during the find() from collection ${collection}`, err);
-      let cursorHasNext = true;
-      const updateDocument = (doc, cb) => {
-        if (doc === null) {
-          debug('document is null');
-          return cb();
-        }
-        db.collection(collection).updateOne(
-          {_id: doc._id},
-          {
-            $set: {
-              users: {
-                [doc.ownedBy]: {
-                  roles: ['owner'],
-                  userId: doc.ownedBy
-                }
-              }
-            }
-          },
-          (err, result) => {
-            if (err) {
-              debug('an error occured during the update', err);
-            } else {
-              debug(collection, doc._id, 'nModified', result.nModified);
-            }
-            cursor.hasNext((err, hasNext) => {
-              if (err) {
-                debug('error occured while fetching hasNext() information', err);
-              }
-              cursorHasNext = hasNext;
-              cb();
-            });
+  const filter = {ownedBy: {$exists: true}};
+  if (!options.params.includes('--all-docs')) {
+    filter.users = {$exists: false};
+  }
+  db.collection(collection).find(filter, {$project: {ownedBy: 1, _id: 1}}, (err, cursor) => {
+    if (err) return debug(`an error occured during the find() from collection ${collection}`, err);
+    let cursorHasNext = true;
+    const updateDocument = (doc, cb) => {
+      if (doc === null) {
+        debug('document is null');
+        return cb();
+      }
+      const ops = {$set: {users: {[doc.ownedBy]: {roles: ['owner'], userId: doc.ownedBy}}}};
+      if (options.params.includes('--remove-ownedBy')) {
+        ops.$unset = {ownedBy: 1};
+      }
+      db.collection(collection).updateOne({_id: doc._id}, ops, (err, result) => {
+        (err) ? debug('an error occured during the update', err)
+          : debug(collection, doc._id, 'nModified', result.nModified);
+        cursor.hasNext((err, hasNext) => {
+          if (err) {
+            debug('error occured while fetching hasNext() information', err);
           }
-        );
-      };
-      cursor.hasNext((err, hasNext) => {
-        if (err) {
-          debug('error occured while fetching hasNext() information', err);
-          return done();
-        }
-        cursorHasNext = hasNext;
-        if (!cursorHasNext) {
-          debug(collection, 'has no element');
-        }
-        async.whilst(() => cursorHasNext, (cb) => {
-          cursor.next((err, doc) => {
-            if (err) {
-              debug('error occured while fetching next() element', err);
-              cursorHasNext = false;
-              return cb();
-            }
-            updateDocument(doc, cb);
-          });
-        }, done);
+          cursorHasNext = hasNext;
+          cb();
+        });
       });
-    }
-  );
+    };
+    cursor.hasNext((err, hasNext) => {
+      if (err) {
+        debug('error occured while fetching hasNext() information', err);
+        return done();
+      }
+      cursorHasNext = hasNext;
+      if (!cursorHasNext) {
+        debug(collection, 'has no element');
+      }
+      async.whilst(() => cursorHasNext, (cb) => {
+        cursor.next((err, doc) => {
+          if (err) {
+            debug('error occured while fetching next() element', err);
+            cursorHasNext = false;
+            return cb();
+          }
+          updateDocument(doc, cb);
+        });
+      }, done);
+    });
+  });
 }

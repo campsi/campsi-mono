@@ -267,10 +267,11 @@ describe('State', () => {
             .send(stateData)
             .end((err, res) => {
               if (err) debug(`received an error from chai: ${err.message}`);
-              res.should.have.status(401);
+              res.should.have.status(200);
               res.should.be.json;
               res.body.should.be.a('object');
-              res.body.should.have.property('message');
+              res.body.should.have.property('doc');
+              res.body.should.have.property('state');
               done();
             });
         })

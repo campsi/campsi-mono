@@ -55,7 +55,7 @@
                     "archived": "*"
                 },
                 "public": {
-                    "published": "GET",
+                    "published": "GET, PUT",
                     "working_draft": "*"
                 }
             }

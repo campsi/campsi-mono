@@ -6,6 +6,7 @@ const {MongoClient} = require('mongodb');
 // CLI
 const args = Array.from(process.argv).splice(2);
 const options = {services: [], params: []};
+/* istanbul ignore if  */
 if (!module.parent) {
   args.forEach(arg => options[arg.startsWith('--') ? 'params' : 'services'].push(arg));
   const collections = options.services.reduce((collections, service) => {

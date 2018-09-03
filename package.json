@@ -16,7 +16,7 @@
   },
   "devDependencies": {
     "async": "^2.6.1",
-    "campsi": "github:campsi/campsi",
+    "campsi": "^1.0.7",
     "chai": "^4.1.2",
     "chai-http": "^4.2.0",
     "config": "^1.31.0",

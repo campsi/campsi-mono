@@ -309,11 +309,48 @@ describe('Auth API', () => {
             res.body.should.have.property('id');
             debug(res.body);
             campsi.db.collection('__users__').findOne({email: robert.email}, (err, doc) => {
-              if (err) {
-                return debug(`received an error from chai: ${err.message}`);
-              }
+              if (err) return debug(`received an error from chai: ${err.message}`);
               doc.should.be.a('object');
               res.body.id.should.be.eq(doc._id.toString());
+              done();
+            });
+          });
+      });
+    });
+    it('should allow someone else to use the invitation', done => {
+      const campsi = context.campsi;
+      const robert = {
+        displayName: 'Robert Bennett',
+        email: 'robert@agilitation.fr',
+        username: 'robert',
+        password: 'signup!'
+      };
+      createUser(chai, campsi, robert).then(robertToken => {
+        robert.token = robertToken;
+        return createUser(chai, campsi, glenda);
+      }).then(glendaToken => {
+        debug(glendaToken);
+        chai.request(campsi.app)
+          .post('/auth/invitations')
+          .set('content-type', 'application/json')
+          .set('Authorization', 'Bearer ' + glendaToken)
+          .send({
+            email: 'odile@agilitation.fr',
+            data: {projectId: 'testProjectId'}
+          })
+          .end((err, res) => {
+            if (err) return debug(`received an error from chai: ${err.message}`);
+            const invitationToken = res.body.invitationToken;
+            chai.request(campsi.app)
+              .post(`/auth/invitations/${invitationToken.value}`)
+              .set('Authorization', 'Bearer ' + robert.token)
+              .end();
+
+            campsi.on('auth/invitation/accepted', payload => {
+              payload.should.have.property('invitedBy');
+              payload.should.have.property('invitedUserId');
+              payload.should.have.property('data');
+              payload.data.projectId.should.eq('testProjectId');
               done();
             });
           });

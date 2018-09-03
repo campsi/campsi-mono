@@ -60,7 +60,6 @@ describe('CRUD', () => {
           server = campsi.listen(config.port);
           done();
         });
-
         campsi.start().catch((err) => {
           debug('Error: %s', err);
         });

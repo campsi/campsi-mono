@@ -153,7 +153,9 @@ module.exports = {
           'state-basic': '*'
         },
         owner: {
-          'state-private': '*'
+          'state-private': '*',
+          'state-public': '*',
+          'state-basic': '*'
         },
         public: {
           'state-public': '*'

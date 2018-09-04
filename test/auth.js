@@ -44,7 +44,7 @@ describe('Auth API', () => {
           res.should.have.status(200);
           res.should.be.json;
           res.body.should.be.a('array');
-          res.body.length.should.be.eq(1);
+          res.body.length.should.be.eq(2);
           res.body[0].should.be.an('object');
           res.body[0].should.have.property('name');
           res.body[0].name.should.be.a('string');
@@ -62,7 +62,7 @@ describe('Auth API', () => {
         .get('/auth/me')
         .end((err, res) => {
           if (err) debug(`received an error from chai: ${err.message}`);
-          res.should.have.status(503);
+          res.should.have.status(401);
           res.should.be.json;
           res.body.should.be.a('object');
           res.body.should.have.property('message');
@@ -118,7 +118,7 @@ describe('Auth API', () => {
         .get('/auth/logout')
         .end((err, res) => {
           if (err) debug(`received an error from chai: ${err.message}`);
-          res.should.have.status(503);
+          res.should.have.status(401);
           res.should.be.json;
           res.body.should.be.a('object');
           res.body.should.have.property('message');

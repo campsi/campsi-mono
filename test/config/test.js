@@ -27,6 +27,11 @@ module.exports = {
             baseUrl: host + '/auth',
             salt: 'CNDygyeFC6536964425994',
             resetPasswordTokenExpiration: 10
+          }),
+          github: require('../../lib/providers/github')({
+            baseUrl: host + '/auth',
+            clientID: '96a51bcde35bc5f08f50',
+            clientSecret: 'e492264cae11297e90ba0d20c25f13a95094111e'
           })
         }
       }

@@ -351,7 +351,15 @@ describe('Auth API', () => {
               payload.should.have.property('invitedUserId');
               payload.should.have.property('data');
               payload.data.projectId.should.eq('testProjectId');
-              done();
+
+              chai.request(campsi.app)
+                .post(`/auth/invitations/${invitationToken.value}`)
+                .set('Authorization', 'Bearer ' + glendaToken)
+                .end((err, res) => {
+                  if (err) return debug(`received an error from chai: ${err.message}`);
+                  res.should.have.status(404);
+                  done();
+                });
             });
           });
       });

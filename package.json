@@ -8,20 +8,20 @@
     "url": "git://github.com/campsi/campsi-service-docs.git"
   },
   "dependencies": {
-    "ajv": "^6.5.3",
+    "ajv": "^6.5.4",
     "campsi-find-references": "^1.0.2",
     "json-schema-ref-parser": "^5.0.3",
-    "mongodb": "^3.1.3",
+    "mongodb": "^3.1.6",
     "string-format": "^1.0.0"
   },
   "devDependencies": {
     "async": "^2.6.1",
     "campsi": "^1.0.7",
-    "chai": "^4.1.2",
+    "chai": "^4.2.0",
     "chai-http": "^4.2.0",
     "config": "^1.31.0",
     "coveralls": "^3.0.2",
-    "debug": "^3.1.0",
+    "debug": "^3.2.5",
     "depcheck": "^0.6.11",
     "eslint": "^4.19.1",
     "eslint-config-standard": "^11.0.0",

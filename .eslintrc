@@ -1,0 +1,14 @@
+{
+  "extends": ["plugin:prettier/recommended"],
+  "rules": {
+    "prettier/prettier": [
+      "warn",
+      {
+        "semi": true,
+        "singleQuote": true,
+        "bracketSpacing": true
+      }
+    ],
+    "no-console": ["warn", { "allow": ["warn", "error"] }]
+  }
+}

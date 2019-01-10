@@ -121,10 +121,10 @@ describe('Auth Local API', () => {
             cb();
           });
       }, (cb) => {
-        campsi.on('auth/local/signup', (payload) => {
-          payload.should.have.property('token');
-          payload.should.have.property('email');
-          payload.should.have.property('data');
+        campsi.on('auth/local/signup', user => {
+          user.should.have.property('token');
+          user.should.have.property('email');
+          user.should.have.property('data');
           cb();
         });
       }], done);
@@ -168,7 +168,7 @@ describe('Auth Local API', () => {
         (parallelCb) => {
           async.series([
             (serieCb) => {
-              campsi.on('auth/local/signup', (payload) => {
+              campsi.on('auth/local/signup', payload => {
                 signupPayload = payload;
                 // TODO : Test is too fast and validation can failed (especially in travis)
                 // TODO : Bug is not clearly identified (node, mqtt-emitter, mongo, mongo driver)

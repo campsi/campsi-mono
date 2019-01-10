@@ -54,7 +54,7 @@ describe('Auth Local Password Reset', () => {
     it('it should validate the user', done => {
       const campsi = context.campsi;
       const newPassword = 'newPassword';
-      campsi.on('auth/local/passwordResetTokenCreated', user => {
+      campsi.on('auth/local/passwordResetTokenCreated', ({ user }) => {
         const passwordResetToken = user.identities.local.passwordResetToken.value;
         resetUserPassword(chai, campsi, glenda.username, passwordResetToken, newPassword).end((err, res) => {
           if (err) debug(`received an error from chai: ${err.message}`);

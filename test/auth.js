@@ -261,6 +261,51 @@ describe('Auth API', () => {
     });
   });
 
+  describe('list users', () => {
+    it('should list existing users', done => {
+      const campsi = context.campsi;
+      const admin = {
+        email: 'admin@campsi.io',
+        username: 'admin@campsi.io',
+        displayName: 'admin',
+        password: 'password'
+      };
+      createUser(chai, campsi, admin, true).then(adminToken => {
+        campsi.db.collection('__users__').findOneAndUpdate(
+          {email: admin.email},
+          {$set: {isAdmin: true}},
+          {returnOriginal: false}
+        ).then(updateResult => {
+          createUser(chai, campsi, glenda).then(userToken => {
+            chai.request(campsi.app)
+              .get('/auth/users')
+              .set('Authorization', 'Bearer ' + adminToken)
+              .end((err, res) => {
+                if (err) {
+                  debug(err);
+                  return done();
+                }
+                res.should.have.status(200);
+                res.body.should.be.a('array');
+                res.body.length.should.be.equal(2);
+                // glenda
+                const userId = res.body.filter(u => u.email === glenda.email)[0]._id;
+                chai.request(campsi.app)
+                  .get(`/auth/users/${userId}/access_token`)
+                  .set('Authorization', `Bearer ${adminToken}`)
+                  .end((err, res) => {
+                    debug(res.body);
+                    res.should.have.status(200);
+                    res.body.should.have.property('token');
+                    done();
+                  });
+              });
+          });
+        });
+      });
+    });
+  });
+
   describe('invitation', () => {
     it('should create a new user', (done) => {
       const campsi = context.campsi;

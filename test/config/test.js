@@ -1,5 +1,3 @@
-const path = require('path');
-
 module.exports = {
   port: process.env.PORT || 3000,
   campsi: {
@@ -17,7 +15,8 @@ module.exports = {
       title: 'Contents',
       description: 'Tested Service',
       options: {
-        secret_key: 'sk_test_TLvEhxPpHyrPhJeyMnJyM9jj'
+        secret_key: 'sk_test_TLvEhxPpHyrPhJeyMnJyM9jj',
+        default_tax_percent: 20
       },
     }
   }

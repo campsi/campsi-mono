@@ -8,10 +8,11 @@
     "url": "git://github.com/campsi/campsi-service-auth.git"
   },
   "dependencies": {
+    "@passport-next/passport-facebook": "^3.1.1",
     "bcryptjs": "^2.4.3",
-    "connect-mongodb-session": "^2.0.3",
+    "connect-mongodb-session": "^2.1.1",
     "crypto-js": "^3.1.9-1",
-    "debug": "^3.2.5",
+    "debug": "^3.2.6",
     "edit-url": "^1.0.1",
     "express-session": "^1.15.6",
     "for-in": "^1.0.2",
@@ -27,17 +28,17 @@
     "yargs": "^11.1.0"
   },
   "devDependencies": {
-    "async": "^2.6.1",
+    "async": "^2.6.2",
     "campsi": "^1.0.7",
     "campsi-service-trace": "^1.0.2",
     "chai": "^4.2.0",
-    "chai-http": "^4.2.0",
+    "chai-http": "^4.2.1",
     "config": "^1.31.0",
     "coveralls": "^3.0.2",
-    "depcheck": "^0.6.11",
-    "eslint": "^4.18.2",
+    "depcheck": "^0.7.1",
+    "eslint": "^5.14.0",
     "eslint-config-standard": "^11.0.0",
-    "eslint-plugin-import": "^2.14.0",
+    "eslint-plugin-import": "^2.16.0",
     "eslint-plugin-indexof": "^0.1.1",
     "eslint-plugin-node": "^6.0.1",
     "eslint-plugin-promise": "^3.8.0",
@@ -45,7 +46,7 @@
     "istanbul": "^0.4.5",
     "mocha": "^5.2.0",
     "mocha-lcov-reporter": "^1.3.0",
-    "mongodb": "^3.1.6",
+    "mongodb": "^3.1.13",
     "string-format": "^1.0.0"
   },
   "altDependencies": {

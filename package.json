@@ -21,7 +21,7 @@
     "config": "^3.0.0"
   },
   "dependencies": {
-    "stripe": "^6.36.0"
+    "stripe": "^7.9.0"
   },
   "devDependencies": {
     "campsi": "^1.0.7",

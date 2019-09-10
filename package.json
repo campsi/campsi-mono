@@ -21,13 +21,13 @@
     "config": "^3.0.0"
   },
   "dependencies": {
-    "stripe": "^6.17.0"
+    "stripe": "^6.36.0"
   },
   "devDependencies": {
     "campsi": "^1.0.7",
-    "config": "^3.0.0",
-    "eslint": "^5.11.1",
-    "eslint-plugin-prettier": "^3.0.0",
-    "prettier": "^1.15.3"
+    "config": "^3.2.2",
+    "eslint": "^5.16.0",
+    "eslint-config-prettier": "^6.2.0",
+    "prettier": "^1.18.2"
   }
 }

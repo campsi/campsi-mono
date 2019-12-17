@@ -1,0 +1,26 @@
+{
+  "env": {
+    "node": true,
+    "mocha": true,
+    "es6": true
+  },
+  "plugins": [
+    "indexof"
+  ],
+  "extends": [
+    "eslint:recommended",
+    "standard"
+  ],
+  "rules": {
+    // Exception
+    "semi": ["error", "always"],
+    // Format xtras
+    "max-len": ["error", 120],
+    "max-lines": ["error", 400],
+    "max-statements": ["error", 20],
+    "linebreak-style": ["error", "unix"],
+    // Other xtras
+    "strict": ["error", "never"],
+    "indexof/no-indexof": ["error"]
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "type": "object",
+  "properties": {
+    "friday": {
+      "type": "boolean"
+    },
+    "monday": {
+      "type": "boolean"
+    },
+    "saturday": {
+      "type": "boolean"
+    },
+    "sunday": {
+      "type": "boolean"
+    },
+    "thursday": {
+      "type": "boolean"
+    },
+    "tuesday": {
+      "type": "boolean"
+    },
+    "wednesday": {
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "monday",
+    "tuesday",
+    "wednesday",
+    "thursday",
+    "friday",
+    "saturday",
+    "sunday"
+  ],
+  "title": "opening_hours",
+  "description": "Opening days"
+}

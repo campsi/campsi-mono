@@ -1,0 +1,33 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "base": {
+      "type": "string",
+      "enum": [
+        "cream",
+        "tomato",
+        "rosé"
+      ]
+    },
+    "ingredients": {
+      "type": "array",
+      "items": [
+        {
+          "type": "string"
+        }
+      ]
+    },
+    "price": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "name"
+  ],
+  "title": "pizza",
+  "description": "Informations on pizza"
+}

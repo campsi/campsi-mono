@@ -1,0 +1,13 @@
+{
+  "type": "object",
+  "properties": {
+    "label": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "label"
+  ],
+  "title": "category",
+  "description": "Category information"
+}

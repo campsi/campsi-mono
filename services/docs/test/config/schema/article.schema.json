@@ -1,0 +1,29 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "title": {
+      "type": "string"
+    },
+    "rels": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "oneToManyRelationship": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "oneToOneRelationship": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "required": [
+    "title"
+  ],
+  "title": "article",
+  "description": "Article"
+}

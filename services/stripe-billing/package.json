@@ -1,0 +1,33 @@
+{
+  "name": "campsi-service-stripe-billing",
+  "version": "1.0.0",
+  "description": "Stripe Billing integration for Campsi",
+  "main": "lib/index.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/campsi/campsi-service-stripe-billing.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/campsi/campsi-service-stripe-billing/issues"
+  },
+  "homepage": "https://github.com/campsi/campsi-service-stripe-billing#readme",
+  "peerDependencies": {
+    "campsi": "^1.0.7",
+    "config": "^3.0.0"
+  },
+  "dependencies": {
+    "stripe": "^7.9.0"
+  },
+  "devDependencies": {
+    "campsi": "^1.0.7",
+    "config": "^3.2.2",
+    "eslint": "^5.16.0",
+    "eslint-config-prettier": "^6.2.0",
+    "prettier": "^1.18.2"
+  }
+}

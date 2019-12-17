@@ -1,0 +1,60 @@
+{
+  "name": "campsi",
+  "version": "1.0.9",
+  "description": "Configurable API for managing and publishing document-oriented content",
+  "main": "index.js",
+  "scripts": {
+    "cover": "istanbul --include-all-sources cover _mocha \"./test/**/!(index).js\" -- --exit",
+    "coveralls": "npm run cover -- --report lcovonly && cat ./coverage/lcov.info | coveralls",
+    "depcheck": "depcheck --ignores=path,mocha,mocha-lcov-reporter",
+    "lint": "./node_modules/eslint/bin/eslint.js --cache lib/** test/** index.js",
+    "test": "mocha \"./test/**/!(index).js\" --exit"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/campsi/api.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/campsi/api/issues"
+  },
+  "homepage": "https://github.com/campsi/api#readme",
+  "peerDependencies": {
+    "debug": "^3.2.6",
+    "mongodb": "^3.1.10",
+    "express": "^4.16.4",
+    "body-parser": "^1.18.2"
+  },
+  "dependencies": {
+    "async": "^2.6.0",
+    "cors": "^2.8.5",
+    "for-in": "^1.0.2",
+    "mongo-uri-builder": "^1.0.3",
+    "mqtt-emitter": "^1.2.4"
+  },
+  "devDependencies": {
+    "chai": "^4.2.0",
+    "chai-http": "^3.0.0",
+    "config": "^1.31.0",
+    "coveralls": "^3.0.2",
+    "depcheck": "^0.6.11",
+    "eslint": "^4.19.1",
+    "eslint-config-standard": "^11.0.0",
+    "eslint-plugin-import": "^2.14.0",
+    "eslint-plugin-indexof": "^0.1.1",
+    "eslint-plugin-node": "^6.0.1",
+    "eslint-plugin-promise": "^3.8.0",
+    "eslint-plugin-standard": "^3.1.0",
+    "istanbul": "^0.4.5",
+    "mocha": "^5.2.0",
+    "mocha-lcov-reporter": "^1.3.0",
+    "string-format": "^0.5.0"
+  },
+  "files": [
+    "LICENSE",
+    "README.md",
+    "index.js",
+    "lib/"
+  ]
+}

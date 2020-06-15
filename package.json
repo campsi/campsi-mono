@@ -56,5 +56,6 @@
     "README.md",
     "index.js",
     "lib/"
+    "services/"
   ]
 }

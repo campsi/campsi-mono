@@ -65,12 +65,11 @@ if (!process.argv[2]) {
 
 const path = require('path');
 const {MongoClient} = require('mongodb');
-const mongoUriBuilder = require('mongo-uri-builder');
 const configPath = path.join(process.cwd(), process.argv[2]);
 const config = require(configPath);
 
 const authKey = process.argv[3] || 'auth';
-const mongoUri = mongoUriBuilder(config.campsi.mongo);
+const mongoUri = config.campsi.mongo.uri;
 MongoClient.connect(mongoUri, (err, client) => {
   if (err) debug(`received an error: ${err.message}`);
   const db = client.db(config.campsi.mongo.database);

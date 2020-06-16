@@ -1,6 +1,6 @@
 const CryptoJS = require('crypto-js');
 const handlers = require('./handlers');
-const helpers = require('campsi/lib/modules/responseHelpers');
+const helpers = require('campsi-mono/lib/modules/responseHelpers');
 const state = require('./state');
 const bcrypt = require('bcryptjs');
 const debug = require('debug')('campsi:auth:local');

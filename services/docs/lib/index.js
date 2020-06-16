@@ -1,4 +1,4 @@
-const CampsiService = require('campsi/lib/service');
+const CampsiService = require('campsi-mono/lib/service');
 const param = require('./param');
 const handlers = require('./handlers');
 const async = require('async');

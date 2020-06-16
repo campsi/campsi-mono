@@ -1,7 +1,6 @@
 const config = require('config');
 const async = require('async');
 const debug = require('debug')('migrate');
-const mongoUriBuilder = require('mongo-uri-builder');
 const {MongoClient} = require('mongodb');
 // CLI
 const args = Array.from(process.argv).splice(2);
@@ -13,7 +12,7 @@ if (!module.parent) {
     const resourcesNames = Object.keys(config.services[service].options.resources);
     return collections.concat(resourcesNames.map(resourceName => `docs.${service}.${resourceName}`));
   }, []);
-  const mongoUri = mongoUriBuilder(config.campsi.mongo);
+  const mongoUri = config.campsi.mongo.uri;
   MongoClient.connect(mongoUri, (err, client) => {
     if (err) throw err;
     const db = client.db(config.campsi.mongo.database);

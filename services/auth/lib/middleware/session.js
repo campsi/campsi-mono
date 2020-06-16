@@ -1,6 +1,5 @@
 const session = require('express-session');
 const SessionStore = require('connect-mongodb-session')(session);
-const mongoUriBuilder = require('mongo-uri-builder');
 /**
  *
  * @param {CampsiServer} server
@@ -13,7 +12,7 @@ module.exports = function authUser (server, service) {
     resave: false,
     saveUninitialized: false,
     store: new SessionStore({
-      uri: mongoUriBuilder(server.config.mongo),
+      uri: server.config.mongo.uri,
       collection: '__sessions__'
     })
   });

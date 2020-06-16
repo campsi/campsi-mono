@@ -1,4 +1,4 @@
-const CampsiService = require('campsi/lib/service');
+const CampsiService = require('campsi-mono/lib/service');
 const handlers = require('./handlers');
 
 module.exports = class TraceService extends CampsiService {

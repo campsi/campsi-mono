@@ -1,4 +1,4 @@
-const CampsiService = require('campsi/lib/service');
+const CampsiService = require('campsi-mono/lib/service');
 const ObjectID = require('mongodb').ObjectID;
 const debug = require('debug')('campsi:service-webhooks');
 const async = require('async');

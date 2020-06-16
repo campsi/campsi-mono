@@ -1,10 +1,10 @@
 const debug = require('debug')('campsi:service:assets');
 const path = require('path');
-const helpers = require('campsi/lib/modules/responseHelpers');
+const helpers = require('campsi-mono/lib/modules/responseHelpers');
 const http = require('http');
 const serviceAsset = require('./services/asset');
 const forIn = require('for-in');
-const buildLink = require('campsi/lib/modules/buildLink');
+const buildLink = require('campsi-mono/lib/modules/buildLink');
 
 module.exports.postAssets = function postAssets (req, res) {
   // TODO create our own structure for files, be independent from multer

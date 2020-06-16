@@ -2,12 +2,12 @@
  * Created by romain on 06/12/2016.
  */
 
-const helpers = require('campsi/lib/modules/responseHelpers');
+const helpers = require('campsi-mono/lib/modules/responseHelpers');
 const resourceService = require('./services/resource');
 const documentService = require('./services/document');
 const userService = require('./services/user');
 const forIn = require('for-in');
-const buildLink = require('campsi/lib/modules/buildLink');
+const buildLink = require('campsi-mono/lib/modules/buildLink');
 const debug = require('debug')('campsi:docs');
 const getEmitPayload = (req, additionalProps) => {
   return Object.assign({

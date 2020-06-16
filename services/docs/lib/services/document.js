@@ -1,8 +1,8 @@
 const builder = require('../modules/queryBuilder');
 const embedDocs = require('../modules/embedDocs');
-const paginateCursor = require('campsi/lib/modules/paginateCursor');
-const sortCursor = require('campsi/lib/modules/sortCursor');
-const createObjectID = require('campsi/lib/modules/createObjectID');
+const paginateCursor = require('campsi-mono/lib/modules/paginateCursor');
+const sortCursor = require('campsi-mono/lib/modules/sortCursor');
+const createObjectID = require('campsi-mono/lib/modules/createObjectID');
 const permissions = require('../modules/permissions');
 // Helper functions
 const getDocUsersList = (doc) => Object.keys(doc ? doc.users : []).map(k => doc.users[k]);

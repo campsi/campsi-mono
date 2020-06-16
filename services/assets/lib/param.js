@@ -1,5 +1,5 @@
-const helpers = require('campsi/lib/modules/responseHelpers');
-const createObjectID = require('campsi/lib/modules/createObjectID');
+const helpers = require('campsi-mono/lib/modules/responseHelpers');
+const createObjectID = require('campsi-mono/lib/modules/createObjectID');
 const debug = require('debug')('campsi:services:assets');
 
 module.exports.attachAsset = function (req, res, next, id) {

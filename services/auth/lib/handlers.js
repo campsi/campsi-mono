@@ -1,4 +1,4 @@
-const helpers = require('campsi/lib/modules/responseHelpers');
+const helpers = require('campsi-mono/lib/modules/responseHelpers');
 const builder = require('./modules/queryBuilder');
 const forIn = require('for-in');
 const passport = require('@passport-next/passport');

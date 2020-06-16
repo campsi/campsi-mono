@@ -44,7 +44,7 @@
     "mkdirp": "^0.5.1",
     "mongo-uri-builder": "^1.0.3",
     "mongodb": "latest",
-    "mqtt-emitter": "^1.2.4"
+    "mqtt-emitter": "^1.2.4",
     "multer": "^2.0.0-alpha.6",
     "passport-github2": "^0.1.10",
     "request": "^2.88.0",
@@ -72,7 +72,7 @@
     "depcheck": "^0.7.2",
     "eslint-config-prettier": "^6.2.0",
     "eslint-config-standard": "^11.0.0",
-    "eslint-plugin-import": "^2.9.0",
+    "eslint-plugin-import": "^2.14.0",
     "eslint-plugin-indexof": "^0.1.1",
     "eslint-plugin-node": "^6.0.1",
     "eslint-plugin-promise": "^3.8.0",

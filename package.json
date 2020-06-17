@@ -12,14 +12,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/campsi/api.git"
+    "url": "git+https://github.com/campsi/campsi-mono.git"
   },
   "author": "",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/campsi/api/issues"
+    "url": "https://github.com/campsi/campsi-mono/issues"
   },
-  "homepage": "https://github.com/campsi/api#readme",
+  "homepage": "https://github.com/campsi/campsi-mono#readme",
   "peerDependencies": {
     "debug": "^3.2.6",
     "mongodb": "^3.1.10",

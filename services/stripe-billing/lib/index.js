@@ -94,6 +94,22 @@ module.exports = class StripeBillingService extends CampsiService {
       );
     });
 
+    this.router.post("/customers/:customer/tax_ids", (req, res) => {
+      stripe.customers.createTaxId(
+        req.params.customer,
+        { type: req.body.type, value: req.body.value },
+        defaultHandler(res)
+      );
+    });
+
+    this.router.delete("/customers/:customer/tax_ids/:id", (req, res) => {
+      stripe.customers.deleteTaxId(
+        req.params.customer,
+        req.params.id,
+        defaultHandler(res)
+      );
+    });
+
     this.router.post("/subscriptions", (req, res) => {
       stripe.subscriptions.create(
         {

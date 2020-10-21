@@ -1,4 +1,4 @@
-const CampsiService = require('../lib/service');
+const CampsiService = require('../../../lib/service');
 const forIn = require('for-in');
 const local = require('./local');
 const passportMiddleware = require('./passportMiddleware');

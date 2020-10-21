@@ -1,5 +1,5 @@
-const CampsiService = require("../lib/service");
-const helpers = require("../lib/modules/responseHelpers");
+const CampsiService = require("../../../lib/service");
+const helpers = require("../../../lib/modules/responseHelpers");
 
 const bodyToCustomer = (body, sourcePropertyName, user) => {
   return {

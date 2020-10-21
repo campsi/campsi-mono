@@ -119,7 +119,7 @@ module.exports = class StripeBillingService extends CampsiService {
           metadata: req.body.metadata,
           coupon: req.body.coupon,
           expand: subscriptionExpand,
-          tax_percent: req.body.tax_percent || this.options.default_tax_percent
+          default_tax_rates: req.body.default_tax_rates
         },
         defaultHandler(res)
       );
@@ -145,7 +145,8 @@ module.exports = class StripeBillingService extends CampsiService {
           items: req.body.items,
           metadata: req.body.metadata,
           coupon: req.body.coupon,
-          expand: subscriptionExpand
+          expand: subscriptionExpand,
+          default_tax_rates: req.body.default_tax_rates
         },
         defaultHandler(res)
       );

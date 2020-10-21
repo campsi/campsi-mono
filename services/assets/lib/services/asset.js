@@ -1,7 +1,7 @@
 const async = require('async');
 const debug = require('debug')('campsi:service:assets');
-const paginateCursor = require('campsi-mono/lib/modules/paginateCursor');
-const sortCursor = require('campsi-mono/lib/modules/sortCursor');
+const paginateCursor = require('../../../../lib/modules/paginateCursor');
+const sortCursor = require('../../../../lib/modules/sortCursor');
 
 module.exports.getAssets = function (service, pagination, sort) {
   return new Promise((resolve, reject) => {

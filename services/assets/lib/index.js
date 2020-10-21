@@ -1,5 +1,5 @@
-const CampsiService = require('campsi-mono/lib/service');
-const helpers = require('campsi-mono/lib/modules/responseHelpers');
+const CampsiService = require('../../../lib/service');
+const helpers = require('../../../lib/modules/responseHelpers');
 const handlers = require('./handlers');
 const param = require('./param');
 const multer = require('multer');

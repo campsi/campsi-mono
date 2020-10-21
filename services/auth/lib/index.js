@@ -1,14 +1,14 @@
-const CampsiService = require('campsi-mono/lib/service');
+const CampsiService = require('../lib/service');
 const forIn = require('for-in');
 const local = require('./local');
 const passportMiddleware = require('./passportMiddleware');
 const passport = require('@passport-next/passport');
-const helpers = require('campsi-mono/lib/modules/responseHelpers');
+const helpers = require('../../../lib/modules/responseHelpers');
 const handlers = require('./handlers');
 const debug = require('debug')('campsi');
 const authUser = require('./middleware/authUser');
 const session = require('./middleware/session');
-const createObjectID = require('campsi-mono/lib/modules/createObjectID');
+const createObjectID = require('../../../lib/modules/createObjectID');
 
 module.exports = class AuthService extends CampsiService {
   initialize () {

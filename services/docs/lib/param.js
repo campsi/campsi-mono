@@ -1,5 +1,5 @@
-const helpers = require('campsi-mono/lib/modules/responseHelpers');
-const createObjectID = require('campsi-mono/lib/modules/createObjectID');
+const helpers = require('../../../lib/modules/responseHelpers');
+const createObjectID = require('../../../lib/modules/createObjectID');
 const { can } = require('./modules/permissions');
 
 module.exports.attachResource = function (options) {

@@ -22,7 +22,7 @@ const glenda = {
 };
 
 const services = {
-  Auth: require('../lib'),
+  Auth: require('../services/auth/lib'),
   Trace: require('campsi-service-trace')
 };
 
@@ -355,7 +355,7 @@ describe('Auth Local API', () => {
           .post('/auth/local/signin')
           .set('content-type', 'application/json')
           .send({
-            username: 'glenda',
+            username: 'Glenda@agilitation.fr',
             password: 'signup!'
           })
           .end((err, res) => {

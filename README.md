@@ -3,7 +3,7 @@
 [![Greenkeeper badge](https://badges.greenkeeper.io/campsi/campsi.svg)](https://greenkeeper.io/)
 [![Build Status](https://travis-ci.org/campsi/campsi.svg?branch=master)](https://travis-ci.org/campsi/campsi)
 
-Manage and expose **document-oriented** content through a configurable RESTful **API**. 
+Manage and expose **document-oriented** content through a configurable RESTful **API**.
 
 - Create schemas with [_campsi_/**architect**](https://github.com/campsi/architect).
 - Talk to the API with [_campsi_/**admin**](https://github.com/campsi/admin).
@@ -31,7 +31,7 @@ Manage and expose **document-oriented** content through a configurable RESTful *
 - [x] Generate invitation tokens by role
 - [x] PassportJS integration
 - [x] Custom authentification providers
-    - [x] [Local Database](lib/modules/auth/local.js)
+    - [x] [Local Database](lib/modules/auth/auth-local.js)
     - [x] [Facebook](lib/modules/auth/facebook.js)
     - [x] [Twitter](lib/modules/auth/twitter.js)
     - [x] [Github](lib/modules/auth/github.js)
@@ -52,13 +52,13 @@ Manage and expose **document-oriented** content through a configurable RESTful *
   - [ ] Google Cloud Platform
 - [ ] GraphicsMagick Metadata recognition
 - [ ] Resize and convert media derivatives
-    
+
 
 ## Concepts
 
 ### States & role permissions
 
-States represent the different stages in a document lifecycle, like `published`, `draft` and `archived`. To each state is associated specific role-based permissions, defining allowed HTTP methods : 
+States represent the different stages in a document lifecycle, like `published`, `draft` and `archived`. To each state is associated specific role-based permissions, defining allowed HTTP methods :
 
 | Method   | Possible actions on the state                                                |
 |:---------|:---------------------------------------------------------------------------- |
@@ -67,7 +67,7 @@ States represent the different stages in a document lifecycle, like `published`,
 | `PUT`    | edit an existing document or put a document in this state                    |
 | `DELETE` | delete the state for the document                                            |
 
-**A document can be in different states at the same time**, for example: 
+**A document can be in different states at the same time**, for example:
 
 1. the `published` version, visible on the website and the mobile app by everyone
 2. the `waiting_for_approval` version that has to be validated by an admin
@@ -75,17 +75,17 @@ States represent the different stages in a document lifecycle, like `published`,
 
 **A document can migrate from a state to another**, for example:
 
-- You create a resource `ticket` for your customers error reporting. 
+- You create a resource `ticket` for your customers error reporting.
 - `customer` role is allowed to `POST /docs/tickets` in the default state `submitted`
 - `support` role is allowed to `PUT /docs/tickets` in the states `replied` or `read`
 
-**You can create any number of states**: 
+**You can create any number of states**:
 
 - `published`
 - `draft`
 - `waiting_for_approval`
 - `approved`
-- `rejected` 
+- `rejected`
 - `populationA`
 - `populationB`
 - `submitted`
@@ -93,15 +93,15 @@ States represent the different stages in a document lifecycle, like `published`,
 - `replied`
 - …
 
-**You can create any number of roles**: 
+**You can create any number of roles**:
 
-- `admin` 
-- `editor` 
-- `manager` 
-- `customer` 
+- `admin`
+- `editor`
+- `manager`
+- `customer`
 - `user`
-- `public` 
-- `visitor` 
+- `public`
+- `visitor`
 - …
 
 
@@ -134,7 +134,7 @@ let doc = {
                 content: "I'm the draft version"
             }
         },
-    }    
+    }
 }
 ```
 
@@ -145,7 +145,7 @@ Relationships between resources are resolved:
 - **automatically**, if the relationship has the property `embed` set to `true`
 - **on demand**, if a `embed={rel}` parameter is passed in the query string
 
-Because there are no `JOIN` in MongoDB, embedding documents requires the execution of supplementary queries. For performance reason, the results are memoized during the request lifetime. 
+Because there are no `JOIN` in MongoDB, embedding documents requires the execution of supplementary queries. For performance reason, the results are memoized during the request lifetime.
 
 ### Webhook
 
@@ -156,14 +156,14 @@ _todo_ distributed architecture example
 ## Usage
 
 ```sh
-node index.js 
+node auth-index.js
 # or
 npm start
 ```
 
 ### Flags
 ```sh
---schema     "path/to/the/schema.json"  # specifies the json schema to use 
+--schema     "path/to/the/schema.json"  # specifies the json schema to use
 --port       3000                       # set the HTTP port to listen to
 --data       "/mnt/nfs/data"            # repository for upload
 ```
@@ -173,7 +173,7 @@ npm start
 
 #### Root
 
-| Property      | Type                 |  Description 
+| Property      | Type                 |  Description
 |:------------- |:-------------------  |:--------------------------------------
 | `name`        | `String`             | unique identifier of your api
 | `title`       | `String`             | title of the API
@@ -184,7 +184,7 @@ npm start
 
 #### Role
 
-| Property    | Type      | Description 
+| Property    | Type      | Description
 |:----------- |:--------  |:------------------------------
 | `label`     | `String`  | unique identifier of your api
 | `auth`      | `Boolean` | title of the API
@@ -192,7 +192,7 @@ npm start
 
 #### ResourceType
 
-| Property          | Type                      |  Description 
+| Property          | Type                      |  Description
 |:----------------- |:------------------------  |:--------------------------------------
 | `defaultState`    | `String`                  | name of the state any request will default to
 | `states`          | `<State>`                 | hashmap of the states
@@ -200,7 +200,7 @@ npm start
 
 #### State
 
-| Property       | type         |  Description 
+| Property       | type         |  Description
 |:-------------- |:-----------  |:--------------------------------------
 | `name`         | `String`     | name of the state any request will default to
 | `label`        | `String`     | hashmap of the states
@@ -208,7 +208,7 @@ npm start
 
 #### Resource
 
-| Property          | type         |  Description 
+| Property          | type         |  Description
 |:----------------- |:-----------  |:--------------------------------------
 | `title`           | `String`     | readable title
 | `description`     | `String`     | markdown description
@@ -219,7 +219,7 @@ npm start
 
 #### Rel
 
-| Property          | type         |  Description 
+| Property          | type         |  Description
 |:----------------- |:-----------  |:--------------------------------------
 | `path`            | `String`     | property path
 | `resource`        | `String`     | name of the resource it points to (self reference is OK)
@@ -229,14 +229,14 @@ npm start
 
 #### Hook
 
-| Property          | type              |  Description 
+| Property          | type              |  Description
 |:----------------- |:----------------  |:--------------------------------------
 | `name`            | `String`          | hook identifier
 | `uri`             | `String`          | todo support parameter
 | `method`          | `String`          | one of `POST` `GET` `PUT` `DELETE`
 | `payload`         | `Boolean`         | if true and method is `POST` or `PUT`, send the `data`
-| `on`              | `[String]`        | list of actions 
-| `states`          | `[String]`        | list of states 
+| `on`              | `[String]`        | list of actions
+| `states`          | `[String]`        | list of states
 | `retry`           | `Number`          | number of time the HTTP client tries to reach the endpoint
 | `timeout`         | `Number`          | number of seconds before the HTTP client hangs up
 | `headers`         | `<String,String>` | hashmap of the request headers

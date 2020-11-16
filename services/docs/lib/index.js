@@ -10,6 +10,11 @@ const format = require('string-format');
 const csdAssign = require('./keywords/csdAssign');
 const csdVisibility = require('./keywords/csdVisibility');
 
+/* Todo
+ * [ ] filter document fields based on query parameter fields
+ * [ ] debug pagination
+ */
+
 format.extend(String.prototype);
 
 module.exports = class DocsService extends CampsiService {

@@ -38,13 +38,14 @@ module.exports.signin = function (req, res) {
 /**
  * This method is responsible of authentificating the user based on the username
  * and password passed in arguments
+ * Added 2020-11-16: email is case insensitive, but username still is.
  * @param req
  * @param username
  * @param password
  * @param done
  */
 module.exports.callback = function localCallback (req, username, password, done) {
-  let filter = {$or: [{'email': username}, {'identities.local.username': username}]};
+  let filter = {$or: [{'email': new RegExp('^' + username + '$', 'i')}, {'identities.local.username': username}]};
   debug('signin passport callback', username, password, filter);
   req.db.collection('__users__').findOne(filter).then((user) => {
     if (!user) {
@@ -133,11 +134,11 @@ module.exports.signup = function (req, res) {
       });
     });
   };
-
+  const email = String(req.body.email || req.body.username).toLowerCase();
   module.exports.encryptPassword(req.body.password).then(encryptedPassword => {
     let user = {
       displayName: req.body.displayName,
-      email: req.body.email || req.body.username,
+      email: email,
       data: req.body.data,
       createdAt: new Date(),
       identities: {

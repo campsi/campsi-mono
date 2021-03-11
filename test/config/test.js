@@ -1,5 +1,23 @@
-const host = 'https://localhost:3003';
+const path = require('path');
+const host = 'http://localhost:3000';
+const LocalAssetStorage = require('../../services/assets/lib/storages/local');
+const S3AssetStorage = require('../../services/assets/lib/storages/s3');
 
+const storageProviders = {
+  local: new LocalAssetStorage({
+    name: 'local',
+    title: 'Serveur',
+    dataPath: path.join(__dirname, '..', 'data'),
+    baseUrl: host + '/assets'
+  }),
+  s3: new S3AssetStorage({
+    bucket: 'campsi-assets-test-bucket',
+    dataPath: '/',
+    getPublicAssetURL: data => {
+      return `https://campsi-assets-test.imgix.net/${data.key}`;
+    }
+  })
+};
 module.exports = {
   // Application configuration
   port: 3000,
@@ -20,10 +38,22 @@ module.exports = {
     }
   },
   services: {
-    'test': {},
+    test: {},
     trace: {
       title: 'Trace',
       options: {}
+    },
+    assets: {
+      title: 'Médias',
+      options: {
+        allowPublicListing: true,
+        roles: ['public', 'admin'],
+        order: ['local', 's3'],
+        fallback: 'local',
+        // todo copy / backup
+        getStorage: (file, user, headers) => storageProviders.s3,
+        storages: storageProviders
+      }
     },
     auth: {
       title: 'Authentification',
@@ -53,6 +83,5 @@ module.exports = {
         }
       }
     }
-
   }
 };

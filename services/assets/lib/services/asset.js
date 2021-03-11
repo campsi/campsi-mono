@@ -40,7 +40,7 @@ module.exports.createAsset = function (service, files, user, headers) {
     }
 
     async.each(files, (file, cb) => {
-      const storage = service.options.getStorage(file);
+      const storage = service.options.getStorage(file, user, headers);
 
       function onError (err) {
         debug('Post asset error: %s', err);

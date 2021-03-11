@@ -12,7 +12,7 @@ module.exports = (config, services, context) => (done) => {
       client.close();
       context.campsi = new CampsiServer(config.campsi);
       context.campsi.mount('auth', new services.Auth(config.services.auth));
-      context.campsi.mount('trace', new services.Trace(config.services.trace));
+      context.campsi.mount('assets', new services.Assets(config.services.assets));
       context.campsi.on('campsi/ready', () => {
         context.server = context.campsi.listen(config.port);
         done();

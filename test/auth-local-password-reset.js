@@ -23,8 +23,9 @@ const glenda = {
 };
 
 const services = {
-  Auth: require('../lib'),
-  Trace: require('campsi-service-trace')
+  Auth: require('../services/auth/lib'),
+  Trace: require('campsi-service-trace'),
+  Assets: require('../services/assets/lib')
 };
 
 const signin = (chai, campsi, username, password) => chai.request(campsi.app)

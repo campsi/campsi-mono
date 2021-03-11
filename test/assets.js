@@ -6,128 +6,101 @@ process.env.NODE_ENV = 'test';
 const debug = require('debug')('campsi:test');
 const chai = require('chai');
 const chaiHttp = require('chai-http');
-const CampsiServer = require('campsi');
 const config = require('config');
-const { MongoClient } = require('mongodb');
-const mongoUriBuilder = require('mongo-uri-builder');
 const fs = require('fs');
 const path = require('path');
 const uniqueSlug = require('unique-slug');
 const mime = require('mime-types');
-const rimraf = require('rimraf');
 const async = require('async');
-
-let campsi;
-let server;
+const setupBeforeEach = require('./helpers/setupBeforeEach');
 
 chai.use(chaiHttp);
 chai.should();
 
 const services = {
-  Assets: require('../lib')
+  Auth: require('../services/auth/lib'),
+  Trace: require('campsi-service-trace'),
+  Assets: require('../services/assets/lib')
 };
 
-// Helpers
-function createAsset (source) {
-  return new Promise(function (resolve, reject) {
-    const localStorage = campsi.services.get('assets').config.options.storages.local;
-    const originalName = path.basename(source);
-    const storageName = uniqueSlug('');
-    const stats = fs.statSync(source);
-
-    let file = {
-      fieldName: 'file',
-      originalName: originalName,
-      clientReportedMimeType: mime.lookup(source),
-      clientReportedFileExtension: path.extname(source),
-      path: '',
-      size: stats.size,
-      detectedMimeType: mime.lookup(source),
-      detectedFileExtension: path.extname(source),
-      createdAt: new Date().getTime(),
-      createdFrom: {
-        origin: null,
-        referer: null,
-        ua: 'local'
-      },
-      storage: 'local',
-      destination: {
-        rel: '',
-        abs: ''
-      },
-      url: ''
-    };
-
-    localStorage.destination().then((destination) => {
-      file.destination = destination;
-      file.path = path.join(file.destination.abs, storageName);
-      file.url = '/local/' + file.destination.rel + '/' + storageName;
-
-      fs.writeFileSync(file.path, fs.readFileSync(source));
-
-      campsi.services.get('assets').collection.insertOne(file)
-        .then((result) => {
-          resolve({
-            id: result.insertedId.toString(),
-            path: '/local/' + file.destination.rel + '/' + storageName
-          });
-        }).catch((err) => reject(err));
-    });
-  });
-}
-
-function createAssets (files) {
-  return new Promise((resolve) => {
-    async.each(files, (file, cb) => {
-      createAsset(file).then(cb);
-    }, () => {
-      resolve();
-    });
-  });
-}
-
 describe('Assets API', () => {
-  beforeEach((done) => {
-    // Empty the database
-    const mongoUri = mongoUriBuilder(config.campsi.mongo);
-    MongoClient.connect(mongoUri, (err, client) => {
-      if (err) throw err;
-      let db = client.db(config.campsi.mongo.database);
-      db.dropDatabase(() => {
-        client.close();
-        campsi = new CampsiServer(config.campsi);
-        campsi.mount('assets', new services.Assets(config.services.assets));
+  let context = {};
+  beforeEach(setupBeforeEach(config, services, context));
+  afterEach(done => {
+    context.server.close(done);
+  });
 
-        campsi.on('campsi/ready', () => {
-          server = campsi.listen(config.port);
-          done();
-        });
+  function createAsset (source) {
+    return new Promise(function (resolve, reject) {
+      const localStorage = context.campsi.services.get('assets').config.options.storages.local;
+      const originalName = path.basename(source);
+      const storageName = uniqueSlug('');
+      const stats = fs.statSync(source);
 
-        // Empty the data folder
-        const localStorage = campsi.services.get('assets').config.options.storages.local;
-        rimraf.sync(localStorage.dataPath + '/*');
+      let file = {
+        fieldName: 'file',
+        originalName: originalName,
+        clientReportedMimeType: mime.lookup(source),
+        clientReportedFileExtension: path.extname(source),
+        path: '',
+        size: stats.size,
+        detectedMimeType: mime.lookup(source),
+        detectedFileExtension: path.extname(source),
+        createdAt: new Date().getTime(),
+        createdFrom: {
+          origin: null,
+          referer: null,
+          ua: 'local'
+        },
+        storage: 'local',
+        destination: {
+          rel: '',
+          abs: ''
+        },
+        url: ''
+      };
 
-        campsi.start()
-          .catch((err) => {
-            debug('Error: %s', err);
-          });
+      localStorage.destination().then((destination) => {
+        file.destination = destination;
+        file.path = path.join(file.destination.abs, storageName);
+        file.url = '/local/' + file.destination.rel + '/' + storageName;
+
+        fs.writeFileSync(file.path, fs.readFileSync(source));
+
+        context.campsi.services.get('assets').collection.insertOne(file)
+          .then((result) => {
+            resolve({
+              id: result.insertedId.toString(),
+              path: '/local/' + file.destination.rel + '/' + storageName
+            });
+          }).catch((err) => reject(err));
       });
     });
-  });
+  }
 
-  afterEach((done) => {
-    server.close(() => {
-      done();
+  function createAssets (files) {
+    return new Promise((resolve) => {
+      async.each(files, (file, cb) => {
+        createAsset(file).then(cb).catch(err => {
+          if (err) {
+            process.exit(1);
+          }
+          cb();
+        });
+      }, () => {
+        resolve();
+      });
     });
-  });
+  }
+
   /*
      * Test the /GET / route
      */
-  describe('/GET /', () => {
+  describe('/GET/', () => {
     it('it should return a list of assets', (done) => {
       createAssets(Array(5).fill('./test/rsrc/logo_agilitation.png'))
         .then(() => {
-          chai.request(campsi.app)
+          chai.request(context.campsi.app)
             .get('/assets/')
             .query({page: 3, perPage: 2})
             .end((err, res) => {
@@ -148,7 +121,7 @@ describe('Assets API', () => {
      */
   describe('/POST /', () => {
     it('it should return ids of uploaded files', (done) => {
-      chai.request(campsi.app)
+      chai.request(context.campsi.app)
         .post('/assets')
         .attach('file', fs.readFileSync('./test/rsrc/logo_agilitation.png'), 'logo_agilitation.png')
         .end((err, res) => {
@@ -166,7 +139,7 @@ describe('Assets API', () => {
     it('it should return local asset', (done) => {
       createAsset('./test/rsrc/logo_agilitation.png')
         .then((asset) => {
-          chai.request(campsi.app)
+          chai.request(context.campsi.app)
             .get('/assets/{0}'.format(asset.id))
             .end((err, res) => {
               if (err) debug(`received an error from chai: ${err.message}`);
@@ -186,7 +159,7 @@ describe('Assets API', () => {
     it('it should return the asset metadata', (done) => {
       createAsset('./test/rsrc/logo_agilitation.png')
         .then((asset) => {
-          chai.request(campsi.app)
+          chai.request(context.campsi.app)
             .get('/assets/{0}/metadata'.format(asset.id))
             .end((err, res) => {
               if (err) debug(`received an error from chai: ${err.message}`);
@@ -205,7 +178,7 @@ describe('Assets API', () => {
     it('it should return the asset metadata', (done) => {
       createAsset('./test/rsrc/logo_agilitation.png')
         .then((asset) => {
-          chai.request(campsi.app)
+          chai.request(context.campsi.app)
             .delete('/assets/' + asset.id)
             .end((err, res) => {
               if (err) debug(`received an error from chai: ${err.message}`);

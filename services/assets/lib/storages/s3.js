@@ -1,6 +1,7 @@
 const aws = require('aws-sdk');
 const AssetStorage = require('../storage');
 const { PassThrough } = require('stream');
+const uuid = require('uuid');
 
 /**
  * @typedef S3AssetStorageOptions
@@ -38,7 +39,8 @@ class S3AssetStorage extends AssetStorage {
     const now = new Date();
     let month = now.getMonth() + 1;
     month = (month < 10) ? '0' + month : month.toString();
-    return now.getFullYear().toString() + '/' + month + '/' + file.originalName;
+    const prefix = uuid();
+    return `${now.getFullYear().toString()}/${month}/${prefix}-${encodeURIComponent(file.originalName)}`;
   }
 
   createPassThrough (file) {

@@ -38,16 +38,17 @@ class S3AssetStorage extends AssetStorage {
   getKey (file) {
     const now = new Date();
     let month = now.getMonth() + 1;
-    month = (month < 10) ? '0' + month : month.toString();
+    month = month < 10 ? '0' + month : month.toString();
     const prefix = uuid();
-    return `${now.getFullYear().toString()}/${month}/${prefix}-${encodeURIComponent(file.originalName)}`;
+    return `${now.getFullYear().toString()}/${month}/${prefix}${file.clientReportedFileExtension}`;
   }
 
   createPassThrough (file) {
     const getPublicAssetURL = this.options.getPublicAssetURL;
-    const getKey = this.getKey;
     const s3 = new aws.S3({ params: { Bucket: this.options.bucket } });
     const bucket = this.options.bucket;
+    // will be used later in a scoped context, do not remove
+    const getKey = this.getKey;
     let buffer = Buffer.alloc(0);
     let len = 0;
     return new PassThrough()
@@ -59,8 +60,8 @@ class S3AssetStorage extends AssetStorage {
         const self = this;
         s3.upload({
           Bucket: bucket,
-          Key: getKey(file),
-          ContentType: 'application/octet-stream',
+          Key: getKey(file, false),
+          ContentType: file.detectedMimeType || 'application/octet-stream',
           ContentLength: file.size,
           Body: buffer
         })
@@ -74,7 +75,10 @@ class S3AssetStorage extends AssetStorage {
             file.s3 = data;
             file.url =
               typeof getPublicAssetURL === 'function'
-                ? getPublicAssetURL(data)
+                ? getPublicAssetURL({
+                  ...data,
+                  encodedKey: getKey(file)
+                })
                 : data.Location;
             self.emit('uploadSuccess', file);
           });

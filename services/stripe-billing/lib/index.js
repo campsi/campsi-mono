@@ -192,4 +192,11 @@ module.exports = class StripeBillingService extends CampsiService {
   fetchSubscription(subscriptionId, cb) {
     this.stripe.subscriptions.retrieve(subscriptionId, cb);
   }
+
+  fetchSubscriptionInvoices = async (subscriptionId) => {
+    const invoices = await this.stripe.invoices.list({
+      subscription: subscriptionId
+    });
+    return invoices
+  };
 };

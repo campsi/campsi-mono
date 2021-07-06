@@ -61,7 +61,7 @@ Object.defineProperty(module.exports.getDocuments, 'apidoc', {value: {
 }});
 
 module.exports.postDoc = function (req, res) {
-  documentService.createDocument(req.resource, req.body, req.state, req.user)
+  documentService.createDocument(req.resource, req.body, req.state, req.user, req?.query?.parentId)
     .then(data => {
       helpers.json(res, data);
       return data;

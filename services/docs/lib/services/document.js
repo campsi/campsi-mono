@@ -4,6 +4,7 @@ const paginateCursor = require('../../../../lib/modules/paginateCursor');
 const sortCursor = require('../../../../lib/modules/sortCursor');
 const createObjectID = require('../../../../lib/modules/createObjectID');
 const permissions = require('../modules/permissions');
+
 // Helper functions
 const getDocUsersList = (doc) => Object.keys(doc ? doc.users : []).map(k => doc.users[k]);
 const getRequestedStatesFromQuery = (resource, query) => {
@@ -71,13 +72,14 @@ module.exports.getDocuments = function (resource, filter, user, query, state, so
   });
 };
 
-module.exports.createDocument = function (resource, data, state, user) {
+module.exports.createDocument = function (resource, data, state, user, parentId) {
   return new Promise((resolve, reject) => {
     builder.create({
       resource: resource,
       data: data,
       state: state,
-      user: user
+      user: user,
+      parentId: parentId
     }).then((doc) => {
       resource.collection.insertOne(doc, (err, result) => {
         if (err) throw err;
@@ -123,32 +125,109 @@ module.exports.setDocument = function (resource, filter, data, state, user) {
 module.exports.getDocument = function (resource, filter, query, user, state) {
   const requestedStates = getRequestedStatesFromQuery(resource, query);
   const fields = {_id: 1, states: 1, users: 1};
-  return new Promise((resolve, reject) => {
-    resource.collection.findOne(filter, {projection: fields}, (err, doc) => {
-      if (err) return reject(err);
-      if (doc === null) {
-        return reject(new Error('Document Not Found'));
-      }
-      if (doc.states[state] === undefined) {
-        return reject(new Error('Document Not Found'));
-      }
+  const match = {...filter};
+  match[`states.${state}`] = { $exists: true};
 
-      const currentState = doc.states[state] || {};
-      const allowedStates = permissions.getAllowedStatesFromDocForUser(user, resource, 'GET', doc);
-      const returnValue = {
-        id: doc._id,
-        state: state,
-        createdAt: currentState.createdAt,
-        createdBy: currentState.createdBy,
-        modifiedAt: currentState.modifiedAt,
-        modifiedBy: currentState.modifiedBy,
-        data: currentState.data || {},
-        states: permissions.filterDocumentStates(doc, allowedStates, requestedStates)
-      };
-      embedDocs.one(resource, resource.schema, query.embed, user, returnValue.data)
-        .then(() => resolve(returnValue));
+  if(!resource.isInheritable) {
+    return new Promise((resolve, reject) => {
+      resource.collection.findOne(match, {projection: fields}, (err, doc) => {
+        if (err) return reject(err);
+        if (doc === null) {
+          return reject(new Error('Document Not Found'));
+        }
+        if (doc.states[state] === undefined) {
+          return reject(new Error('Document Not Found'));
+        }
+
+        const currentState = doc.states[state] || {};
+        const allowedStates = permissions.getAllowedStatesFromDocForUser(user, resource, 'GET', doc);
+        const returnValue = {
+          id: doc._id,
+          state: state,
+          createdAt: currentState.createdAt,
+          createdBy: currentState.createdBy,
+          modifiedAt: currentState.modifiedAt,
+          modifiedBy: currentState.modifiedBy,
+          data: currentState.data || {},
+          states: permissions.filterDocumentStates(doc, allowedStates, requestedStates)
+        };
+        embedDocs.one(resource, resource.schema, query.embed, user, returnValue.data)
+          .then(() => resolve(returnValue));
+      });
     });
-  });
+  } else {
+    const pipeline = [
+      {
+        $match: match
+      },
+      {
+        $graphLookup: {
+          from: resource.collection.collectionName,
+          startWith: '$parentId',
+          connectFromField: 'parentId',
+          connectToField: '_id',
+          as: 'parents'
+        }
+      },
+      {
+        $addFields: {
+          parent: {
+            $reduce: {
+              input: '$parents',
+              initialValue: {},
+              in: { $mergeObjects: { $reverseArray: '$parents' } }
+            }
+          }
+        }
+      },
+      {
+        $addFields: {
+          [`states.${state}.data`]: {
+            $mergeObjects: [`$parent.states.${state}.data`, `$$ROOT.states.${state}.data`]
+          }
+        }
+      },
+      {
+        $project: {
+          parents: 0,
+          parent: 0
+        }
+      }
+    ];
+
+    return new Promise((resolve, reject) => {
+      resource.collection.aggregate(pipeline)
+        .toArray().then(documents => {
+        if (!documents || documents.length === 0) {
+          return reject(new Error('Document Not Found'));
+        }
+        const doc = documents[0];
+        const currentState = doc.states[state] || {};
+        const allowedStates = permissions.getAllowedStatesFromDocForUser(user, resource, 'GET', doc);
+
+        const returnValue = {
+          id: doc._id,
+          state: state,
+          createdAt: currentState.createdAt,
+          createdBy: currentState.createdBy,
+          modifiedAt: currentState.modifiedAt,
+          modifiedBy: currentState.modifiedBy,
+          data: currentState.data || {},
+          states: permissions.filterDocumentStates(doc, allowedStates, requestedStates)
+        };
+
+        embedDocs.one(resource, resource.schema, query.embed, user, returnValue.data)
+          .then(() => resolve(returnValue));
+      }).catch(err => {
+          console.error(err);
+        reject(err);
+      });
+    });
+
+  }
+
+
+
 };
 
 module.exports.getDocumentUsers = function (resource, filter) {

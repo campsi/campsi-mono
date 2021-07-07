@@ -335,18 +335,53 @@ module.exports.setDocumentState = function (resource, filter, fromState, toState
   });
 };
 
-module.exports.deleteDocument = function (resource, filter, state) {
-  const statePath = ['states', state].join('.');
-  let updateParams = {$unset: {}};
-  updateParams.$unset[statePath] = '';
-  return new Promise((resolve, reject) => {
-    resource.collection.findOneAndUpdate(filter, updateParams, (err, out) => {
-      if (err) return reject(err);
-      if (out.lastErrorObject.n === 0) return reject(new Error('Not Found'));
-      let filter = builder.deleteFilter({id: out.value._id});
-      resource.collection.findOneAndDelete(filter, () => {
-        return resolve({});
-      });
-    });
-  });
+module.exports.deleteDocument = function (resource, filter) {
+  if(!resource.isInheritable) {
+    return resource.collection.deleteOne(filter);
+  } else {
+    return resource.collection.findOne(filter)
+      .then(async (docToDelete) => {
+          const children = await getDocumentChildren(filter._id, resource);
+          if(!children.length) {
+            await resource.collection.deleteOne(filter);
+            return {};
+          }
+          Object.keys(docToDelete.states).forEach((stateName, index) => {
+            children.forEach(child => {
+              if(!child.states[stateName])   {
+                child.states[stateName] = docToDelete.states[stateName];
+              } else {
+                child.states[stateName].data = Object.assign(docToDelete.states[stateName].data, child.states[stateName].data);
+              }
+              delete child.parentId;
+              if (!!docToDelete.parentId) {
+                child.parentId = docToDelete.parentId;
+              }
+              return child;
+            });
+          });
+
+        await Promise.all(
+          children.map(async child => await resource.collection.replaceOne({ _id: child._id }, child))
+        );
+        await resource.collection.deleteOne(filter);
+        return {};
+    })
+      .catch(err => err);
+  }
 };
+
+
+const getDocumentChildren = async (documentId, resource) => {
+  return  await resource.collection.aggregate([
+    {
+      $match: {
+        parentId: documentId
+      }
+    }
+  ]).toArray();
+}
+
+
+
+

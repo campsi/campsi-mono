@@ -118,7 +118,7 @@ module.exports.getDoc = function (req, res) {
 };
 
 module.exports.delDoc = function (req, res) {
-  documentService.deleteDocument(req.resource, req.filter, req.state)
+  documentService.deleteDocument(req.resource, req.filter)
     .then(result => helpers.json(res, result))
     .then(() => req.service.emit('document/deleted', getEmitPayload(req)))
     .catch(err => helpers.notFound(res, err));

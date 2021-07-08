@@ -226,28 +226,14 @@ module.exports.getDocument = function (resource, filter, query, user, state) {
         if (doc.states[state] === undefined) {
           return reject(new Error('Document Not Found'));
         }
-
-        const currentState = doc.states[state] || {};
-        const allowedStates = permissions.getAllowedStatesFromDocForUser(
-          user,
+        const returnValue = prepareGetDocument({
+          doc,
+          state,
+          permissions,
+          requestedStates,
           resource,
-          'GET',
-          doc
-        );
-        const returnValue = {
-          id: doc._id,
-          state: state,
-          createdAt: currentState.createdAt,
-          createdBy: currentState.createdBy,
-          modifiedAt: currentState.modifiedAt,
-          modifiedBy: currentState.modifiedBy,
-          data: currentState.data || {},
-          states: permissions.filterDocumentStates(
-            doc,
-            allowedStates,
-            requestedStates
-          ),
-        };
+          user,
+        });
         embedDocs
           .one(resource, resource.schema, query.embed, user, returnValue.data)
           .then(() => resolve(returnValue));
@@ -305,29 +291,14 @@ module.exports.getDocument = function (resource, filter, query, user, state) {
             return reject(new Error('Document Not Found'));
           }
           const doc = documents[0];
-          const currentState = doc.states[state] || {};
-          const allowedStates = permissions.getAllowedStatesFromDocForUser(
-            user,
+          const returnValue = prepareGetDocument({
+            doc,
+            state,
+            permissions,
+            requestedStates,
             resource,
-            'GET',
-            doc
-          );
-
-          const returnValue = {
-            id: doc._id,
-            state: state,
-            createdAt: currentState.createdAt,
-            createdBy: currentState.createdBy,
-            modifiedAt: currentState.modifiedAt,
-            modifiedBy: currentState.modifiedBy,
-            data: currentState.data || {},
-            states: permissions.filterDocumentStates(
-              doc,
-              allowedStates,
-              requestedStates
-            ),
-          };
-
+            user,
+          });
           embedDocs
             .one(resource, resource.schema, query.embed, user, returnValue.data)
             .then(() => resolve(returnValue));
@@ -535,4 +506,30 @@ const getDocumentChildren = async (documentId, resource) => {
       },
     ])
     .toArray();
+};
+
+const prepareGetDocument = (settings) => {
+  const { doc, state, permissions, requestedStates, resource, user } = settings;
+  const currentState = doc.states[state] || {};
+  const allowedStates = permissions.getAllowedStatesFromDocForUser(
+    user,
+    resource,
+    'GET',
+    doc
+  );
+
+  return {
+    id: doc._id,
+    state: state,
+    createdAt: currentState.createdAt,
+    createdBy: currentState.createdBy,
+    modifiedAt: currentState.modifiedAt,
+    modifiedBy: currentState.modifiedBy,
+    data: currentState.data || {},
+    states: permissions.filterDocumentStates(
+      doc,
+      allowedStates,
+      requestedStates
+    ),
+  };
 };

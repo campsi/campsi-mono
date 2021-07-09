@@ -5,71 +5,83 @@ const passport = require('@passport-next/passport');
 const editURL = require('edit-url');
 const state = require('./state');
 const debug = require('debug')('campsi:service:auth');
-const ObjectID = require('mongodb').ObjectID;
+const ObjectId = require('mongodb').ObjectId;
 
-function logout (req, res) {
+function logout(req, res) {
   if (!req.user) {
     return helpers.unauthorized(res);
   }
 
-  let update = {$set: {token: 'null'}};
-  req.db.collection('__users__')
-    .findOneAndUpdate({_id: req.user._id}, update).then(() => {
-      return res.json({message: 'signed out'});
-    }).catch((error) => {
+  let update = { $set: { token: 'null' } };
+  req.db
+    .collection('__users__')
+    .findOneAndUpdate({ _id: req.user._id }, update)
+    .then(() => {
+      return res.json({ message: 'signed out' });
+    })
+    .catch((error) => {
       return helpers.error(res, error);
     });
 }
 
-function me (req, res) {
+function me(req, res) {
   if (!req.user) {
     return helpers.unauthorized(res);
   }
   res.json(req.user);
 }
 
-function updateMe (req, res) {
+function updateMe(req, res) {
   if (!req.user) {
     return helpers.unauthorized(res);
   }
 
   const allowedProps = ['displayName', 'data'];
-  let update = {$set: {}};
+  let update = { $set: {} };
 
-  allowedProps.forEach(prop => {
+  allowedProps.forEach((prop) => {
     if (req.body[prop]) {
       update.$set[prop] = req.body[prop];
     }
   });
 
-  req.db.collection('__users__')
-    .findOneAndUpdate({_id: req.user._id}, update, {returnOriginal: false})
-    .then(result => res.json(result.value))
-    .catch(error => helpers.error(res, error));
+  req.db
+    .collection('__users__')
+    .findOneAndUpdate({ _id: req.user._id }, update, { returnOriginal: false })
+    .then((result) => res.json(result.value))
+    .catch((error) => helpers.error(res, error));
 }
 
-function createAnonymousUser (req, res) {
+function createAnonymousUser(req, res) {
   const token = builder.genBearerToken(100);
   const insert = {
     identities: {},
-    tokens: {[token.value]: {expiration: token.expiration, grantedByProvider: 'anonymous'}},
+    tokens: {
+      [token.value]: {
+        expiration: token.expiration,
+        grantedByProvider: 'anonymous',
+      },
+    },
     email: token.value,
     token: token.value,
-    createdAt: new Date()
+    createdAt: new Date(),
   };
-  req.db.collection('__users__').insertOne(insert).then(insertResult => {
-    res.json(insertResult.ops[0]);
-  });
+  req.db
+    .collection('__users__')
+    .insertOne(insert)
+    .then((insertResult) => {
+      res.json(insertResult.ops[0]);
+    });
 }
 
-function getProviders (req, res) {
+function getProviders(req, res) {
   let ret = [];
   forIn(req.authProviders, (provider, name) => {
     ret.push({
       name: name,
       title: provider.title,
       buttonStyle: provider.buttonStyle,
-      scope: provider.scope
+      scope: provider.scope,
     });
   });
 
@@ -77,16 +89,23 @@ function getProviders (req, res) {
   res.json(ret);
 }
 
-function callback (req, res) {
-  const {redirectURI} = state.get(req);
+function callback(req, res) {
+  const { redirectURI } = state.get(req);
   // noinspection JSUnresolvedFunction
-  passport.authenticate(req.authProvider.name, {session: false, failWithError: true})(req, res, () => {
+  passport.authenticate(req.authProvider.name, {
+    session: false,
+    failWithError: true,
+  })(req, res, () => {
     if (!req.user) {
-      return redirectWithError(req, res, new Error('unable to authentify user'));
+      return redirectWithError(
+        req,
+        res,
+        new Error('unable to authentify user')
+      );
     }
     if (!redirectURI) {
       try {
-        res.json({token: req.authBearerToken});
+        res.json({ token: req.authBearerToken });
       } catch (err) {
         debug('Catching headers', err);
       }
@@ -105,8 +124,8 @@ function callback (req, res) {
   });
 }
 
-function redirectWithError (req, res, err) {
-  const {redirectURI} = state.get(req);
+function redirectWithError(req, res, err) {
+  const { redirectURI } = state.get(req);
   if (!redirectURI) {
     helpers.error(res, err);
   } else {
@@ -118,56 +137,71 @@ function redirectWithError (req, res, err) {
   }
 }
 
-function getUserFilterFromQuery (query) {
+function getUserFilterFromQuery(query) {
   let filter = {};
   if (query.provider) {
-    filter[`identities.${query.provider}`] = {$exists: true};
+    filter[`identities.${query.provider}`] = { $exists: true };
   }
   if (query.email) {
     filter.email = query.email;
   }
   if (query.userId) {
     try {
-      filter._id = new ObjectID(query.userId);
+      filter._id = new ObjectId(query.userId);
     } catch (e) {
-      debug('erroneous ObjectID', query.userId);
+      debug('erroneous ObjectId', query.userId);
       return { _id: null };
     }
   }
   return filter;
 }
-function getUsers (req, res) {
+function getUsers(req, res) {
   if (req.user && req.user.isAdmin) {
-    req.db.collection('__users__').find(getUserFilterFromQuery(req.query), (err, result) => {
-      if (err) {
-        return redirectWithError(req, res, err);
-      }
-      result.toArray().then(users => res.json(users));
-    });
+    req.db
+      .collection('__users__')
+      .find(getUserFilterFromQuery(req.query), (err, result) => {
+        if (err) {
+          return redirectWithError(req, res, err);
+        }
+        result.toArray().then((users) => res.json(users));
+      });
   } else {
-    redirectWithError(req, res, new Error('Only admin users are allowed to show users'));
+    redirectWithError(
+      req,
+      res,
+      new Error('Only admin users are allowed to show users')
+    );
   }
 }
 
-function getAccessTokenForUser (req, res) {
+function getAccessTokenForUser(req, res) {
   if (req.user && req.user.isAdmin) {
     let userId;
     try {
-      userId = new ObjectID(req.params.userId);
+      userId = new ObjectId(req.params.userId);
     } catch (e) {
       return redirectWithError(req, res, new Error('Erroneous userId'));
     }
-    let {update, updateToken} = builder.genUpdate({name: 'impersonatingByAdmin'}, {});
-    req.db.collection('__users__').findOneAndUpdate({_id: userId}, update, {returnOriginal: false})
+    let { update, updateToken } = builder.genUpdate(
+      { name: 'impersonatingByAdmin' },
+      {}
+    );
+    req.db
+      .collection('__users__')
+      .findOneAndUpdate({ _id: userId }, update, { returnOriginal: false })
       .then((result) => {
         if (result.value) {
-          res.json({token: updateToken.value});
+          res.json({ token: updateToken.value });
         } else {
           helpers.notFound(res, new Error('Unknown user'));
         }
       });
   } else {
-    redirectWithError(req, res, new Error('Only admin users are allowed to show users'));
+    redirectWithError(
+      req,
+      res,
+      new Error('Only admin users are allowed to show users')
+    );
   }
 }
 /**
@@ -178,104 +212,138 @@ function getAccessTokenForUser (req, res) {
  * @param res
  * @param next
  */
-function initAuth (req, res, next) {
+function initAuth(req, res, next) {
   const params = {
     session: false,
     state: state.serialize(req),
-    scope: req.authProvider.scope
+    scope: req.authProvider.scope,
   };
   debug(params, req.authProvider);
   // noinspection JSUnresolvedFunction
-  passport.authenticate(
-    req.params.provider,
-    params
-  )(req, res, next);
+  passport.authenticate(req.params.provider, params)(req, res, next);
 }
 
-function inviteUser (req, res) {
+function inviteUser(req, res) {
   if (!req.user) {
-    return helpers.unauthorized(res, new Error('You must be authentified to send an invitation'));
+    return helpers.unauthorized(
+      res,
+      new Error('You must be authentified to send an invitation')
+    );
   }
   const invitationToken = builder.genBearerToken(100);
   const dispatchInvitationEvent = function (payload) {
     req.service.emit('invitation/created', payload);
   };
-  // if user exists with the given email, we return the id
-  req.db.collection('__users__').findOne({email: req.body.email}, {}, (err, doc) => {
-    if (err) {
-      return helpers.error(res, err);
+  const update = {};
+  const groupId = req?.query?.groupId ?? null;
+  if (groupId) {
+    if (ObjectId.isValid(groupId.split('_').pop())) {
+      update.$addToSet = { groups: groupId };
     }
-    if (doc) {
-      res.json({id: doc._id.toString(), invitationToken});
-      return dispatchInvitationEvent({
-        id: doc._id,
-        email: doc.email,
-        invitedBy: req.user,
-        token: invitationToken,
-        requestBody: req.body,
-        requestHeaders: req.headers
-      });
-    } else {
-      const invitationToken = builder.genBearerToken(100);
-      const provider = {name: `invitation-${invitationToken.value}`, expiration: 20};
-      const profile = {
-        email: req.body.email,
-        displayName: req.body.displayName,
-        identity: {
-          invitedBy: req.user._id,
-          token: invitationToken,
-          data: req.body.data
-        }
-      };
-      const {insert, insertToken} = builder.genInsert(provider, profile);
-      req.db.collection('__users__').insertOne(insert, (err, result) => {
+  }
+  // if user exists with the given email, we return the id
+  req.db
+    .collection('__users__')
+    .findOneAndUpdate(
+      { email: req.body.email },
+      update,
+      { returnNewDocument: true },
+      (err, result) => {
         if (err) {
           return helpers.error(res, err);
         }
-        res.json({id: result.insertedId, insertToken, invitationToken});
-        dispatchInvitationEvent({
-          id: result.insertedId,
-          email: profile.email,
-          invitedBy: req.user,
-          token: invitationToken
-        });
-      });
-    }
-  });
+        if (result.value) {
+          const doc = result.value;
+          res.json({ id: doc._id.toString(), invitationToken });
+          return dispatchInvitationEvent({
+            id: doc._id,
+            email: doc.email,
+            invitedBy: req.user,
+            token: invitationToken,
+            requestBody: req.body,
+            requestHeaders: req.headers,
+          });
+        } else {
+          const invitationToken = builder.genBearerToken(100);
+          const provider = {
+            name: `invitation-${invitationToken.value}`,
+            expiration: 20,
+          };
+          const profile = {
+            email: req.body.email,
+            displayName: req.body.displayName,
+            identity: {
+              invitedBy: req.user._id,
+              token: invitationToken,
+              data: req.body.data,
+            },
+          };
+
+          const { insert, insertToken } = builder.genInsert(provider, profile);
+          if (groupId) {
+            insert.groups.push(groupId);
+          }
+          req.db.collection('__users__').insertOne(insert, (err, result) => {
+            if (err) {
+              return helpers.error(res, err);
+            }
+            res.json({ id: result.insertedId, insertToken, invitationToken });
+            dispatchInvitationEvent({
+              id: result.insertedId,
+              email: profile.email,
+              invitedBy: req.user,
+              token: invitationToken,
+            });
+          });
+        }
+      }
+    );
 }
 
-function acceptInvitation (req, res) {
+function acceptInvitation(req, res) {
   if (!req.user) {
-    return helpers.unauthorized(res, new Error('You must be authentified to accept an invitation'));
+    return helpers.unauthorized(
+      res,
+      new Error('You must be authentified to accept an invitation')
+    );
   }
   const query = {
     [`identities.invitation-${req.params.invitationToken}.token.expiration`]: {
-      $gt: new Date()
-    }
+      $gt: new Date(),
+    },
   };
-  req.db.collection('__users__').findOneAndUpdate(query, {
-    $unset: {[`identities.invitation-${req.params.invitationToken}`]: true}
-  }, {
-    returnOriginal: true
-  }, (err, updateResult) => {
-    if (err) return helpers.error(res, err);
-    const doc = updateResult.value;
-    if (!doc) {
-      debug('No user was found nor updated in query', query);
-      return helpers.notFound(res, new Error('No user was found with this invitation token'));
+  req.db.collection('__users__').findOneAndUpdate(
+    query,
+    {
+      $unset: { [`identities.invitation-${req.params.invitationToken}`]: true },
+    },
+    {
+      returnOriginal: true,
+    },
+    (err, updateResult) => {
+      if (err) return helpers.error(res, err);
+      const doc = updateResult.value;
+      if (!doc) {
+        debug('No user was found nor updated in query', query);
+        return helpers.notFound(
+          res,
+          new Error('No user was found with this invitation token')
+        );
+      }
+      const invitation =
+        doc.identities[`invitation-${req.params.invitationToken}`];
+      const payload = {
+        userId: req.user._id,
+        invitedUserId: doc._id,
+        invitedBy: invitation.invitedBy,
+        data: invitation.data,
+        requestBody: req.body,
+        requestHeaders: req.headers,
+      };
+      res.json(payload);
+      req.service.emit('invitation/accepted', payload);
     }
-    const invitation = doc.identities[`invitation-${req.params.invitationToken}`];
-    const payload = {
-      userId: req.user._id,
-      invitedUserId: doc._id,
-      invitedBy: invitation.invitedBy,
-      data: invitation.data,
-      requestBody: req.body,
-      requestHeaders: req.headers
-    };
-    res.json(payload);
-    req.service.emit('invitation/accepted', payload);
-  });
+  );
 }
 
 module.exports = {
@@ -290,5 +358,5 @@ module.exports = {
   createAnonymousUser,
   logout,
   inviteUser,
-  acceptInvitation
+  acceptInvitation,
 };

@@ -234,7 +234,7 @@ module.exports.createResetPasswordToken = function (req, res) {
   const token = module.exports.createRandomToken(req.body.email, opts.salt);
 
   req.db.collection('__users__').findOneAndUpdate(
-    {'email': new RegExp('^' + req.body.email + '$', 'i')},
+    {'email': new RegExp('^' + req.body.email.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$', 'i')},
     {
       $set: {
         'identities.local.passwordResetToken': {

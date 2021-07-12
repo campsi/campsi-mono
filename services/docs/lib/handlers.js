@@ -79,7 +79,8 @@ module.exports.postDoc = function (req, res) {
       req.body,
       req.state,
       req.user,
-      req?.query?.parentId
+      req?.query?.parentId,
+      req?.query?.groupId
     )
     .then((data) => {
       helpers.json(res, data);

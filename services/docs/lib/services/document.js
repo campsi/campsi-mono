@@ -149,7 +149,8 @@ module.exports.createDocument = function (
   data,
   state,
   user,
-  parentId
+  parentId,
+  groupId
 ) {
   return new Promise((resolve, reject) => {
     builder
@@ -170,6 +171,9 @@ module.exports.createDocument = function (
               doc.groups = parent.groups;
             }
           } catch (err) {}
+        }
+        if (groupId && !doc.groups.includes(groupId)) {
+          doc.groups.push(groupId);
         }
 
         await resource.collection.insertOne(doc, (err, result) => {

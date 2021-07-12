@@ -45,7 +45,7 @@ module.exports.signin = function (req, res) {
  * @param done
  */
 module.exports.callback = function localCallback (req, username, password, done) {
-  let filter = {$or: [{'email': new RegExp('^' + username + '$', 'i')}, {'identities.local.username': username}]};
+  let filter = {$or: [{'email': new RegExp('^' + username.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$', 'i')}, {'identities.local.username': username}]};
   debug('signin passport callback', username, password, filter);
   req.db.collection('__users__').findOne(filter).then((user) => {
     if (!user) {

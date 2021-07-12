@@ -4,7 +4,6 @@ const paginateCursor = require('../../../../lib/modules/paginateCursor');
 const sortCursor = require('../../../../lib/modules/sortCursor');
 const createObjectID = require('../../../../lib/modules/createObjectID');
 const permissions = require('../modules/permissions');
-
 // Helper functions
 const getDocUsersList = (doc) =>
   Object.keys(doc ? doc.users : []).map((k) => doc.users[k]);
@@ -358,8 +357,14 @@ module.exports.addUserToDocument = function (resource, filter, userDetails) {
   });
 };
 
-module.exports.removeUserFromDocument = function (resource, filter, userId) {
-  return new Promise((resolve, reject) => {
+module.exports.removeUserFromDocument = function (
+  resource,
+  filter,
+  userId,
+  groupId,
+  db
+) {
+  const removeUserFromDoc = new Promise((resolve, reject) => {
     const ops = { $unset: { [`users.${userId}`]: 1 } };
     const options = { returnOriginal: false, projection: { users: 1 } };
     resource.collection.findOneAndUpdate(
@@ -375,6 +380,20 @@ module.exports.removeUserFromDocument = function (resource, filter, userId) {
       }
     );
   });
+  const removeGroupFromUser = !groupId
+    ? Promise.resolve(null)
+    : new Promise((resolve, reject) => {
+        const filter = { _id: createObjectID(userId) };
+        const update = { $pull: { groups: groupId } };
+        db.collection('__users__').updateOne(filter, update, (err, result) => {
+          if (err) return reject(err);
+          return resolve(null);
+        });
+      });
+
+  return Promise.all([removeUserFromDoc, removeGroupFromUser]).then(
+    (values) => values[0]
+  );
 };
 
 module.exports.setDocumentState = function (

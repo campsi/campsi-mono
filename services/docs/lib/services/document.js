@@ -226,7 +226,7 @@ module.exports.setDocument = function (resource, filter, data, state, user) {
 
 module.exports.getDocument = function (resource, filter, query, user, state) {
   const requestedStates = getRequestedStatesFromQuery(resource, query);
-  const fields = { _id: 1, states: 1, users: 1 };
+  const fields = { _id: 1, states: 1, users: 1, groups: 1 };
   const match = { ...filter };
   match[`states.${state}`] = { $exists: true };
 
@@ -560,6 +560,7 @@ const prepareGetDocument = (settings) => {
     modifiedAt: currentState.modifiedAt,
     modifiedBy: currentState.modifiedBy,
     data: currentState.data || {},
+    groups: doc.groups || [],
     states: permissions.filterDocumentStates(
       doc,
       allowedStates,

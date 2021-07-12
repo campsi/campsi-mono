@@ -154,14 +154,25 @@ module.exports.createDocument = function (
   return new Promise((resolve, reject) => {
     builder
       .create({
-        resource: resource,
-        data: data,
-        state: state,
-        user: user,
-        parentId: parentId,
+        resource,
+        data,
+        state,
+        user,
+        parentId,
       })
-      .then((doc) => {
-        resource.collection.insertOne(doc, (err, result) => {
+      .then(async (doc) => {
+        if (doc.parentId) {
+          try {
+            const parent = await resource.collection.findOne({
+              _id: doc.parentId,
+            });
+            if (parent) {
+              doc.groups = parent.groups;
+            }
+          } catch (err) {}
+        }
+
+        await resource.collection.insertOne(doc, (err, result) => {
           if (err) throw err;
           resolve(
             Object.assign(

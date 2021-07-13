@@ -45,6 +45,13 @@ function updateMe(req, res) {
       update.$set[prop] = req.body[prop];
     }
   });
+  const groups = req?.query?.groupsIds
+    ? groupsHelpers(req.query.groupsIds)
+    : [];
+
+  if (!!groups.length) {
+    update.$addToSet = { groups: { $each: groups } };
+  }
 
   req.db
     .collection('__users__')

@@ -1,5 +1,6 @@
 const debug = require('debug')('campsi:service:docs');
 const forIn = require('for-in');
+const { ObjectId } = require('mongodb');
 
 /**
  * Simple utility function that converts a list of arguments
@@ -77,6 +78,9 @@ module.exports.create = function createDoc (options) {
           users: {},
           states: {}
         };
+        if(ObjectId.isValid(options.parentId)){
+          doc.parentId = new ObjectId(options.parentId);
+        }
 
         if (options.user) {
           doc.users[String(options.user._id)] = {

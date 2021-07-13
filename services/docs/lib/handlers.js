@@ -80,7 +80,7 @@ module.exports.postDoc = function (req, res) {
       req.state,
       req.user,
       req?.query?.parentId,
-      req?.query?.groupId
+      req.groups
     )
     .then((data) => {
       helpers.json(res, data);
@@ -213,7 +213,7 @@ module.exports.delDocUser = function (req, res) {
       req.resource,
       req.filter,
       req.params.user,
-      req?.query?.groupId,
+      req.groups,
       req.db
     )
     .then((users) =>

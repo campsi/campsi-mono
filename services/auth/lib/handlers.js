@@ -1,4 +1,5 @@
 const helpers = require('../../../lib/modules/responseHelpers');
+const groupsHelpers = require('../../../lib/modules/groupsHelpers');
 const builder = require('./modules/queryBuilder');
 const forIn = require('for-in');
 const passport = require('@passport-next/passport');
@@ -234,12 +235,15 @@ function inviteUser(req, res) {
   const dispatchInvitationEvent = function (payload) {
     req.service.emit('invitation/created', payload);
   };
-  const update = {};
-  const groupId = req?.query?.groupId ?? null;
-  if (groupId) {
-    if (ObjectId.isValid(groupId.split('_').pop())) {
-      update.$addToSet = { groups: groupId };
-    }
+  const filter = { email: req.body.email };
+  const update = { $set: { email: req.body.email } };
+
+  const groups = req?.query?.groupsIds
+    ? groupsHelpers(req.query.groupsIds)
+    : [];
+
+  if (!!groups.length) {
+    update.$addToSet = { groups: { $each: groups } };
   }
   // if user exists with the given email, we return the id
   req.db
@@ -280,8 +284,8 @@ function inviteUser(req, res) {
           };
 
           const { insert, insertToken } = builder.genInsert(provider, profile);
-          if (groupId) {
-            insert.groups.push(groupId);
+          if (!!groups.length) {
+            insert.groups = groups;
           }
           req.db.collection('__users__').insertOne(insert, (err, result) => {
             if (err) {

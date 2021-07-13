@@ -4,6 +4,7 @@ const paginateCursor = require('../../../../lib/modules/paginateCursor');
 const sortCursor = require('../../../../lib/modules/sortCursor');
 const createObjectID = require('../../../../lib/modules/createObjectID');
 const permissions = require('../modules/permissions');
+
 // Helper functions
 const getDocUsersList = (doc) =>
   Object.keys(doc ? doc.users : []).map((k) => doc.users[k]);
@@ -33,7 +34,7 @@ module.exports.getDocuments = function (
     filter,
     builder.find(queryBuilderOptions)
   );
-  const dbFields = { _id: 1, states: 1, users: 1 };
+  const dbFields = { _id: 1, states: 1, users: 1, groups: 1 };
   const pipeline = !resource.isInheritable
     ? null
     : [
@@ -150,7 +151,7 @@ module.exports.createDocument = function (
   state,
   user,
   parentId,
-  groupId
+  groups
 ) {
   return new Promise((resolve, reject) => {
     builder
@@ -172,8 +173,9 @@ module.exports.createDocument = function (
             }
           } catch (err) {}
         }
-        if (groupId && !doc.groups.includes(groupId)) {
-          doc.groups.push(groupId);
+
+        if (groups.length) {
+          doc.groups = [...new Set([...doc.groups, ...groups])];
         }
 
         await resource.collection.insertOne(doc, (err, result) => {
@@ -376,7 +378,7 @@ module.exports.removeUserFromDocument = function (
   resource,
   filter,
   userId,
-  groupId,
+  groups,
   db
 ) {
   const removeUserFromDoc = new Promise((resolve, reject) => {
@@ -395,11 +397,11 @@ module.exports.removeUserFromDocument = function (
       }
     );
   });
-  const removeGroupFromUser = !groupId
+  const removeGroupFromUser = !groups.length
     ? Promise.resolve(null)
     : new Promise((resolve, reject) => {
         const filter = { _id: createObjectID(userId) };
-        const update = { $pull: { groups: groupId } };
+        const update = { $pull: { groups: { $in: groups } } };
         db.collection('__users__').updateOne(filter, update, (err, result) => {
           if (err) return reject(err);
           return resolve(null);

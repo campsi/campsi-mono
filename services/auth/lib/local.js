@@ -54,7 +54,12 @@ module.exports.callback = function localCallback(
 ) {
   let filter = {
     $or: [
-      { email: new RegExp('^' + username + '$', 'i') },
+      {
+        email: new RegExp(
+          '^' + username.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$',
+          'i'
+        ),
+      },
       { 'identities.local.username': username },
     ],
   };
@@ -140,7 +145,6 @@ module.exports.signup = function (req, res) {
   }
   const insertUser = function (user) {
     return new Promise((resolve, reject) => {
-      user.groups = [];
       users
         .insertOne(user)
         .then((result) =>
@@ -292,7 +296,12 @@ module.exports.createResetPasswordToken = function (req, res) {
   req.db
     .collection('__users__')
     .findOneAndUpdate(
-      { email: new RegExp('^' + req.body.email + '$', 'i') },
+      {
+        email: new RegExp(
+          '^' + req.body.email.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$',
+          'i'
+        ),
+      },
       {
         $set: {
           'identities.local.passwordResetToken': {

@@ -1,5 +1,7 @@
 const helpers = require('../../../lib/modules/responseHelpers');
-const groupsHelpers = require('../../../lib/modules/groupsHelpers');
+const {
+  getValidGroupsFromString,
+} = require('../../../lib/modules/groupsHelpers');
 const builder = require('./modules/queryBuilder');
 const forIn = require('for-in');
 const passport = require('@passport-next/passport');
@@ -46,7 +48,7 @@ function updateMe(req, res) {
     }
   });
   const groups = req?.query?.groupsIds
-    ? groupsHelpers(req.query.groupsIds)
+    ? getValidGroupsFromString(req.query.groupsIds)
     : [];
 
   if (!!groups.length) {
@@ -246,7 +248,7 @@ function inviteUser(req, res) {
   const update = { $set: { email: req.body.email } };
 
   const groups = req?.query?.groupsIds
-    ? groupsHelpers(req.query.groupsIds)
+    ? getValidGroupsFromString(req.query.groupsIds)
     : [];
 
   if (!!groups.length) {

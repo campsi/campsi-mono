@@ -2,7 +2,9 @@ const helpers = require('../../../lib/modules/responseHelpers');
 const createObjectID = require('../../../lib/modules/createObjectID');
 const { can } = require('./modules/permissions');
 const { ObjectId } = require('mongodb');
-const groupsHelpers = require('../../../lib/modules/groupsHelpers');
+const {
+  getValidGroupsFromString,
+} = require('../../../lib/modules/groupsHelpers');
 
 module.exports.attachResource = function (options) {
   return (req, res, next) => {
@@ -34,7 +36,7 @@ module.exports.attachResource = function (options) {
       }
 
       req.groups = req.query?.groupsIds
-        ? groupsHelpers(req.query?.groupsIds)
+        ? getValidGroupsFromString(req.query?.groupsIds)
         : [];
 
       // USER can access RESOURCE/FILTER with METHOD/STATE ?

@@ -34,7 +34,7 @@ module.exports.getDocuments = function (
     filter,
     builder.find(queryBuilderOptions)
   );
-  const dbFields = { _id: 1, states: 1, users: 1 };
+  const dbFields = { _id: 1, states: 1, users: 1, groups: 1 };
   const pipeline = !resource.isInheritable
     ? null
     : [
@@ -150,19 +150,35 @@ module.exports.createDocument = function (
   data,
   state,
   user,
-  parentId
+  parentId,
+  groups
 ) {
   return new Promise((resolve, reject) => {
     builder
       .create({
-        resource: resource,
-        data: data,
-        state: state,
-        user: user,
-        parentId: parentId,
+        resource,
+        data,
+        state,
+        user,
+        parentId,
       })
-      .then((doc) => {
-        resource.collection.insertOne(doc, (err, result) => {
+      .then(async (doc) => {
+        if (doc.parentId) {
+          try {
+            const parent = await resource.collection.findOne({
+              _id: doc.parentId,
+            });
+            if (parent) {
+              doc.groups = parent.groups;
+            }
+          } catch (err) {}
+        }
+
+        if (groups.length) {
+          doc.groups = [...new Set([...doc.groups, ...groups])];
+        }
+
+        await resource.collection.insertOne(doc, (err, result) => {
           if (err) throw err;
           resolve(
             Object.assign(
@@ -212,7 +228,7 @@ module.exports.setDocument = function (resource, filter, data, state, user) {
 
 module.exports.getDocument = function (resource, filter, query, user, state) {
   const requestedStates = getRequestedStatesFromQuery(resource, query);
-  const fields = { _id: 1, states: 1, users: 1 };
+  const fields = { _id: 1, states: 1, users: 1, groups: 1 };
   const match = { ...filter };
   match[`states.${state}`] = { $exists: true };
 
@@ -358,8 +374,14 @@ module.exports.addUserToDocument = function (resource, filter, userDetails) {
   });
 };
 
-module.exports.removeUserFromDocument = function (resource, filter, userId) {
-  return new Promise((resolve, reject) => {
+module.exports.removeUserFromDocument = function (
+  resource,
+  filter,
+  userId,
+  groups,
+  db
+) {
+  const removeUserFromDoc = new Promise((resolve, reject) => {
     const ops = { $unset: { [`users.${userId}`]: 1 } };
     const options = { returnOriginal: false, projection: { users: 1 } };
     resource.collection.findOneAndUpdate(
@@ -375,6 +397,20 @@ module.exports.removeUserFromDocument = function (resource, filter, userId) {
       }
     );
   });
+  const removeGroupFromUser = !groups.length
+    ? Promise.resolve(null)
+    : new Promise((resolve, reject) => {
+        const filter = { _id: createObjectID(userId) };
+        const update = { $pull: { groups: { $in: groups } } };
+        db.collection('__users__').updateOne(filter, update, (err, result) => {
+          if (err) return reject(err);
+          return resolve(null);
+        });
+      });
+
+  return Promise.all([removeUserFromDoc, removeGroupFromUser]).then(
+    (values) => values[0]
+  );
 };
 
 module.exports.setDocumentState = function (
@@ -526,6 +562,7 @@ const prepareGetDocument = (settings) => {
     modifiedAt: currentState.modifiedAt,
     modifiedBy: currentState.modifiedBy,
     data: currentState.data || {},
+    groups: doc.groups || [],
     states: permissions.filterDocumentStates(
       doc,
       allowedStates,

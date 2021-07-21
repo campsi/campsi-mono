@@ -8,7 +8,7 @@ const { ObjectId } = require('mongodb');
  * @param {string} properties
  * @return {string}
  */
-function join (...properties) {
+function join(...properties) {
   return properties.join('.');
 }
 /**
@@ -17,10 +17,10 @@ function join (...properties) {
  * @param {string} [propertyName]
  * @returns {State}
  */
-function getStateFromOptions (options, propertyName) {
+function getStateFromOptions(options, propertyName) {
   propertyName = propertyName || 'state';
   const stateName = options[propertyName] || options.resource.defaultState;
-  let stateObj = options.resource.states[stateName] || {validate: false};
+  let stateObj = options.resource.states[stateName] || { validate: false };
   stateObj.name = stateName;
   return stateObj;
 }
@@ -32,7 +32,7 @@ function getStateFromOptions (options, propertyName) {
  * @param {boolean} doValidate
  * @returns {Promise}
  */
-function validate (resource, doc, doValidate) {
+function validate(resource, doc, doValidate) {
   return new Promise((resolve, reject) => {
     if (doValidate !== true) {
       return resolve();
@@ -46,7 +46,7 @@ function validate (resource, doc, doValidate) {
   });
 }
 
-module.exports.find = function find (options) {
+module.exports.find = function find(options) {
   let state = getStateFromOptions(options);
   let filter = {};
 
@@ -67,7 +67,7 @@ module.exports.find = function find (options) {
  * @param {User} [options.user]
  * @returns {Promise}
  */
-module.exports.create = function createDoc (options) {
+module.exports.create = function createDoc(options) {
   const state = getStateFromOptions(options);
 
   return new Promise((resolve, reject) => {
@@ -76,9 +76,10 @@ module.exports.create = function createDoc (options) {
       .then(() => {
         let doc = {
           users: {},
-          states: {}
+          states: {},
+          groups: [],
         };
-        if(ObjectId.isValid(options.parentId)){
+        if (options.parentId) {
           doc.parentId = new ObjectId(options.parentId);
         }
 
@@ -86,13 +87,13 @@ module.exports.create = function createDoc (options) {
           doc.users[String(options.user._id)] = {
             roles: ['owner'],
             addedAt: new Date(),
-            userId: options.user._id
+            userId: options.user._id,
           };
         }
         doc.states[state.name] = {
           createdAt: new Date(),
           createdBy: options.user ? options.user._id : null,
-          data: options.data
+          data: options.data,
         };
         resolve(doc);
       });
@@ -108,22 +109,24 @@ module.exports.create = function createDoc (options) {
  *
  * @returns {Promise}
  */
-module.exports.update = function updateDoc (options) {
+module.exports.update = function updateDoc(options) {
   const state = getStateFromOptions(options);
   return new Promise((resolve, reject) => {
     validate(options.resource, options.data, state.validate)
       .catch(reject)
       .then(() => {
-        let ops = {$set: {}};
+        let ops = { $set: {} };
         ops.$set[join('states', state.name, 'modifiedAt')] = new Date();
-        ops.$set[join('states', state.name, 'modifiedBy')] = options.user ? options.user.id : null;
+        ops.$set[join('states', state.name, 'modifiedBy')] = options.user
+          ? options.user.id
+          : null;
         ops.$set[join('states', state.name, 'data')] = options.data;
         return resolve(ops);
       });
   });
 };
 
-module.exports.deleteFilter = function deleteDoc (options) {
+module.exports.deleteFilter = function deleteDoc(options) {
   let filter = {};
   filter._id = options.id;
   filter.states = {};
@@ -139,14 +142,14 @@ module.exports.deleteFilter = function deleteDoc (options) {
  * @param {Object} [options.doc]
  * @returns {Promise}
  */
-module.exports.setState = function setDocState (options) {
+module.exports.setState = function setDocState(options) {
   const stateTo = getStateFromOptions(options, 'to');
 
   return new Promise((resolve, reject) => {
     validate(options.resource, options.doc, stateTo.validate)
       .catch(reject)
       .then(() => {
-        let ops = {$rename: {}, $set: {}};
+        let ops = { $rename: {}, $set: {} };
         ops.$rename[join('states', options.from)] = join('states', options.to);
         ops.$set.modifiedAt = new Date();
         ops.$set.modifiedBy = options.user ? options.user.id : null;

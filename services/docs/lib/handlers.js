@@ -61,7 +61,7 @@ Object.defineProperty(module.exports.getDocuments, 'apidoc', {value: {
 }});
 
 module.exports.postDoc = function (req, res) {
-  documentService.createDocument(req.resource, req.body, req.state, req.user)
+  documentService.createDocument(req.resource, req.body, req.state, req.user, req?.query?.parentId)
     .then(data => {
       helpers.json(res, data);
       return data;
@@ -118,7 +118,7 @@ module.exports.getDoc = function (req, res) {
 };
 
 module.exports.delDoc = function (req, res) {
-  documentService.deleteDocument(req.resource, req.filter, req.state)
+  documentService.deleteDocument(req.resource, req.filter)
     .then(result => helpers.json(res, result))
     .then(() => req.service.emit('document/deleted', getEmitPayload(req)))
     .catch(err => helpers.notFound(res, err));

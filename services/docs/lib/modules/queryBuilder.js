@@ -79,7 +79,7 @@ module.exports.create = function createDoc(options) {
           states: {},
           groups: [],
         };
-        if (ObjectId.isValid(options.parentId)) {
+        if (options.parentId) {
           doc.parentId = new ObjectId(options.parentId);
         }
 

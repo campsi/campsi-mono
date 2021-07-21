@@ -1,7 +1,3 @@
-/**
- * Created by romain on 06/12/2016.
- */
-
 const helpers = require('../../../lib/modules/responseHelpers');
 const resourceService = require('./services/resource');
 const documentService = require('./services/document');
@@ -9,6 +5,8 @@ const userService = require('./services/user');
 const forIn = require('for-in');
 const buildLink = require('../../../lib/modules/buildLink');
 const debug = require('debug')('campsi:docs');
+const { ObjectID } = require('mongodb');
+
 const getEmitPayload = (req, additionalProps) => {
   return Object.assign(
     {
@@ -73,6 +71,9 @@ Object.defineProperty(module.exports.getDocuments, 'apidoc', {
 });
 
 module.exports.postDoc = function (req, res) {
+  if (!!req.query.parentId && !ObjectID.isValid(req.query.parentId)) {
+    return helpers.badRequest(res, { message: 'Invalid parentId' });
+  }
   documentService
     .createDocument(
       req.resource,

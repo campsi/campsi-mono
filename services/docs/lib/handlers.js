@@ -71,7 +71,7 @@ Object.defineProperty(module.exports.getDocuments, 'apidoc', {
 });
 
 module.exports.postDoc = function (req, res) {
-  if (!!req.query.parentId && !ObjectID.isValid(req.query.parentId)) {
+  if (!!req.query?.parentId && !ObjectID.isValid(req.query.parentId)) {
     return helpers.badRequest(res, { message: 'Invalid parentId' });
   }
   documentService

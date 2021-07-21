@@ -35,8 +35,8 @@ module.exports.attachResource = function (options) {
         }
       }
 
-      req.groups = req.query?.groupsIds
-        ? getValidGroupsFromString(req.query?.groupsIds)
+      req.groups = req.query?.groupIds
+        ? getValidGroupsFromString(req.query.groupIds)
         : [];
 
       // USER can access RESOURCE/FILTER with METHOD/STATE ?

@@ -1,3 +1,5 @@
+
+
 function isAllowedTo(permission, method) {
   return permission && (permission.includes(method) || permission === '*');
 }
@@ -38,7 +40,7 @@ module.exports.can = function can(user, resource, method, state) {
       [`users.${user._id}.roles`]: { $elemMatch: { $in: allowedRoles } },
     };
 
-    if (user.groups.length) {
+    if (user.groups && user.groups.length) {
       filter = { $or: [filter, { groups: { $in: user.groups } }] };
     }
     return resolve(filter);

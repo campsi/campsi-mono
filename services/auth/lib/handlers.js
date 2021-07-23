@@ -201,7 +201,12 @@ function getAccessTokenForUser(req, res) {
       .findOneAndUpdate({ _id: userId }, update, { returnOriginal: false })
       .then((result) => {
         if (result.value) {
-          res.json({ token: updateToken.value });
+          if(!req.query.redirectURI){
+            return res.json({ token: updateToken.value });
+          }
+          res.redirect(editURL(req.query.redirectURI, (url) => {
+            url.query.access_token = updateToken.value;
+          }));
         } else {
           helpers.notFound(res, new Error('Unknown user'));
         }

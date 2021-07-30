@@ -1,6 +1,6 @@
 const helpers = require('../../../lib/modules/responseHelpers');
 const {
-  getValidGroupsFromString,
+  getValidGroupsFromString
 } = require('../../../lib/modules/groupsHelpers');
 const builder = require('./modules/queryBuilder');
 const forIn = require('for-in');
@@ -22,7 +22,7 @@ function logout(req, res) {
     .then(() => {
       return res.json({ message: 'signed out' });
     })
-    .catch((error) => {
+    .catch(error => {
       return helpers.error(res, error);
     });
 }
@@ -42,24 +42,17 @@ function updateMe(req, res) {
   const allowedProps = ['displayName', 'data'];
   let update = { $set: {} };
 
-  allowedProps.forEach((prop) => {
+  allowedProps.forEach(prop => {
     if (req.body[prop]) {
       update.$set[prop] = req.body[prop];
     }
   });
-  const groups = req?.query?.groupsIds
-    ? getValidGroupsFromString(req.query.groupsIds)
-    : [];
-
-  if (!!groups.length) {
-    update.$addToSet = { groups: { $each: groups } };
-  }
 
   req.db
     .collection('__users__')
     .findOneAndUpdate({ _id: req.user._id }, update, { returnOriginal: false })
-    .then((result) => res.json(result.value))
-    .catch((error) => helpers.error(res, error));
+    .then(result => res.json(result.value))
+    .catch(error => helpers.error(res, error));
 }
 
 function createAnonymousUser(req, res) {
@@ -69,17 +62,17 @@ function createAnonymousUser(req, res) {
     tokens: {
       [token.value]: {
         expiration: token.expiration,
-        grantedByProvider: 'anonymous',
-      },
+        grantedByProvider: 'anonymous'
+      }
     },
     email: token.value,
     token: token.value,
-    createdAt: new Date(),
+    createdAt: new Date()
   };
   req.db
     .collection('__users__')
     .insertOne(insert)
-    .then((insertResult) => {
+    .then(insertResult => {
       res.json(insertResult.ops[0]);
     });
 }
@@ -91,7 +84,7 @@ function getProviders(req, res) {
       name: name,
       title: provider.title,
       buttonStyle: provider.buttonStyle,
-      scope: provider.scope,
+      scope: provider.scope
     });
   });
 
@@ -104,7 +97,7 @@ function callback(req, res) {
   // noinspection JSUnresolvedFunction
   passport.authenticate(req.authProvider.name, {
     session: false,
-    failWithError: true,
+    failWithError: true
   })(req, res, () => {
     if (!req.user) {
       return redirectWithError(
@@ -121,7 +114,7 @@ function callback(req, res) {
       }
     } else {
       res.redirect(
-        editURL(redirectURI, (obj) => {
+        editURL(redirectURI, obj => {
           obj.query.access_token = req.authBearerToken;
         })
       );
@@ -140,7 +133,7 @@ function redirectWithError(req, res, err) {
     helpers.error(res, err);
   } else {
     res.redirect(
-      editURL(redirectURI, (obj) => {
+      editURL(redirectURI, obj => {
         obj.query.error = true;
       })
     );
@@ -173,7 +166,7 @@ function getUsers(req, res) {
         if (err) {
           return redirectWithError(req, res, err);
         }
-        result.toArray().then((users) => res.json(users));
+        result.toArray().then(users => res.json(users));
       });
   } else {
     redirectWithError(
@@ -199,14 +192,16 @@ function getAccessTokenForUser(req, res) {
     req.db
       .collection('__users__')
       .findOneAndUpdate({ _id: userId }, update, { returnOriginal: false })
-      .then((result) => {
+      .then(result => {
         if (result.value) {
-          if(!req.query.redirectURI){
+          if (!req.query.redirectURI) {
             return res.json({ token: updateToken.value });
           }
-          res.redirect(editURL(req.query.redirectURI, (url) => {
-            url.query.access_token = updateToken.value;
-          }));
+          res.redirect(
+            editURL(req.query.redirectURI, url => {
+              url.query.access_token = updateToken.value;
+            })
+          );
         } else {
           helpers.notFound(res, new Error('Unknown user'));
         }
@@ -231,7 +226,7 @@ function initAuth(req, res, next) {
   const params = {
     session: false,
     state: state.serialize(req),
-    scope: req.authProvider.scope,
+    scope: req.authProvider.scope
   };
   debug(params, req.authProvider);
   // noinspection JSUnresolvedFunction
@@ -246,14 +241,14 @@ function inviteUser(req, res) {
     );
   }
   const invitationToken = builder.genBearerToken(100);
-  const dispatchInvitationEvent = function (payload) {
+  const dispatchInvitationEvent = function(payload) {
     req.service.emit('invitation/created', payload);
   };
   const filter = { email: req.body.email };
   const update = { $set: { email: req.body.email } };
 
-  const groups = req?.query?.groupsIds
-    ? getValidGroupsFromString(req.query.groupsIds)
+  const groups = req?.query?.groups
+    ? getValidGroupsFromString(req.query.groups)
     : [];
 
   if (!!groups.length) {
@@ -279,13 +274,13 @@ function inviteUser(req, res) {
             invitedBy: req.user,
             token: invitationToken,
             requestBody: req.body,
-            requestHeaders: req.headers,
+            requestHeaders: req.headers
           });
         } else {
           const invitationToken = builder.genBearerToken(100);
           const provider = {
             name: `invitation-${invitationToken.value}`,
-            expiration: 20,
+            expiration: 20
           };
           const profile = {
             email: req.body.email,
@@ -293,8 +288,8 @@ function inviteUser(req, res) {
             identity: {
               invitedBy: req.user._id,
               token: invitationToken,
-              data: req.body.data,
-            },
+              data: req.body.data
+            }
           };
 
           const { insert, insertToken } = builder.genInsert(provider, profile);
@@ -310,7 +305,7 @@ function inviteUser(req, res) {
               id: result.insertedId,
               email: profile.email,
               invitedBy: req.user,
-              token: invitationToken,
+              token: invitationToken
             });
           });
         }
@@ -327,16 +322,16 @@ function acceptInvitation(req, res) {
   }
   const query = {
     [`identities.invitation-${req.params.invitationToken}.token.expiration`]: {
-      $gt: new Date(),
-    },
+      $gt: new Date()
+    }
   };
   req.db.collection('__users__').findOneAndUpdate(
     query,
     {
-      $unset: { [`identities.invitation-${req.params.invitationToken}`]: true },
+      $unset: { [`identities.invitation-${req.params.invitationToken}`]: true }
     },
     {
-      returnOriginal: true,
+      returnOriginal: true
     },
     (err, updateResult) => {
       if (err) return helpers.error(res, err);
@@ -356,12 +351,42 @@ function acceptInvitation(req, res) {
         invitedBy: invitation.invitedBy,
         data: invitation.data,
         requestBody: req.body,
-        requestHeaders: req.headers,
+        requestHeaders: req.headers
       };
       res.json(payload);
       req.service.emit('invitation/accepted', payload);
     }
   );
+}
+
+function addGroupsToUser(req, res) {
+  if (!req.user) {
+    return helpers.unauthorized(res);
+  }
+
+  if (!req?.params?.groups) {
+    return helpers.missingParameters(
+      res,
+      new Error('groups must be specified')
+    );
+  }
+
+  const groups = getValidGroupsFromString(req.params.groups);
+
+  if (!groups.length) {
+    return helpers.badRequest(
+      res,
+      new Error('groups contain invalid object Id(s)')
+    );
+  }
+
+  const update = { $addToSet: { groups: { $each: groups } } };
+
+  req.db
+    .collection('__users__')
+    .findOneAndUpdate({ _id: req.user._id }, update, { returnOriginal: false })
+    .then(result => res.json(result.value))
+    .catch(error => helpers.error(res, error));
 }
 
 module.exports = {
@@ -377,4 +402,5 @@ module.exports = {
   logout,
   inviteUser,
   acceptInvitation,
+  addGroupsToUser
 };

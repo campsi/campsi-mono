@@ -11,14 +11,14 @@ const session = require('./middleware/session');
 const createObjectID = require('../../../lib/modules/createObjectID');
 
 module.exports = class AuthService extends CampsiService {
-  initialize () {
+  initialize() {
     this.install();
     this.prepareAuthProviders();
     this.patchRouter();
     return super.initialize();
   }
 
-  prepareAuthProviders () {
+  prepareAuthProviders() {
     forIn(this.options.providers, (provider, name) => {
       provider.options.passReqToCallback = true;
       provider.options.scope = provider.scope;
@@ -34,7 +34,7 @@ module.exports = class AuthService extends CampsiService {
     });
   }
 
-  patchRouter () {
+  patchRouter() {
     const router = this.router;
     const providers = this.options.providers;
     this.router.use((req, res, next) => {
@@ -45,13 +45,14 @@ module.exports = class AuthService extends CampsiService {
     this.router.use(passport.initialize());
     this.router.param('provider', (req, res, next, id) => {
       req.authProvider = providers[id];
-      return (!req.authProvider) ? helpers.notFound(res) : next();
+      return !req.authProvider ? helpers.notFound(res) : next();
     });
     router.get('/users', handlers.getUsers);
     router.get('/users/:userId/access_token', handlers.getAccessTokenForUser);
     router.get('/providers', handlers.getProviders);
     router.get('/me', handlers.me);
     router.put('/me', handlers.updateMe);
+    router.post('/me/groups/:groups', handlers.addGroupsToUser);
     router.get('/anonymous', handlers.createAnonymousUser);
     router.get('/logout', handlers.logout);
     router.post('/invitations', handlers.inviteUser);
@@ -60,7 +61,10 @@ module.exports = class AuthService extends CampsiService {
       router.use('/local', local.middleware(providers.local));
       router.post('/local/signup', local.signup);
       router.post('/local/signin', local.signin);
-      router.post('/local/reset-password-token', local.createResetPasswordToken);
+      router.post(
+        '/local/reset-password-token',
+        local.createResetPasswordToken
+      );
       router.post('/local/reset-password', local.resetPassword);
       router.get('/local/validate', local.validate);
     }
@@ -68,19 +72,21 @@ module.exports = class AuthService extends CampsiService {
     this.router.get('/:provider/callback', handlers.callback);
   }
 
-  getMiddlewares () {
+  getMiddlewares() {
     return [session, authUser];
   }
 
-  install () {
-    this.db.collection('__users__').createIndex({'email': 1}, {unique: true})
-      .catch((err) => {
-        debug('Can\'t apply unique index on users collection');
+  install() {
+    this.db
+      .collection('__users__')
+      .createIndex({ email: 1 }, { unique: true })
+      .catch(err => {
+        debug("Can't apply unique index on users collection");
         debug(err);
       });
   }
 
-  fetchUsers (userIds) {
+  fetchUsers(userIds) {
     return new Promise((resolve, reject) => {
       const filter = {
         _id: {

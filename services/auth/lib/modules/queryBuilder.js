@@ -18,7 +18,7 @@ function genBearerToken(expiration) {
   exp.setTime(exp.getTime() + (expiration || 10) * 86400000);
   return {
     value: uuid(),
-    expiration: exp,
+    expiration: exp
   };
 }
 
@@ -28,7 +28,7 @@ function genUpdate(provider, profile) {
   update.$set.token = token.value;
   update.$set[`tokens.${token.value}`] = {
     expiration: token.expiration,
-    grantedByProvider: provider.name,
+    grantedByProvider: provider.name
   };
   update.$set[`identities.${provider.name}`] = profile.identity;
   update.$set.updatedAt = new Date();
@@ -49,16 +49,16 @@ function genInsert(provider, profile) {
     picture: profile.picture,
     identities: {},
     createdAt: new Date(),
-    groups: [],
+    groups: []
   };
-  insert.invitedBy = profile.invitedBy;
+  insert.invitedBy = profile.identity.invitedBy;
   insert.identities[provider.name] = profile.identity;
   insert.token = token.value;
   insert.tokens = {
     [token.value]: {
       expiration: token.expiration,
-      grantedByProvider: provider.name,
-    },
+      grantedByProvider: provider.name
+    }
   };
   return { insert, insertToken: token };
 }
@@ -67,5 +67,5 @@ module.exports = {
   filterUserByEmailOrProviderId: filterUserByEmailOrProviderId,
   genBearerToken: genBearerToken,
   genUpdate: genUpdate,
-  genInsert: genInsert,
+  genInsert: genInsert
 };

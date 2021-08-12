@@ -271,7 +271,7 @@ function inviteUser(req, res) {
           return dispatchInvitationEvent({
             id: doc._id,
             email: doc.email,
-            invitedBy: req.user,
+            invitedBy: req.user._id,
             token: invitationToken,
             requestBody: req.body,
             requestHeaders: req.headers
@@ -304,7 +304,7 @@ function inviteUser(req, res) {
             dispatchInvitationEvent({
               id: result.insertedId,
               email: profile.email,
-              invitedBy: req.user,
+              invitedBy: req.user._id,
               token: invitationToken
             });
           });

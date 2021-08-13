@@ -381,16 +381,14 @@ module.exports.addUserToDocument = function(resource, filter, userDetails) {
     resource.collection.findOne(filter, (err, document) => {
       if (err || !document) return reject(err || 'Document is null');
       const newUser = {
-        [userDetails.userId]: {
-          roles: userDetails.roles,
-          addedAt: new Date(),
-          userId: createObjectID(userDetails.userId) || userDetails.userId,
-          displayName: userDetails.displayName,
-          infos: userDetails.infos
-        }
+        roles: userDetails.roles,
+        addedAt: new Date(),
+        userId: createObjectID(userDetails.userId) || userDetails.userId,
+        displayName: userDetails.displayName,
+        infos: userDetails.infos
       };
       const ops = {
-        $set: { users: Object.assign({}, document.users || {}, newUser) }
+        $set: { [`users.${userDetails.userId}`]: newUser }
       };
       const options = { returnOriginal: false, projection: { users: 1 } };
       resource.collection.findOneAndUpdate(

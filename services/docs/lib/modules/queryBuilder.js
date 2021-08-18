@@ -133,7 +133,7 @@ module.exports.patch = async options => {
     options.data,
     state.validate
   );
-  if (!validation) return new Error('Validation Error');
+  if (!validation) throw new Error('Validation Error');
 
   let ops = { $set: {}, $unset: {} };
   ops.$set[join('states', state.name, 'modifiedAt')] = new Date();

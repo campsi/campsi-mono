@@ -230,10 +230,10 @@ module.exports.patchDocument = async (resource, filter, data, state, user) => {
   const update = await builder.patch({ resource, data, state, user });
 
   const updateDoc = await resource.collection.findOneAndUpdate(filter, update, {
-    returnDocument: 'after'
+    returnDocument: 'after',
+    returnOriginal: false
   });
-
-  if (!updateDoc.value) return new Error('Not Found');
+  if (!updateDoc.value) throw new Error('Not Found');
 
   return {
     id: filter._id,

@@ -226,39 +226,20 @@ module.exports.setDocument = function(resource, filter, data, state, user) {
   });
 };
 
-module.exports.patchDocument = (resource, filter, data, state, user) => {
-  return new Promise((resolve, reject) => {
-    builder
-      .patch({
-        resource: resource,
-        data: data,
-        state: state,
-        user: user
-      })
-      .then(update => {
-        console.log(update);
-        resource.collection.findOneAndUpdate(
-          filter,
-          update,
-          { returnDocument: 'after' },
-          (err, result) => {
-            if (err) return reject(err);
+module.exports.patchDocument = async (resource, filter, data, state, user) => {
+  const update = await builder.patch({ resource, data, state, user });
 
-            if (!result.value) {
-              return reject(new Error('Not Found'));
-            }
-            resolve({
-              id: filter._id,
-              state: state,
-              data: result.value.states[state].data
-            });
-          }
-        );
-      })
-      .catch(() => {
-        return reject(new Error('Validation Error'));
-      });
+  const updateDoc = await resource.collection.findOneAndUpdate(filter, update, {
+    returnDocument: 'after'
   });
+
+  if (!updateDoc.value) return new Error('Not Found');
+
+  return {
+    id: filter._id,
+    state: state,
+    data: updateDoc.value.states[state].data
+  };
 };
 
 module.exports.getDocument = function(resource, filter, query, user, state) {

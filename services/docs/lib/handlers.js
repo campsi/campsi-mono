@@ -154,28 +154,32 @@ module.exports.putDoc = function(req, res) {
     });
 };
 
-module.exports.patchDoc = function(req, res) {
-  documentService
-    .patchDocument(req.resource, req.filter, req.body, req.state, req.user)
-    .then(result => helpers.json(res, result))
-    .then(() =>
-      req.service.emit(
-        'document/updated',
-        getEmitPayload(req, { data: req.body })
-      )
-    )
-    .catch(err => {
-      switch (err.message) {
-        case 'Validation Error': {
-          let func = helpers.validationError(res);
-          return func(err);
-        }
-        case 'Not Found':
-          return helpers.notFound(res);
-        default:
-          return helpers.error(res, err);
+module.exports.patchDoc = async (req, res) => {
+  try {
+    const result = await documentService.patchDocument(
+      req.resource,
+      req.filter,
+      req.body,
+      req.state,
+      req.user
+    );
+    helpers.json(res, result);
+    req.service.emit(
+      'document/updated',
+      getEmitPayload(req, { data: req.body })
+    );
+  } catch (err) {
+    switch (err.message) {
+      case 'Validation Error': {
+        let func = helpers.validationError(res);
+        return func(err);
       }
-    });
+      case 'Not Found':
+        return helpers.notFound(res);
+      default:
+        return helpers.error(res, err);
+    }
+  }
 };
 
 // get a doc

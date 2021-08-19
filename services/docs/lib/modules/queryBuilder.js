@@ -128,12 +128,15 @@ module.exports.update = function updateDoc(options) {
 
 module.exports.patch = async options => {
   const state = getStateFromOptions(options);
-  const validation = await validate(
-    options.resource,
-    options.data,
-    state.validate
-  );
-  if (!validation) throw new Error('Validation Error');
+  try {
+    const validation = await validate(
+      options.resource,
+      options.data,
+      state.validate
+    );
+  } catch (e) {
+    throw new Error(`Validation Error: `);
+  }
 
   let ops = { $set: {}, $unset: {} };
   ops.$set[join('states', state.name, 'modifiedAt')] = new Date();

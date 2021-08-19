@@ -18,7 +18,7 @@ const csdVisibility = require('./keywords/csdVisibility');
 format.extend(String.prototype);
 
 module.exports = class DocsService extends CampsiService {
-  initialize () {
+  initialize() {
     const service = this;
     const server = this.server;
 
@@ -40,32 +40,44 @@ module.exports = class DocsService extends CampsiService {
     this.router.put('/:resource/:id/state', handlers.putDocState);
     this.router.put('/:resource/:id/:state', handlers.putDoc);
     this.router.put('/:resource/:id', handlers.putDoc);
+    this.router.patch('/:resource/:id', handlers.patchDoc);
     this.router.delete('/:resource/:id', handlers.delDoc);
     this.router.delete('/:resource/:id/:state', handlers.delDoc);
-    return new Promise((resolve) => {
-      let ajvWriter = new Ajv({useAssign: true});
+    return new Promise(resolve => {
+      let ajvWriter = new Ajv({ useAssign: true });
       csdAssign(ajvWriter);
-      let ajvReader = new Ajv({useVisibility: true});
+      let ajvReader = new Ajv({ useVisibility: true });
       csdVisibility(ajvReader);
-      async.eachOf(service.options.resources, function (resource, name, cb) {
-        Object.assign(resource, service.options.classes[resource.class]);
-        resource.collection = server.db.collection('docs.{0}.{1}'.format(service.path, name));
-        $RefParser.dereference(service.config.optionsBasePath + '/', resource.schema, {})
-          .then(function (schema) {
-            resource.schema = schema;
-            resource.validate = ajvWriter.compile(schema);
-            resource.filter = ajvWriter.compile(schema);
-            cb();
-          })
-          .catch(function (error) {
-            debug(error);
-            cb();
-          });
-      }, resolve);
+      async.eachOf(
+        service.options.resources,
+        function(resource, name, cb) {
+          Object.assign(resource, service.options.classes[resource.class]);
+          resource.collection = server.db.collection(
+            'docs.{0}.{1}'.format(service.path, name)
+          );
+          $RefParser
+            .dereference(
+              service.config.optionsBasePath + '/',
+              resource.schema,
+              {}
+            )
+            .then(function(schema) {
+              resource.schema = schema;
+              resource.validate = ajvWriter.compile(schema);
+              resource.filter = ajvWriter.compile(schema);
+              cb();
+            })
+            .catch(function(error) {
+              debug(error);
+              cb();
+            });
+        },
+        resolve
+      );
     });
   }
 
-  describe () {
+  describe() {
     let desc = super.describe();
     desc.resources = {};
     desc.classes = this.options.classes;

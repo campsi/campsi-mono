@@ -35,10 +35,10 @@ function getStateFromOptions(options, propertyName) {
 function validate(resource, doc, doValidate) {
   return new Promise((resolve, reject) => {
     if (doValidate !== true) {
-      return resolve();
+      return resolve(true);
     }
     if (resource.validate(doc)) {
-      return resolve();
+      return resolve(true);
     } else {
       debug('model have %d error(s)', resource.validate.errors.length);
       return reject(resource.validate.errors);
@@ -77,7 +77,7 @@ module.exports.create = function createDoc(options) {
         let doc = {
           users: {},
           states: {},
-          groups: [],
+          groups: []
         };
         if (options.parentId) {
           doc.parentId = new ObjectId(options.parentId);
@@ -87,13 +87,13 @@ module.exports.create = function createDoc(options) {
           doc.users[String(options.user._id)] = {
             roles: ['owner'],
             addedAt: new Date(),
-            userId: options.user._id,
+            userId: options.user._id
           };
         }
         doc.states[state.name] = {
           createdAt: new Date(),
           createdBy: options.user ? options.user._id : null,
-          data: options.data,
+          data: options.data
         };
         resolve(doc);
       });
@@ -124,6 +124,36 @@ module.exports.update = function updateDoc(options) {
         return resolve(ops);
       });
   });
+};
+
+module.exports.patch = async options => {
+  const state = getStateFromOptions(options);
+  try {
+    const validation = await validate(
+      options.resource,
+      options.data,
+      state.validate
+    );
+  } catch (e) {
+    throw new Error(`Validation Error: `);
+  }
+
+  let ops = { $set: {}, $unset: {} };
+  ops.$set[join('states', state.name, 'modifiedAt')] = new Date();
+  ops.$set[join('states', state.name, 'modifiedBy')] = options.user
+    ? options.user._id
+    : null;
+
+  for (const [key, value] of Object.entries(options.data)) {
+    const operator =
+      value === '' || value === null || value === undefined ? '$unset' : '$set';
+    ops[operator][join('states', state.name, 'data', key)] = value;
+  }
+
+  if (Object.keys(ops.$unset).length === 0) {
+    delete ops.$unset;
+  }
+  return ops;
 };
 
 module.exports.deleteFilter = function deleteDoc(options) {

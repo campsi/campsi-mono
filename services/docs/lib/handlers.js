@@ -13,13 +13,13 @@ const getEmitPayload = (req, additionalProps) => {
       documentId: req.params.id,
       userId: req.user ? req.user._id : null,
       state: req.state,
-      resource: req.resource,
+      resource: req.resource
     },
     additionalProps || {}
   );
 };
 
-module.exports.getDocuments = function (req, res) {
+module.exports.getDocuments = function(req, res) {
   let pagination = {};
   let perPage = req.query.perPage || req.resource.perPage;
   if (perPage) pagination.perPage = perPage;
@@ -35,7 +35,7 @@ module.exports.getDocuments = function (req, res) {
       req.query.sort,
       pagination
     )
-    .then((data) => {
+    .then(data => {
       let links = [];
       forIn(data.nav, (page, rel) => {
         if (page !== data.page) {
@@ -53,7 +53,7 @@ module.exports.getDocuments = function (req, res) {
         'X-Per-Page': data.perPage,
         'X-Last-Page': data.nav.last,
         'Access-Control-Expose-Headers':
-          'X-Total-Count, X-Page, X-Per-Page, X-Last-Page',
+          'X-Total-Count, X-Page, X-Per-Page, X-Last-Page'
       };
       if (links.length) {
         headers.Link = links.join(', ');
@@ -66,11 +66,11 @@ module.exports.getDocuments = function (req, res) {
 };
 Object.defineProperty(module.exports.getDocuments, 'apidoc', {
   value: {
-    summary: 'Get documents',
-  },
+    summary: 'Get documents'
+  }
 });
 
-module.exports.postDoc = function (req, res) {
+module.exports.postDoc = function(req, res) {
   if (!!req.query?.parentId && !ObjectID.isValid(req.query.parentId)) {
     return helpers.badRequest(res, new Error('Invalid parent id'));
   }
@@ -83,17 +83,17 @@ module.exports.postDoc = function (req, res) {
       req?.query?.parentId,
       req.groups
     )
-    .then((data) => {
+    .then(data => {
       helpers.json(res, data);
       return data;
     })
-    .then((body) =>
+    .then(body =>
       req.service.emit(
         'document/created',
         getEmitPayload(req, { documentId: body.id, data: body.data })
       )
     )
-    .catch((error) => {
+    .catch(error => {
       debug(error);
       let func = helpers.validationError(res);
       return func(error);
@@ -101,7 +101,7 @@ module.exports.postDoc = function (req, res) {
 };
 
 // modify the state of a doc
-module.exports.putDocState = function (req, res) {
+module.exports.putDocState = function(req, res) {
   documentService
     .setDocumentState(
       req.resource,
@@ -110,14 +110,14 @@ module.exports.putDocState = function (req, res) {
       req.body.to,
       req.user
     )
-    .then((result) => helpers.json(res, result))
+    .then(result => helpers.json(res, result))
     .then(() =>
       req.service.emit(
         'document/state/changed',
         getEmitPayload(req, { to: req.body.to, from: req.body.from })
       )
     )
-    .catch((err) => {
+    .catch(err => {
       switch (err.message) {
         case 'Validation Error':
           return helpers.validationError(res);
@@ -130,17 +130,17 @@ module.exports.putDocState = function (req, res) {
 };
 
 // modify a doc
-module.exports.putDoc = function (req, res) {
+module.exports.putDoc = function(req, res) {
   documentService
     .setDocument(req.resource, req.filter, req.body, req.state, req.user)
-    .then((result) => helpers.json(res, result))
+    .then(result => helpers.json(res, result))
     .then(() =>
       req.service.emit(
         'document/updated',
         getEmitPayload(req, { data: req.body })
       )
     )
-    .catch((err) => {
+    .catch(err => {
       switch (err.message) {
         case 'Validation Error': {
           let func = helpers.validationError(res);
@@ -154,61 +154,89 @@ module.exports.putDoc = function (req, res) {
     });
 };
 
+module.exports.patchDoc = async (req, res) => {
+  try {
+    const result = await documentService.patchDocument(
+      req.resource,
+      req.filter,
+      req.body,
+      req.state,
+      req.user
+    );
+    helpers.json(res, result);
+    req.service.emit(
+      'document/updated',
+      getEmitPayload(req, { data: req.body })
+    );
+  } catch (err) {
+    switch (err.message) {
+      case 'Validation Error': {
+        let func = helpers.validationError(res);
+        return func(err);
+      }
+      case 'Not Found':
+        return helpers.notFound(res);
+      default:
+        return helpers.error(res, err);
+    }
+  }
+};
+
 // get a doc
-module.exports.getDoc = function (req, res) {
+module.exports.getDoc = function(req, res) {
   documentService
     .getDocument(req.resource, req.filter, req.query, req.user, req.state)
-    .then((result) => helpers.json(res, result))
-    .catch((err) => helpers.notFound(res, err));
+    .then(result => helpers.json(res, result))
+    .catch(err => helpers.notFound(res, err));
 };
 
-module.exports.delDoc = function (req, res) {
+module.exports.delDoc = function(req, res) {
   documentService
     .deleteDocument(req.resource, req.filter)
-    .then((result) => helpers.json(res, result))
+    .then(result => helpers.json(res, result))
     .then(() => req.service.emit('document/deleted', getEmitPayload(req)))
-    .catch((err) => helpers.notFound(res, err));
+    .catch(err => helpers.notFound(res, err));
 };
 
-module.exports.getResources = function (req, res) {
-  resourceService.getResources(req.options).then((result) => {
+module.exports.getResources = function(req, res) {
+  resourceService.getResources(req.options).then(result => {
     return helpers.json(res, result);
   });
 };
 Object.defineProperty(module.exports.getResources, 'apidoc', {
   value: {
     summary: 'Get all resources',
-    description: 'List all resources from schema.',
-  },
+    description: 'List all resources from schema.'
+  }
 });
 
-module.exports.getDocUsers = function (req, res) {
+module.exports.getDocUsers = function(req, res) {
   documentService
     .getDocumentUsers(req.resource, req.filter)
-    .then((users) =>
+    .then(users =>
       userService.fetchUsers(users, req.options, req.service.server)
     )
-    .then((fetchedUsers) => helpers.json(res, fetchedUsers))
-    .catch((err) => helpers.notFound(res, err));
+    .then(fetchedUsers => helpers.json(res, fetchedUsers))
+    .catch(err => helpers.notFound(res, err));
 };
 
-module.exports.postDocUser = function (req, res) {
+module.exports.postDocUser = function(req, res) {
   documentService
     .addUserToDocument(req.resource, req.filter, req.body)
-    .then((users) =>
+    .then(users =>
       userService.fetchUsers(users, req.options, req.service.server)
     )
-    .then((result) => helpers.json(res, result))
+    .then(result => helpers.json(res, result))
     .then(() =>
       req.service.emit(
         'document/users/added',
         getEmitPayload(req, { addedUserId: req.body.userId })
       )
     )
-    .catch((err) => helpers.notFound(res, err));
+    .catch(err => helpers.notFound(res, err));
 };
 
-module.exports.delDocUser = function (req, res) {
+module.exports.delDocUser = function(req, res) {
   documentService
     .removeUserFromDocument(
       req.resource,
@@ -217,15 +245,15 @@ module.exports.delDocUser = function (req, res) {
       req.groups,
       req.db
     )
-    .then((users) =>
+    .then(users =>
       userService.fetchUsers(users, req.options, req.service.server)
     )
-    .then((result) => helpers.json(res, result))
+    .then(result => helpers.json(res, result))
     .then(() =>
       req.service.emit(
         'document/users/removed',
         getEmitPayload(req, { removedUserId: req.params.user })
       )
     )
-    .catch((err) => helpers.notFound(res, err));
+    .catch(err => helpers.notFound(res, err));
 };

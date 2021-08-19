@@ -226,6 +226,22 @@ module.exports.setDocument = function(resource, filter, data, state, user) {
   });
 };
 
+module.exports.patchDocument = async (resource, filter, data, state, user) => {
+  const update = await builder.patch({ resource, data, state, user });
+
+  const updateDoc = await resource.collection.findOneAndUpdate(filter, update, {
+    returnDocument: 'after',
+    returnOriginal: false
+  });
+  if (!updateDoc.value) throw new Error('Not Found');
+
+  return {
+    id: filter._id,
+    state: state,
+    data: updateDoc.value.states[state].data
+  };
+};
+
 module.exports.getDocument = function(resource, filter, query, user, state) {
   const requestedStates = getRequestedStatesFromQuery(resource, query);
   const fields = { _id: 1, states: 1, users: 1, groups: 1 };

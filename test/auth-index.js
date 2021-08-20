@@ -6,7 +6,7 @@ const config = require('config');
 const debug = require('debug')('campsi:test');
 
 const services = {
-  Auth: require('../lib/index')
+  Auth: require('../services/auth/lib')
 };
 
 let campsi = new CampsiServer(config.campsi);
@@ -19,10 +19,15 @@ campsi.on('campsi/ready', () => {
     const https = require('https');
     const fs = require('fs');
     const path = require('path');
-    https.createServer({
-      key: fs.readFileSync(path.resolve('../cert/server.key')),
-      cert: fs.readFileSync(path.resolve('../cert/server.crt'))
-    }, campsi.app).listen(config.port);
+    https
+      .createServer(
+        {
+          key: fs.readFileSync(path.resolve('../cert/server.key')),
+          cert: fs.readFileSync(path.resolve('../cert/server.crt'))
+        },
+        campsi.app
+      )
+      .listen(config.port);
   } else {
     campsi.listen(config.port);
   }
@@ -36,7 +41,7 @@ campsi.on('auth/invitation', payload => {
   debug('invitation', payload);
 });
 
-process.on('uncaughtException', function (reason, p) {
+process.on('uncaughtException', function(reason, p) {
   debug('Uncaught Rejection at:', p, 'reason:', reason);
   process.exit(1);
 });
@@ -46,7 +51,6 @@ process.on('unhandledRejection', (reason, p) => {
   process.exit(1);
 });
 
-campsi.start()
-  .catch((error) => {
-    debug(error);
-  });
+campsi.start().catch(error => {
+  debug(error);
+});

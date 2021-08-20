@@ -168,7 +168,7 @@ describe('Auth Local API', () => {
    * Test the /GET local/validate route
    */
   describe('/GET local/validate [default]', () => {
-    it('it should validate the user', done => {
+    it.skip('it should validate the user', done => {
       const campsi = context.campsi;
       let signupPayload;
       let signinToken;

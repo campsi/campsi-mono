@@ -71,27 +71,43 @@ const options = {
   validate: true
 };
 
-describe('Unit Test', () => {
-  describe('queryBuilder patch function', () => {
-    it('should return an object ready to be used in an update mongodb function, with $set and/or $unset operators ', async () => {
-      const patchResult = await patch(options);
-      if (
-        Object.prototype.toString.call(
-          patchResult.$set['states.published.modifiedAt']
-        ) === '[object Date]'
-      ) {
-        // date would be different anyway so we won't compare it
-        delete patchResult.$set['states.published.modifiedAt'];
+describe('queryBuilder patch function', () => {
+  it('should return an object ready to be used in an update mongodb function, with $set and $unset operators', async () => {
+    const patchResult = await patch(options);
+    if (
+      Object.prototype.toString.call(
+        patchResult.$set['states.published.modifiedAt']
+      ) === '[object Date]'
+    ) {
+      // date would be different anyway so we won't compare it
+      delete patchResult.$set['states.published.modifiedAt'];
+    }
+    assert.deepEqual(patchResult, {
+      $set: {
+        'states.published.modifiedBy': 'abc123',
+        'states.published.data.DPO.fullname': 'roro'
+      },
+      $unset: {
+        'states.published.data.DPO.address': ''
       }
-      assert.deepEqual(patchResult, {
-        $set: {
-          'states.published.modifiedBy': 'abc123',
-          'states.published.data.DPO.fullname': 'roro'
-        },
-        $unset: {
-          'states.published.data.DPO.address': ''
-        }
-      });
+    });
+  });
+  it('should return an object ready to be used in an update mongodb function, with only $set operator', async () => {
+    delete options.data['DPO.address'];
+    const patchResult = await patch(options);
+    if (
+      Object.prototype.toString.call(
+        patchResult.$set['states.published.modifiedAt']
+      ) === '[object Date]'
+    ) {
+      // date would be different anyway so we won't compare it
+      delete patchResult.$set['states.published.modifiedAt'];
+    }
+    assert.deepEqual(patchResult, {
+      $set: {
+        'states.published.modifiedBy': 'abc123',
+        'states.published.data.DPO.fullname': 'roro'
+      }
     });
   });
 });

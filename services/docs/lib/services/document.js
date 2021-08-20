@@ -437,7 +437,6 @@ module.exports.removeUserFromDocument = function(
   resource,
   filter,
   userId,
-  groups,
   db
 ) {
   const removeUserFromDoc = new Promise((resolve, reject) => {
@@ -456,16 +455,15 @@ module.exports.removeUserFromDocument = function(
       }
     );
   });
-  const removeGroupFromUser = !groups.length
-    ? Promise.resolve(null)
-    : new Promise((resolve, reject) => {
-        const filter = { _id: createObjectID(userId) };
-        const update = { $pull: { groups: { $in: groups } } };
-        db.collection('__users__').updateOne(filter, update, (err, result) => {
-          if (err) return reject(err);
-          return resolve(null);
-        });
-      });
+  const groups = [`${resource.label}_${filter._id}`];
+  const removeGroupFromUser = new Promise((resolve, reject) => {
+    const filter = { _id: createObjectID(userId) };
+    const update = { $pull: { groups: { $in: groups } } };
+    db.collection('__users__').updateOne(filter, update, (err, result) => {
+      if (err) return reject(err);
+      return resolve(null);
+    });
+  });
 
   return Promise.all([removeUserFromDoc, removeGroupFromUser]).then(
     values => values[0]

@@ -3,10 +3,10 @@ const createObjectID = require('../../../lib/modules/createObjectID');
 const { can } = require('./modules/permissions');
 const { ObjectId } = require('mongodb');
 const {
-  getValidGroupsFromString,
+  getValidGroupsFromString
 } = require('../../../lib/modules/groupsHelpers');
 
-module.exports.attachResource = function (options) {
+module.exports.attachResource = function(options) {
   return (req, res, next) => {
     if (req.params.resource) {
       req.resource = options.resources[req.params.resource];
@@ -35,17 +35,17 @@ module.exports.attachResource = function (options) {
         }
       }
 
-      req.groups = req.query?.groupIds
-        ? getValidGroupsFromString(req.query.groupIds)
+      req.groups = req.query?.groups
+        ? getValidGroupsFromString(req.query.groups)
         : [];
 
       // USER can access RESOURCE/FILTER with METHOD/STATE ?
       can(req.user, req.resource, req.method, req.state)
-        .then((filter) => {
+        .then(filter => {
           req.filter = Object.assign({}, req.filter, filter);
           next();
         })
-        .catch((err) => helpers.unauthorized(res, err));
+        .catch(err => helpers.unauthorized(res, err));
     }
   };
 };

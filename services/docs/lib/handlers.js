@@ -242,7 +242,6 @@ module.exports.delDocUser = function(req, res) {
       req.resource,
       req.filter,
       req.params.user,
-      req.groups,
       req.db
     )
     .then(users =>

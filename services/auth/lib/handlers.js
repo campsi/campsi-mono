@@ -47,13 +47,6 @@ function updateMe(req, res) {
       update.$set[prop] = req.body[prop];
     }
   });
-  const groups = req?.query?.groupsIds
-    ? getValidGroupsFromString(req.query.groupsIds)
-    : [];
-
-  if (!!groups.length) {
-    update.$addToSet = { groups: { $each: groups } };
-  }
 
   req.db
     .collection('__users__')
@@ -254,8 +247,8 @@ function inviteUser(req, res) {
   const filter = { email: req.body.email };
   const update = { $set: { email: req.body.email } };
 
-  const groups = req?.query?.groupsIds
-    ? getValidGroupsFromString(req.query.groupsIds)
+  const groups = req?.query?.groups
+    ? getValidGroupsFromString(req.query.groups)
     : [];
 
   if (!!groups.length) {
@@ -366,6 +359,36 @@ function acceptInvitation(req, res) {
   );
 }
 
+function addGroupsToUser(req, res) {
+  if (!req.user) {
+    return helpers.unauthorized(res);
+  }
+
+  if (!req?.params?.groups) {
+    return helpers.missingParameters(
+      res,
+      new Error('groups must be specified')
+    );
+  }
+
+  const groups = getValidGroupsFromString(req.params.groups);
+
+  if (!groups.length) {
+    return helpers.badRequest(
+      res,
+      new Error('groups contain invalid object Id(s)')
+    );
+  }
+
+  const update = { $addToSet: { groups: { $each: groups } } };
+
+  req.db
+    .collection('__users__')
+    .findOneAndUpdate({ _id: req.user._id }, update, { returnOriginal: false })
+    .then(result => res.json(result.value))
+    .catch(error => helpers.error(res, error));
+}
+
 module.exports = {
   initAuth,
   redirectWithError,
@@ -378,5 +401,6 @@ module.exports = {
   createAnonymousUser,
   logout,
   inviteUser,
-  acceptInvitation
+  acceptInvitation,
+  addGroupsToUser
 };

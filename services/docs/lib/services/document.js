@@ -34,54 +34,92 @@ module.exports.getDocuments = function(
     filter,
     builder.find(queryBuilderOptions)
   );
-  const dbFields = { _id: 1, states: 1, users: 1, groups: 1 };
-  const pipeline = !resource.isInheritable
-    ? null
-    : [
-        { $match: dbQuery },
-        {
-          $graphLookup: {
-            from: resource.collection.collectionName,
-            startWith: '$parentId',
-            connectFromField: 'parentId',
-            connectToField: '_id',
-            as: 'parents'
-          }
-        },
-        {
-          $addFields: {
-            parent: {
-              $reduce: {
-                input: '$parents',
-                initialValue: {},
-                in: {
-                  $mergeObjects: {
-                    $reverseArray: '$parents'
-                  }
-                }
-              }
-            }
-          }
-        },
-        {
-          $addFields: {
-            [`states.${state}.data`]: {
-              $mergeObjects: [
-                `$parent.states.${state}.data`,
-                `$$ROOT.states.${state}.data`
-              ]
-            }
-          }
-        },
-        {
-          $project: {
-            parents: 0,
-            parent: 0
-          }
-        }
-      ];
 
-  const cursor = !pipeline
+  const dbFields = {
+    _id: 1,
+    states: 1,
+    users: 1,
+    groups: 1,
+  };
+
+  let aggregate = false;
+  if (resource.isInheritable || query?.with?.includes('creator')) {
+    aggregate = true;
+  }
+
+  const pipeline = [{ $match: dbQuery }];
+
+  if (resource.isInheritable) {
+    dbFields.parentId = 1;
+    pipeline.push(
+      {
+        $graphLookup: {
+          from: resource.collection.collectionName,
+          startWith: '$parentId',
+          connectFromField: 'parentId',
+          connectToField: '_id',
+          as: 'parents',
+        },
+      },
+      {
+        $addFields: {
+          parent: {
+            $reduce: {
+              input: '$parents',
+              initialValue: {},
+              in: {
+                $mergeObjects: {
+                  $reverseArray: '$parents',
+                },
+              },
+            },
+          },
+        },
+      },
+      {
+        $addFields: {
+          [`states.${state}.data`]: {
+            $mergeObjects: [
+              `$parent.states.${state}.data`,
+              `$$ROOT.states.${state}.data`,
+            ],
+          },
+        },
+      }
+    );
+  }
+
+  if (query?.with?.includes('creator')) {
+    dbFields.creator = {
+      _id: 1,
+      displayName: 1,
+      email: 1,
+    };
+
+    pipeline.push(
+      {
+        $lookup: {
+          from: '__users__',
+          localField: `states.${state}.createdBy`,
+          foreignField: '_id',
+          as: 'tempUser',
+        },
+      },
+      {
+        $addFields: {
+          creator: {
+            $arrayElemAt: ['$tempUser', 0],
+          },
+        },
+      }
+    );
+  }
+
+  pipeline.push({
+    $project: dbFields,
+  });
+
+  const cursor = !aggregate
     ? resource.collection.find(dbQuery, dbFields)
     : resource.collection.aggregate(pipeline);
   const requestedStates = getRequestedStatesFromQuery(resource, query);
@@ -125,7 +163,7 @@ module.exports.getDocuments = function(
             allowedStates,
             requestedStates
           );
-          return {
+          const returnData = {
             id: doc._id,
             state: state,
             states: states,
@@ -133,6 +171,13 @@ module.exports.getDocuments = function(
             createdBy: currentState.createdBy,
             data: currentState.data || {}
           };
+          if (resource.isInheritable && query?.with?.includes('parentId')) {
+            returnData.parentId = doc.parentId;
+          }
+          if (query?.with?.includes('creator')) {
+            returnData.creator = doc.creator;
+          }
+          return returnData;
         });
         return embedDocs.many(resource, query.embed, user, result.docs);
       })

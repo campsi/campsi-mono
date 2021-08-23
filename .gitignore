@@ -46,3 +46,6 @@ config/private.js
 
 data/*
 !data/.gitkeep
+
+test/data/*
+!test/data/.gitkeep

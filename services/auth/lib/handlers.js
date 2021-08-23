@@ -39,7 +39,7 @@ function updateMe(req, res) {
     return helpers.unauthorized(res);
   }
 
-  const allowedProps = ['displayName', 'data'];
+  const allowedProps = ['displayName', 'data', 'identities', 'email'];
   let update = { $set: {} };
 
   allowedProps.forEach(prop => {

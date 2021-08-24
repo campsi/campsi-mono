@@ -21,13 +21,15 @@ const glenda = {
 };
 
 const services = {
-  Auth: require('../lib'),
-  Trace: require('campsi-service-trace')
+  Auth: require('../services/auth/lib'),
+  Trace: require('campsi-service-trace'),
+  Assets: require('../services/assets/lib')
 };
 
-function createUser (campsi, user) {
+function createUser(campsi, user) {
   return new Promise((resolve, reject) => {
-    chai.request(campsi.app)
+    chai
+      .request(campsi.app)
       .post('/auth/local/signup')
       .set('content-type', 'application/json')
       .send(user)
@@ -43,9 +45,10 @@ describe('User Fetching', () => {
   beforeEach(setupBeforeEach(config, services, context));
   afterEach(done => context.server.close(done));
   describe('AuthService.fetchUsers', () => {
-    it('it should return an array of user objects', (done) => {
+    it('it should return an array of user objects', done => {
       createUser(context.campsi, glenda).then(bearerToken => {
-        chai.request(context.campsi.app)
+        chai
+          .request(context.campsi.app)
           .get('/auth/me')
           .set('Authorization', 'Bearer ' + bearerToken)
           .end((err, res) => {
@@ -55,13 +58,16 @@ describe('User Fetching', () => {
             res.body.should.be.a('object');
             res.body.identities.local.validated.should.eq(false);
             const glendaId = res.body._id;
-            context.campsi.services.get('auth').fetchUsers([glendaId]).then(users => {
-              users.should.be.a('array');
-              users.length.should.be.eq(1);
-              users[0].should.be.a('object');
-              users[0].email.should.eq(glenda.email);
-              done();
-            });
+            context.campsi.services
+              .get('auth')
+              .fetchUsers([glendaId])
+              .then(users => {
+                users.should.be.a('array');
+                users.length.should.be.eq(1);
+                users[0].should.be.a('object');
+                users[0].email.should.eq(glenda.email);
+                done();
+              });
           });
       });
     });

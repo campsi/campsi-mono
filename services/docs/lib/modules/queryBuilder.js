@@ -129,11 +129,7 @@ module.exports.update = function updateDoc(options) {
 module.exports.patch = async options => {
   const state = getStateFromOptions(options);
   try {
-    const validation = await validate(
-      options.resource,
-      options.data,
-      state.validate
-    );
+    await validate(options.resource, options.data, state.validate);
   } catch (e) {
     throw new Error(`Validation Error: `);
   }

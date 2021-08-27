@@ -39,7 +39,7 @@ module.exports.getDocuments = function(
     _id: 1,
     states: 1,
     users: 1,
-    groups: 1,
+    groups: 1
   };
 
   let aggregate = false;
@@ -58,8 +58,8 @@ module.exports.getDocuments = function(
           startWith: '$parentId',
           connectFromField: 'parentId',
           connectToField: '_id',
-          as: 'parents',
-        },
+          as: 'parents'
+        }
       },
       {
         $addFields: {
@@ -69,22 +69,22 @@ module.exports.getDocuments = function(
               initialValue: {},
               in: {
                 $mergeObjects: {
-                  $reverseArray: '$parents',
-                },
-              },
-            },
-          },
-        },
+                  $reverseArray: '$parents'
+                }
+              }
+            }
+          }
+        }
       },
       {
         $addFields: {
           [`states.${state}.data`]: {
             $mergeObjects: [
               `$parent.states.${state}.data`,
-              `$$ROOT.states.${state}.data`,
-            ],
-          },
-        },
+              `$$ROOT.states.${state}.data`
+            ]
+          }
+        }
       }
     );
   }
@@ -93,7 +93,7 @@ module.exports.getDocuments = function(
     dbFields.creator = {
       _id: 1,
       displayName: 1,
-      email: 1,
+      email: 1
     };
 
     pipeline.push(
@@ -102,21 +102,21 @@ module.exports.getDocuments = function(
           from: '__users__',
           localField: `states.${state}.createdBy`,
           foreignField: '_id',
-          as: 'tempUser',
-        },
+          as: 'tempUser'
+        }
       },
       {
         $addFields: {
           creator: {
-            $arrayElemAt: ['$tempUser', 0],
-          },
-        },
+            $arrayElemAt: ['$tempUser', 0]
+          }
+        }
       }
     );
   }
 
   pipeline.push({
-    $project: dbFields,
+    $project: dbFields
   });
 
   const cursor = !aggregate
@@ -275,7 +275,6 @@ module.exports.patchDocument = async (resource, filter, data, state, user) => {
   const update = await builder.patch({ resource, data, state, user });
 
   const updateDoc = await resource.collection.findOneAndUpdate(filter, update, {
-    returnDocument: 'after',
     returnOriginal: false
   });
   if (!updateDoc.value) throw new Error('Not Found');
@@ -433,12 +432,7 @@ module.exports.addUserToDocument = function(resource, filter, userDetails) {
   });
 };
 
-module.exports.removeUserFromDocument = function(
-  resource,
-  filter,
-  userId,
-  db
-) {
+module.exports.removeUserFromDocument = function(resource, filter, userId, db) {
   const removeUserFromDoc = new Promise((resolve, reject) => {
     const ops = { $unset: { [`users.${userId}`]: 1 } };
     const options = { returnOriginal: false, projection: { users: 1 } };

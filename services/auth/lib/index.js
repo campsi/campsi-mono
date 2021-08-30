@@ -52,6 +52,7 @@ module.exports = class AuthService extends CampsiService {
     router.get('/providers', handlers.getProviders);
     router.get('/me', handlers.me);
     router.put('/me', handlers.updateMe);
+    router.patch('/me', handlers.patchMe);
     router.post('/me/groups/:groups', handlers.addGroupsToUser);
     router.get('/anonymous', handlers.createAnonymousUser);
     router.get('/logout', handlers.logout);

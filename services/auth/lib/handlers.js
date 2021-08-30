@@ -32,7 +32,6 @@ function me(req, res) {
     return helpers.unauthorized(res);
   }
   delete req.user.identities?.local?.encryptedPassword;
-
   res.json(req.user);
 }
 
@@ -52,11 +51,11 @@ function updateMe(req, res) {
 
   req.db
     .collection('__users__')
-    .findOneAndUpdate({ _id: req.user._id }, update, { returnOriginal: false })
-    .then(result => {
-      delete result.value.identities?.local?.encryptedPassword;
-      res.json(result.value);
+    .findOneAndUpdate({ _id: req.user._id }, update, {
+      returnOriginal: false,
+      projection: { 'identities.local.encryptedPassword': 0 }
     })
+    .then(result => res.json(result.value))
     .catch(error => helpers.error(res, error));
 }
 
@@ -167,12 +166,16 @@ function getUsers(req, res) {
   if (req.user && req.user.isAdmin) {
     req.db
       .collection('__users__')
-      .find(getUserFilterFromQuery(req.query), (err, result) => {
-        if (err) {
-          return redirectWithError(req, res, err);
+      .find(
+        getUserFilterFromQuery(req.query),
+        { projection: { 'identities.local.encryptedPassword': 0 } },
+        (err, result) => {
+          if (err) {
+            return redirectWithError(req, res, err);
+          }
+          result.toArray().then(users => res.json(users));
         }
-        result.toArray().then(users => res.json(users));
-      });
+      );
   } else {
     redirectWithError(
       req,

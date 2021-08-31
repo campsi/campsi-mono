@@ -59,6 +59,27 @@ function updateMe(req, res) {
     .catch(error => helpers.error(res, error));
 }
 
+function patchMe(req, res) {
+  if (!req.user) {
+    return helpers.unauthorized(res);
+  }
+
+  const allowedProps = ['displayName', 'data', 'identities', 'email'];
+  let update = { $set: {} };
+
+  for (const [key, value] of Object.entries(req.body)) {
+    if (allowedProps.filter(prop => key.startsWith(prop)).length && !!value) {
+      update.$set[key] = value;
+    }
+  }
+
+  req.db
+    .collection('__users__')
+    .findOneAndUpdate({ _id: req.user._id }, update, { returnOriginal: false })
+    .then(result => res.json(result.value))
+    .catch(error => helpers.error(res, error));
+}
+
 function createAnonymousUser(req, res) {
   const token = builder.genBearerToken(100);
   const insert = {
@@ -406,6 +427,7 @@ module.exports = {
   getAccessTokenForUser,
   me,
   updateMe,
+  patchMe,
   createAnonymousUser,
   logout,
   inviteUser,

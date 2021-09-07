@@ -141,8 +141,7 @@ module.exports.patch = async options => {
     : null;
 
   for (const [key, value] of Object.entries(options.data)) {
-    const operator =
-      value === '' || value === null || value === undefined ? '$unset' : '$set';
+    const operator = value === null || value === undefined ? '$unset' : '$set';
     ops[operator][join('states', state.name, 'data', key)] = value;
   }
 

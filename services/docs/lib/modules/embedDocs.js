@@ -59,13 +59,15 @@ function embedDocs(resource, embed, user, doc, resources) {
   });
 }
 module.exports.one = embedDocs;
-module.exports.many = function(resource, embed, user, docs) {
-  let hash = {};
+module.exports.many = function(resource, embed, user, docs, resources) {
   return new Promise(resolve => {
     async.forEach(
       docs,
       (doc, cb) => {
-        embedDocs(resource, embed, user, doc.data, hash).then(cb);
+        embedDocs(resource, embed, user, doc.data, resources).then(doc => {
+          cb();
+          return doc;
+        });
       },
       resolve
     );

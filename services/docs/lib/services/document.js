@@ -19,7 +19,8 @@ module.exports.getDocuments = function(
   query,
   state,
   sort,
-  pagination
+  pagination,
+  resources
 ) {
   const queryBuilderOptions = {
     resource: resource,
@@ -179,7 +180,13 @@ module.exports.getDocuments = function(
           }
           return returnData;
         });
-        return embedDocs.many(resource, query.embed, user, result.docs);
+        return embedDocs.many(
+          resource,
+          query.embed,
+          user,
+          result.docs,
+          resources
+        );
       })
       .then(() => {
         return resolve(result);
@@ -384,8 +391,15 @@ module.exports.getDocument = function(
             user
           });
           embedDocs
-            .one(resource, resource.schema, query.embed, user, returnValue.data)
-            .then(() => resolve(returnValue));
+            .one(
+              resource,
+              resource.schema,
+              query.embed,
+              user,
+              returnValue.data,
+              resources
+            )
+            .then(doc => resolve(doc));
         })
         .catch(err => {
           reject(err);

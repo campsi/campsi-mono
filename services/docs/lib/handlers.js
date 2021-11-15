@@ -33,7 +33,8 @@ module.exports.getDocuments = function(req, res) {
       req.query,
       req.state,
       req.query.sort,
-      pagination
+      pagination,
+      req.options.resources
     )
     .then(data => {
       let links = [];

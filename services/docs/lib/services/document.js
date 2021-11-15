@@ -286,7 +286,14 @@ module.exports.patchDocument = async (resource, filter, data, state, user) => {
   };
 };
 
-module.exports.getDocument = function(resource, filter, query, user, state) {
+module.exports.getDocument = function(
+  resource,
+  filter,
+  query,
+  user,
+  state,
+  resources
+) {
   const requestedStates = getRequestedStatesFromQuery(resource, query);
   const fields = { _id: 1, states: 1, users: 1, groups: 1 };
   const match = { ...filter };
@@ -311,8 +318,10 @@ module.exports.getDocument = function(resource, filter, query, user, state) {
           user
         });
         embedDocs
-          .one(resource, resource.schema, query.embed, user, returnValue.data)
-          .then(() => resolve(returnValue));
+          .one(resource, query.embed, user, returnValue.data, resources)
+          .then(doc => {
+            resolve(doc);
+          });
       });
     });
   } else {
@@ -357,7 +366,6 @@ module.exports.getDocument = function(resource, filter, query, user, state) {
         }
       }
     ];
-
     return new Promise((resolve, reject) => {
       resource.collection
         .aggregate(pipeline)

@@ -391,14 +391,7 @@ module.exports.getDocument = function(
             user
           });
           embedDocs
-            .one(
-              resource,
-              resource.schema,
-              query.embed,
-              user,
-              returnValue.data,
-              resources
-            )
+            .one(resource, query.embed, user, returnValue.data, resources)
             .then(doc => resolve(returnValue));
         })
         .catch(err => {

@@ -2,7 +2,7 @@ const async = require('async');
 const ObjectId = require('mongodb').ObjectId;
 const findRefs = require('campsi-find-references');
 
-function fetchSubdoc(resource, reference, user) {
+function fetchSubdoc(resource, reference) {
   const _id = reference.get();
   return new Promise((resolve, reject) => {
     resource.collection.findOne(
@@ -41,7 +41,7 @@ function embedDocs(resource, embed, user, doc, resources) {
         async.each(
           references,
           (reference, refCb) => {
-            fetchSubdoc(resources[relationship.resource], reference, user).then(
+            fetchSubdoc(resources[relationship.resource], reference).then(
               subdoc => {
                 doc[embed] = {};
                 relationship.fields.forEach(field => {

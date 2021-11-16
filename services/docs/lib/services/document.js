@@ -327,7 +327,7 @@ module.exports.getDocument = function(
         embedDocs
           .one(resource, query.embed, user, returnValue.data, resources)
           .then(doc => {
-            resolve(doc);
+            resolve(returnValue);
           });
       });
     });
@@ -399,7 +399,7 @@ module.exports.getDocument = function(
               returnValue.data,
               resources
             )
-            .then(doc => resolve(doc));
+            .then(doc => resolve(returnValue));
         })
         .catch(err => {
           reject(err);

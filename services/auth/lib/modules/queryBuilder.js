@@ -44,7 +44,7 @@ function genUpdate(provider, profile) {
 function genInsert(provider, profile) {
   const token = genBearerToken(provider.expiration);
   let insert = {
-    email: profile.email,
+    email: profile.email.toLowerCase(),
     displayName: profile.displayName,
     picture: profile.picture,
     identities: {},

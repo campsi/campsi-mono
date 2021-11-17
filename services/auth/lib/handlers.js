@@ -273,8 +273,8 @@ function inviteUser(req, res) {
   const dispatchInvitationEvent = function(payload) {
     req.service.emit('invitation/created', payload);
   };
-  const filter = { email: req.body.email };
-  const update = { $set: { email: req.body.email } };
+  const filter = { email: new RegExp('^' + req.body.email.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$', 'i') };
+  const update = { $set: { updatedAt: new Date() } };
 
   const groups = req?.query?.groups
     ? getValidGroupsFromString(req.query.groups)
@@ -287,7 +287,7 @@ function inviteUser(req, res) {
   req.db
     .collection('__users__')
     .findOneAndUpdate(
-      { email: req.body.email },
+      filter,
       update,
       { returnNewDocument: true },
       (err, result) => {

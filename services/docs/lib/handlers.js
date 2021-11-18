@@ -33,7 +33,8 @@ module.exports.getDocuments = function(req, res) {
       req.query,
       req.state,
       req.query.sort,
-      pagination
+      pagination,
+      req.options.resources
     )
     .then(data => {
       let links = [];
@@ -185,7 +186,14 @@ module.exports.patchDoc = async (req, res) => {
 // get a doc
 module.exports.getDoc = function(req, res) {
   documentService
-    .getDocument(req.resource, req.filter, req.query, req.user, req.state)
+    .getDocument(
+      req.resource,
+      req.filter,
+      req.query,
+      req.user,
+      req.state,
+      req.options.resources
+    )
     .then(result => helpers.json(res, result))
     .catch(err => helpers.notFound(res, err));
 };
@@ -238,12 +246,7 @@ module.exports.postDocUser = function(req, res) {
 
 module.exports.delDocUser = function(req, res) {
   documentService
-    .removeUserFromDocument(
-      req.resource,
-      req.filter,
-      req.params.user,
-      req.db
-    )
+    .removeUserFromDocument(req.resource, req.filter, req.params.user, req.db)
     .then(users =>
       userService.fetchUsers(users, req.options, req.service.server)
     )

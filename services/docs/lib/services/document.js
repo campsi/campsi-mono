@@ -19,7 +19,8 @@ module.exports.getDocuments = function(
   query,
   state,
   sort,
-  pagination
+  pagination,
+  resources
 ) {
   const queryBuilderOptions = {
     resource: resource,
@@ -179,7 +180,13 @@ module.exports.getDocuments = function(
           }
           return returnData;
         });
-        return embedDocs.many(resource, query.embed, user, result.docs);
+        return embedDocs.many(
+          resource,
+          query.embed,
+          user,
+          result.docs,
+          resources
+        );
       })
       .then(() => {
         return resolve(result);
@@ -286,7 +293,14 @@ module.exports.patchDocument = async (resource, filter, data, state, user) => {
   };
 };
 
-module.exports.getDocument = function(resource, filter, query, user, state) {
+module.exports.getDocument = function(
+  resource,
+  filter,
+  query,
+  user,
+  state,
+  resources
+) {
   const requestedStates = getRequestedStatesFromQuery(resource, query);
   const fields = { _id: 1, states: 1, users: 1, groups: 1 };
   const match = { ...filter };
@@ -311,8 +325,10 @@ module.exports.getDocument = function(resource, filter, query, user, state) {
           user
         });
         embedDocs
-          .one(resource, resource.schema, query.embed, user, returnValue.data)
-          .then(() => resolve(returnValue));
+          .one(resource, query.embed, user, returnValue.data, resources)
+          .then(doc => {
+            resolve(returnValue);
+          });
       });
     });
   } else {
@@ -357,7 +373,6 @@ module.exports.getDocument = function(resource, filter, query, user, state) {
         }
       }
     ];
-
     return new Promise((resolve, reject) => {
       resource.collection
         .aggregate(pipeline)
@@ -376,8 +391,8 @@ module.exports.getDocument = function(resource, filter, query, user, state) {
             user
           });
           embedDocs
-            .one(resource, resource.schema, query.embed, user, returnValue.data)
-            .then(() => resolve(returnValue));
+            .one(resource, query.embed, user, returnValue.data, resources)
+            .then(doc => resolve(returnValue));
         })
         .catch(err => {
           reject(err);

@@ -230,8 +230,8 @@ module.exports.createDocument = function(
           doc.groups = [...new Set([...doc.groups, ...groups])];
         }
 
-        await resource.collection.insertOne(doc, (err, result) => {
-          if (err) throw err;
+        resource.collection.insertOne(doc, (err, result) => {
+          if (err) return reject(err);
           resolve(
             Object.assign(
               {

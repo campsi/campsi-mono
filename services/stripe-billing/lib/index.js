@@ -15,7 +15,8 @@ const bodyToCustomer = (body, sourcePropertyName, user) => {
       body.metadata || {},
       user ? { user: user._id.toString() } : {}
     ),
-    shipping: body.shipping
+    shipping: body.shipping,
+    expand: ['tax_ids']
   };
 };
 
@@ -65,6 +66,11 @@ module.exports = class StripeBillingService extends CampsiService {
     });
 
     this.router.get('/customers/:id', (req, res) => {
+      req.query.expand = req.query.expand
+        ? req.query.expand.includes('tax_ids')
+          ? req.query.expand
+          : `${req.query.expand}|tax_ids`
+        : 'tax_ids';
       stripe.customers.retrieve(
         req.params.id,
         optionsFromQuery(req.query),

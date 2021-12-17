@@ -124,6 +124,7 @@ module.exports = class StripeBillingService extends CampsiService {
           items: req.body.items,
           metadata: req.body.metadata,
           coupon: req.body.coupon,
+          promotion_code: req.body.promotion_code,
           expand: subscriptionExpand,
           default_tax_rates: req.body.default_tax_rates
         },
@@ -151,6 +152,7 @@ module.exports = class StripeBillingService extends CampsiService {
           items: req.body.items,
           metadata: req.body.metadata,
           coupon: req.body.coupon,
+          promotion_code: req.body.promotion_code,
           expand: subscriptionExpand,
           default_tax_rates: req.body.default_tax_rates
         },

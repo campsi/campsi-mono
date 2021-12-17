@@ -229,7 +229,7 @@ module.exports = class StripeBillingService extends CampsiService {
     });
 
     if (promoCodes.data.length) {
-      return res.json(promoCodes.data[0].coupon);
+      return res.json(promoCodes.data[0]);
     }
     // no promocode => let's find if there's a valid coupon with code as its id
     try {

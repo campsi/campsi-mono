@@ -124,6 +124,7 @@ module.exports = class StripeBillingService extends CampsiService {
           items: req.body.items,
           metadata: req.body.metadata,
           coupon: req.body.coupon,
+          promotion_code: req.body.promotion_code,
           expand: subscriptionExpand,
           default_tax_rates: req.body.default_tax_rates
         },
@@ -151,6 +152,7 @@ module.exports = class StripeBillingService extends CampsiService {
           items: req.body.items,
           metadata: req.body.metadata,
           coupon: req.body.coupon,
+          promotion_code: req.body.promotion_code,
           expand: subscriptionExpand,
           default_tax_rates: req.body.default_tax_rates
         },
@@ -192,6 +194,12 @@ module.exports = class StripeBillingService extends CampsiService {
         defaultHandler(res)
       );
     });
+
+    this.router.get(
+      '/coupons/:code[:]check-validity',
+      this.checkCouponCodeValidity
+    );
+
     return super.initialize();
   }
 
@@ -205,5 +213,37 @@ module.exports = class StripeBillingService extends CampsiService {
    */
   fetchInvoices = async parameters => {
     return await this.stripe.invoices.list(parameters);
+  };
+
+  checkCouponCodeValidity = async (req, res) => {
+    const code = req.params.code;
+    if (!code) {
+      return helpers.missingParameters(
+        res,
+        new Error('code must be specified')
+      );
+    }
+
+    const promoCodes = await this.stripe.promotionCodes.list({
+      limit: 1,
+      active: true,
+      code
+    });
+
+    if (promoCodes.data.length) {
+      return res.json(promoCodes.data[0]);
+    }
+    // no promocode => let's find if there's a valid coupon with code as its id
+    try {
+      const coupon = await this.stripe.coupons.retrieve(code);
+      if (!coupon.valid) {
+        return helpers.badRequest(res, new Error(`invalid code ${code}`));
+      }
+      return res.json(coupon);
+    } catch (err) {
+      return res
+        .status(err.statusCode || 500)
+        .json({ message: err.raw?.message || `invalid code ${code}` });
+    }
   };
 };

@@ -148,7 +148,7 @@ module.exports = class StripeBillingService extends CampsiService {
       stripe.subscriptions.update(
         req.params.id,
         {
-          billing: 'charge_automatically',
+          collection_method: 'charge_automatically',
           items: req.body.items,
           metadata: req.body.metadata,
           coupon: req.body.coupon,

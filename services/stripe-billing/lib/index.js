@@ -120,7 +120,7 @@ module.exports = class StripeBillingService extends CampsiService {
       stripe.subscriptions.create(
         {
           customer: req.body.customer,
-          billing: 'charge_automatically',
+          collection_method: 'charge_automatically',
           items: req.body.items,
           metadata: req.body.metadata,
           coupon: req.body.coupon,

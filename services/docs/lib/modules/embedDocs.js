@@ -11,7 +11,7 @@ function fetchSubdoc(resource, reference) {
       { _id: 1, states: 1 },
       (err, subDoc) => {
         if (err) return reject(err);
-        return resolve(subDoc.states[resource.defaultState].data);
+        return resolve(subDoc?.states[resource.defaultState].data);
       }
     );
   });
@@ -46,7 +46,7 @@ function embedDocs(resource, embed, user, doc, resources) {
               subdoc => {
                 doc[embed] = {};
                 relationship.fields.forEach(field => {
-                  doc[embed][field] = subdoc[field];
+                  doc[embed][field] = subdoc?.[field];
                 });
                 refCb();
               }

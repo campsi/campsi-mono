@@ -369,7 +369,7 @@ module.exports.resetPassword = function (req, res) {
           // we set the username as a param because if the update succeeds,
           // the request is forwarded to the passport local callback and will
           // authorize the user with the new password
-          req.body.username = result.value.identities.local.username;
+          req.body.username = result.value.identities.local.username || result.value.email;
           return handlers.callback(req, res);
         })
         .catch((err) => handlers.redirectWithError(req, res, err));

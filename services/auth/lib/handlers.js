@@ -183,20 +183,19 @@ function getUserFilterFromQuery(query) {
   }
   return filter;
 }
-function getUsers(req, res) {
+async function getUsers(req, res) {
   if (req.user && req.user.isAdmin) {
-    req.db
-      .collection('__users__')
-      .find(
-        getUserFilterFromQuery(req.query),
-        { projection: { 'identities.local.encryptedPassword': 0 } },
-        (err, result) => {
-          if (err) {
-            return redirectWithError(req, res, err);
-          }
-          result.toArray().then(users => res.json(users));
-        }
-      );
+    try {
+      const users = await req.db
+        .collection('__users__')
+        .find(getUserFilterFromQuery(req.query), {
+          projection: { 'identities.local.encryptedPassword': 0 }
+        })
+        .toArray();
+      return res.json(users);
+    } catch (err) {
+      return redirectWithError(req, res, err);
+    }
   } else {
     redirectWithError(
       req,
@@ -273,7 +272,12 @@ function inviteUser(req, res) {
   const dispatchInvitationEvent = function(payload) {
     req.service.emit('invitation/created', payload);
   };
-  const filter = { email: new RegExp('^' + req.body.email.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$', 'i') };
+  const filter = {
+    email: new RegExp(
+      '^' + req.body.email.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$',
+      'i'
+    )
+  };
   const update = { $set: { updatedAt: new Date() } };
 
   const groups = req?.query?.groups

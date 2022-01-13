@@ -121,7 +121,7 @@ module.exports.getDocuments = function(
   });
 
   const cursor = !aggregate
-    ? resource.collection.find(dbQuery, dbFields)
+    ? resource.collection.find(dbQuery, { projection: dbFields })
     : resource.collection.aggregate(pipeline);
   const requestedStates = getRequestedStatesFromQuery(resource, query);
   let result = {};

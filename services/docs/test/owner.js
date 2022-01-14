@@ -3,7 +3,7 @@ process.env.NODE_CONFIG_DIR = './test/config';
 process.env.NODE_ENV = 'test';
 
 // Require the dev-dependencies
-const {MongoClient} = require('mongodb');
+const { MongoClient } = require('mongodb');
 const mongoUriBuilder = require('mongo-uri-builder');
 const debug = require('debug')('campsi:test');
 const chai = require('chai');
@@ -33,28 +33,31 @@ let notMe = {
 };
 
 // Helpers
-function createEntry (data, owner, state) {
-  return new Promise(function (resolve, reject) {
+function createEntry(data, owner, state) {
+  return new Promise(function(resolve, reject) {
     let resource = campsi.services.get('docs').options.resources['simple'];
-    builder.create({
-      user: owner,
-      data: data,
-      resource: resource,
-      state: state
-    }).then((doc) => {
-      resource.collection.insertOne(doc, (err, result) => {
-        if (err) return reject(err);
-        resolve(result.ops[0]._id);
+    builder
+      .create({
+        user: owner,
+        data: data,
+        resource: resource,
+        state: state
+      })
+      .then(doc => {
+        resource.collection.insertOne(doc, (err, result) => {
+          if (err) return reject(err);
+          resolve(result.insertedId);
+        });
+      })
+      .catch(error => {
+        reject(error);
       });
-    }).catch((error) => {
-      reject(error);
-    });
   });
 }
 
 // Our parent block
 describe('Owner', () => {
-  beforeEach((done) => {
+  beforeEach(done => {
     // Empty the database
     const mongoUri = mongoUriBuilder(config.campsi.mongo);
     MongoClient.connect(mongoUri, (err, client) => {
@@ -74,14 +77,14 @@ describe('Owner', () => {
           done();
         });
 
-        campsi.start().catch((err) => {
+        campsi.start().catch(err => {
           debug('Error: %s', err);
         });
       });
     });
   });
 
-  afterEach((done) => {
+  afterEach(done => {
     server.close();
     done();
   });
@@ -90,9 +93,10 @@ describe('Owner', () => {
    * Test owner role
    */
   describe('owner role', () => {
-    it('it should create a doc with correct owner', (done) => {
-      let data = {'name': 'test'};
-      chai.request(campsi.app)
+    it('it should create a doc with correct owner', done => {
+      let data = { name: 'test' };
+      chai
+        .request(campsi.app)
         .post('/docs/simple/state-private')
         .set('content-type', 'application/json')
         .send(data)
@@ -113,10 +117,11 @@ describe('Owner', () => {
           done();
         });
     });
-    it('it should not get a document not owned by current user', (done) => {
-      let data = {'name': 'test'};
-      createEntry(data, notMe, 'state-private').then((id) => {
-        chai.request(campsi.app)
+    it('it should not get a document not owned by current user', done => {
+      let data = { name: 'test' };
+      createEntry(data, notMe, 'state-private').then(id => {
+        chai
+          .request(campsi.app)
           .get('/docs/simple/{0}/state-private'.format(id))
           .end((err, res) => {
             debug(res.body, res.status);
@@ -129,10 +134,11 @@ describe('Owner', () => {
           });
       });
     });
-    it('it should get a document owned by current user', (done) => {
-      let data = {'name': 'test'};
-      createEntry(data, me, 'state-private').then((id) => {
-        chai.request(campsi.app)
+    it('it should get a document owned by current user', done => {
+      let data = { name: 'test' };
+      createEntry(data, me, 'state-private').then(id => {
+        chai
+          .request(campsi.app)
           .get('/docs/simple/{0}/state-private'.format(id))
           .end((err, res) => {
             debug(res.status, res.body);
@@ -152,10 +158,11 @@ describe('Owner', () => {
           });
       });
     });
-    it('it should return an empty array if not on the good state', (done) => {
-      let data = {name: 'test'};
+    it('it should return an empty array if not on the good state', done => {
+      let data = { name: 'test' };
       createEntry(data, notMe, 'state-private').then(() => {
-        chai.request(campsi.app)
+        chai
+          .request(campsi.app)
           .get('/docs/simple')
           .end((err, res) => {
             if (err) debug(`received an error from chai: ${err.message}`);
@@ -166,10 +173,11 @@ describe('Owner', () => {
           });
       });
     });
-    it('it should return an empty array if current user have not created any document', (done) => {
-      let data = {name: 'test'};
+    it('it should return an empty array if current user have not created any document', done => {
+      let data = { name: 'test' };
       createEntry(data, notMe, 'state-private').then(() => {
-        chai.request(campsi.app)
+        chai
+          .request(campsi.app)
           .get('/docs/simple?state=state-private')
           .end((err, res) => {
             if (err) debug(`received an error from chai: ${err.message}`);
@@ -180,10 +188,11 @@ describe('Owner', () => {
           });
       });
     });
-    it('it should not return an empty array if current user have created a document', (done) => {
-      let data = {name: 'test'};
+    it('it should not return an empty array if current user have created a document', done => {
+      let data = { name: 'test' };
       createEntry(data, me, 'state-private').then(() => {
-        chai.request(campsi.app)
+        chai
+          .request(campsi.app)
           .get('/docs/simple?state=state-private')
           .end((err, res) => {
             if (err) debug(`received an error from chai: ${err.message}`);
@@ -194,10 +203,11 @@ describe('Owner', () => {
           });
       });
     });
-    it('it should return the list of users', (done) => {
-      let data = {name: 'test'};
+    it('it should return the list of users', done => {
+      let data = { name: 'test' };
       createEntry(data, me, 'state-private').then(id => {
-        chai.request(campsi.app)
+        chai
+          .request(campsi.app)
           .get(`/docs/simple/${id}/users`)
           .end((err, res) => {
             if (err) debug(`received an error from chai: ${err.message}`);
@@ -209,12 +219,18 @@ describe('Owner', () => {
           });
       });
     });
-    it('it should add and remove users', (done) => {
-      let data = {name: 'test'};
+    it('it should add and remove users', done => {
+      let data = { name: 'test' };
       createEntry(data, me, 'state-private').then(id => {
-        chai.request(campsi.app)
+        chai
+          .request(campsi.app)
           .post(`/docs/simple/${id}/users`)
-          .send({roles: ['owner'], userId: notMe._id, displayName: 'Not me', infos: {message: 'userInfo'}})
+          .send({
+            roles: ['owner'],
+            userId: notMe._id,
+            displayName: 'Not me',
+            infos: { message: 'userInfo' }
+          })
           .end((err, res) => {
             if (err) debug(`received an error from chai: ${err.message}`);
             res.should.have.status(200);
@@ -222,7 +238,8 @@ describe('Owner', () => {
             res.body.should.have.length(2);
             res.body[1].roles[0].should.eq('owner');
             res.body[1].should.have.property('infos');
-            chai.request(campsi.app)
+            chai
+              .request(campsi.app)
               .delete(`/docs/simple/${id}/users/${notMe._id}`)
               .end((err, res) => {
                 if (err) debug(`received an error from chai: ${err.message}`);

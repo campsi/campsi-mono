@@ -117,7 +117,7 @@ class WebhooksService extends CampsiService {
     this.collection
       .insertOne(doc)
       .then(result => {
-        res.status(201).json(result.ops[0]);
+        res.status(201).json({ _id: result.insertedId, ...doc });
       })
       .catch(error => {
         res.status(500).json({ error });

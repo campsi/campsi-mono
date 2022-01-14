@@ -7,9 +7,9 @@ const builder = require('./modules/queryBuilder');
  * @param args
  * @param done
  */
-function proxyVerifyCallback (fn, args, done) {
-  const {callback, index} = findCallback(args);
-  args[index] = function (err, user) {
+function proxyVerifyCallback(fn, args, done) {
+  const { callback, index } = findCallback(args);
+  args[index] = function(err, user) {
     done(err, user, callback);
   };
   fn.apply(null, args);
@@ -21,26 +21,36 @@ function proxyVerifyCallback (fn, args, done) {
  *
  * @param req
  */
-module.exports = function passportMiddleware (req) {
+module.exports = function passportMiddleware(req) {
   const users = req.db.collection('__users__');
   const provider = req.authProvider;
-  proxyVerifyCallback(provider.callback, arguments, function (err, profile, passportCallback) {
+  proxyVerifyCallback(provider.callback, arguments, function(
+    err,
+    profile,
+    passportCallback
+  ) {
     if (!profile || err) {
       return passportCallback('cannot find user');
     }
     let filter = builder.filterUserByEmailOrProviderId(provider, profile);
-    let {update, updateToken} = builder.genUpdate(provider, profile);
-    users.findOneAndUpdate(filter, update, {returnOriginal: false})
-      .then((result) => {
+    let { update, updateToken } = builder.genUpdate(provider, profile);
+    users
+      .findOneAndUpdate(filter, update, { returnOriginal: false })
+      .then(result => {
         if (result.value) {
           req.authBearerToken = updateToken.value;
           return passportCallback(null, result.value);
         }
-        let {insert, insertToken} = builder.genInsert(provider, profile);
+        let { insert, insertToken } = builder.genInsert(provider, profile);
         req.authBearerToken = insertToken.value;
-        return users.insertOne(insert).then((insertResult) => passportCallback(null, insertResult.ops[0]));
-      }).catch(err => {
-        passportCallback()
+        return users
+          .insertOne(insert)
+          .then(insertResult =>
+            passportCallback(null, { _id: insertResult.insertedId, ...insert })
+          );
+      })
+      .catch(err => {
+        passportCallback();
       });
   });
 };

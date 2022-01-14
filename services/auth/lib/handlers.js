@@ -8,7 +8,7 @@ const passport = require('@passport-next/passport');
 const editURL = require('edit-url');
 const state = require('./state');
 const debug = require('debug')('campsi:service:auth');
-const ObjectId = require('mongodb').ObjectId;
+const { ObjectId } = require('mongodb');
 
 function logout(req, res) {
   if (!req.user) {
@@ -98,7 +98,7 @@ function createAnonymousUser(req, res) {
     .collection('__users__')
     .insertOne(insert)
     .then(insertResult => {
-      res.json(insertResult.ops[0]);
+      res.json({ _id: insertResult.insertedId, ...insert });
     });
 }
 

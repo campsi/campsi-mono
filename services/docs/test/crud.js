@@ -3,7 +3,7 @@ process.env.NODE_CONFIG_DIR = './test/config';
 process.env.NODE_ENV = 'test';
 
 // Require the dev-dependencies
-const {MongoClient} = require('mongodb');
+const { MongoClient } = require('mongodb');
 const mongoUriBuilder = require('mongo-uri-builder');
 const debug = require('debug')('campsi:test');
 const chai = require('chai');
@@ -24,28 +24,31 @@ const services = {
 };
 
 // Helpers
-function createPizza (data, state) {
-  return new Promise(function (resolve, reject) {
+function createPizza(data, state) {
+  return new Promise(function(resolve, reject) {
     let resource = campsi.services.get('docs').options.resources['pizzas'];
-    builder.create({
-      user: null,
-      data: data,
-      resource: resource,
-      state: state
-    }).then((doc) => {
-      resource.collection.insertOne(doc, (err, result) => {
-        if (err) return reject(err);
-        resolve(result.ops[0]._id);
+    builder
+      .create({
+        user: null,
+        data: data,
+        resource: resource,
+        state: state
+      })
+      .then(doc => {
+        resource.collection.insertOne(doc, (err, result) => {
+          if (err) return reject(err);
+          resolve(result.insertedId);
+        });
+      })
+      .catch(error => {
+        reject(error);
       });
-    }).catch((error) => {
-      reject(error);
-    });
   });
 }
 
 // Our parent block
 describe('CRUD', () => {
-  beforeEach((done) => {
+  beforeEach(done => {
     // Empty the database
     const mongoUri = mongoUriBuilder(config.campsi.mongo);
     MongoClient.connect(mongoUri, (err, client) => {
@@ -60,14 +63,14 @@ describe('CRUD', () => {
           server = campsi.listen(config.port);
           done();
         });
-        campsi.start().catch((err) => {
+        campsi.start().catch(err => {
           debug('Error: %s', err);
         });
       });
     });
   });
 
-  afterEach((done) => {
+  afterEach(done => {
     server.close();
     done();
   });
@@ -75,8 +78,9 @@ describe('CRUD', () => {
    * Test the /GET docs route
    */
   describe('/GET docs', () => {
-    it('it should GET all the ressources', (done) => {
-      chai.request(campsi.app)
+    it('it should GET all the ressources', done => {
+      chai
+        .request(campsi.app)
         .get('/docs')
         .end((err, res) => {
           if (err) debug(`received an error from chai: ${err.message}`);
@@ -91,8 +95,9 @@ describe('CRUD', () => {
    * Test the /GET docs/pizzas route
    */
   describe('/GET docs/pizzas', () => {
-    it('it should GET all the documents', (done) => {
-      chai.request(campsi.app)
+    it('it should GET all the documents', done => {
+      chai
+        .request(campsi.app)
         .get('/docs/pizzas')
         .end((err, res) => {
           if (err) debug(`received an error from chai: ${err.message}`);
@@ -110,9 +115,10 @@ describe('CRUD', () => {
    * Test the /POST docs/pizzas route
    */
   describe('/POST docs/pizzas', () => {
-    it('it should not create a document (no credentials for default state)', (done) => {
-      let data = {'name': 'test'};
-      chai.request(campsi.app)
+    it('it should not create a document (no credentials for default state)', done => {
+      let data = { name: 'test' };
+      chai
+        .request(campsi.app)
         .post('/docs/pizzas')
         .set('content-type', 'application/json')
         .send(data)
@@ -130,11 +136,12 @@ describe('CRUD', () => {
    * Test the /GET docs/pizzas/:id route
    */
   describe('/GET docs/pizzas/:id', () => {
-    it('it should return a 404 error', (done) => {
-      let data = {'name': 'test'};
+    it('it should return a 404 error', done => {
+      let data = { name: 'test' };
       createPizza(data, 'working_draft')
-        .then((id) => {
-          chai.request(campsi.app)
+        .then(id => {
+          chai
+            .request(campsi.app)
             .get('/docs/pizzas/{0}'.format(id))
             .end((err, res) => {
               if (err) debug(`received an error from chai: ${err.message}`);
@@ -145,7 +152,7 @@ describe('CRUD', () => {
               done();
             });
         })
-        .catch((err) => {
+        .catch(err => {
           throw err;
         });
     });

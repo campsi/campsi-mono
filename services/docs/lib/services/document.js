@@ -232,15 +232,11 @@ module.exports.createDocument = function(
 
         resource.collection.insertOne(doc, (err, result) => {
           if (err) return reject(err);
-          resolve(
-            Object.assign(
-              {
-                state: state,
-                id: result.ops[0]._id
-              },
-              result.ops[0].states[state]
-            )
-          );
+          resolve({
+            state: state,
+            id: result.insertedId,
+            ...doc.states[state]
+          });
         });
       })
       .catch(error => {

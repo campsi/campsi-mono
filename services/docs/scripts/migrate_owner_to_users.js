@@ -50,7 +50,7 @@ async function updateCollection(params, db, collection, done) {
   try {
     const cursor = await db
       .collection(collection)
-      .find(filter, { $project: { ownedBy: 1, _id: 1 } });
+      .find(filter, { projection: { ownedBy: 1, _id: 1 } });
     let cursorHasNext = true;
     const updateDocument = (doc, cb) => {
       if (doc === null) {

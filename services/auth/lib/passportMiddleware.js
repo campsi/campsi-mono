@@ -35,7 +35,9 @@ module.exports = function passportMiddleware(req) {
     let filter = builder.filterUserByEmailOrProviderId(provider, profile);
     let { update, updateToken } = builder.genUpdate(provider, profile);
     users
-      .findOneAndUpdate(filter, update, { returnOriginal: false })
+      .findOneAndUpdate(filter, update, {
+        returnDocument: 'after'
+      })
       .then(result => {
         if (result.value) {
           req.authBearerToken = updateToken.value;

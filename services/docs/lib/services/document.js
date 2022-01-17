@@ -278,7 +278,7 @@ module.exports.patchDocument = async (resource, filter, data, state, user) => {
   const update = await builder.patch({ resource, data, state, user });
 
   const updateDoc = await resource.collection.findOneAndUpdate(filter, update, {
-    returnOriginal: false
+    returnDocument: 'after'
   });
   if (!updateDoc.value) throw new Error('Not Found');
 
@@ -426,7 +426,7 @@ module.exports.addUserToDocument = function(resource, filter, userDetails) {
       const ops = {
         $set: { [`users.${userDetails.userId}`]: newUser }
       };
-      const options = { returnOriginal: false, projection: { users: 1 } };
+      const options = { returnDocument: 'after', projection: { users: 1 } };
       resource.collection.findOneAndUpdate(
         filter,
         ops,
@@ -446,7 +446,7 @@ module.exports.addUserToDocument = function(resource, filter, userDetails) {
 module.exports.removeUserFromDocument = function(resource, filter, userId, db) {
   const removeUserFromDoc = new Promise((resolve, reject) => {
     const ops = { $unset: { [`users.${userId}`]: 1 } };
-    const options = { returnOriginal: false, projection: { users: 1 } };
+    const options = { returnDocument: 'after', projection: { users: 1 } };
     resource.collection.findOneAndUpdate(
       filter,
       ops,

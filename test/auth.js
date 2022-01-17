@@ -293,7 +293,7 @@ describe('Auth API', () => {
           .findOneAndUpdate(
             { email: admin.email },
             { $set: { isAdmin: true } },
-            { returnOriginal: false }
+            { returnDocument: 'after' }
           )
           .then(updateResult => {
             createUser(chai, campsi, glenda).then(userToken => {

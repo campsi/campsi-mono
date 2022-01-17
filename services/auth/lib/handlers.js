@@ -75,7 +75,9 @@ function patchMe(req, res) {
 
   req.db
     .collection('__users__')
-    .findOneAndUpdate({ _id: req.user._id }, update, { returnOriginal: false })
+    .findOneAndUpdate({ _id: req.user._id }, update, {
+      returnDocument: 'after'
+    })
     .then(result => res.json(result.value))
     .catch(error => helpers.error(res, error));
 }
@@ -219,7 +221,9 @@ function getAccessTokenForUser(req, res) {
     );
     req.db
       .collection('__users__')
-      .findOneAndUpdate({ _id: userId }, update, { returnOriginal: false })
+      .findOneAndUpdate({ _id: userId }, update, {
+        returnDocument: 'after'
+      })
       .then(result => {
         if (result.value) {
           if (!req.query.redirectURI) {
@@ -293,7 +297,7 @@ function inviteUser(req, res) {
     .findOneAndUpdate(
       filter,
       update,
-      { returnNewDocument: true },
+      { returnDocument: 'after' },
       (err, result) => {
         if (err) {
           return helpers.error(res, err);
@@ -364,7 +368,7 @@ function acceptInvitation(req, res) {
       $unset: { [`identities.invitation-${req.params.invitationToken}`]: true }
     },
     {
-      returnOriginal: true
+      returnDocument: 'after'
     },
     (err, updateResult) => {
       if (err) return helpers.error(res, err);
@@ -417,7 +421,9 @@ function addGroupsToUser(req, res) {
 
   req.db
     .collection('__users__')
-    .findOneAndUpdate({ _id: req.user._id }, update, { returnOriginal: false })
+    .findOneAndUpdate({ _id: req.user._id }, update, {
+      returnDocument: 'after'
+    })
     .then(result => res.json(result.value))
     .catch(error => helpers.error(res, error));
 }

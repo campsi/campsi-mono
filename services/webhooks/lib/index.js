@@ -60,7 +60,7 @@ class WebhooksService extends CampsiService {
                   .findOneAndUpdate(
                     { _id: webhook._id },
                     { $inc: { failCount: 1 } },
-                    { returnOriginal: false }
+                    { returnDocument: 'after' }
                   )
                   .then(result => {
                     debug(

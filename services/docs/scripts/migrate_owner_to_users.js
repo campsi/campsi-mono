@@ -71,7 +71,7 @@ async function updateCollection(params, db, collection, done) {
         (err, result) => {
           err
             ? debug('an error occured during the update', err)
-            : debug(collection, doc._id, 'nModified', result.nModified);
+            : debug(collection, doc._id, 'nModified', result.modifiedCount);
           cursor.hasNext((err, hasNext) => {
             /* istanbul ignore if  */
             if (err)

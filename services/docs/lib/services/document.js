@@ -298,13 +298,13 @@ module.exports.getDocument = function(
   resources
 ) {
   const requestedStates = getRequestedStatesFromQuery(resource, query);
-  const fields = { _id: 1, states: 1, users: 1, groups: 1 };
+  const projection = { _id: 1, states: 1, users: 1, groups: 1 };
   const match = { ...filter };
   match[`states.${state}`] = { $exists: true };
 
   if (!resource.isInheritable) {
     return new Promise((resolve, reject) => {
-      resource.collection.findOne(match, { projection: fields }, (err, doc) => {
+      resource.collection.findOne(match, { projection }, (err, doc) => {
         if (err) return reject(err);
         if (doc === null) {
           return reject(new Error('Document Not Found'));

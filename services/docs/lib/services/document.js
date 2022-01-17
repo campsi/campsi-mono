@@ -148,7 +148,7 @@ module.exports.getDocuments = function(
             sort.indexOf('data') === 0 ? 'states.{}.data.'.format(state) : ''
           );
         }
-        return cursor.toArray();
+        return info.documents ?? cursor.toArray();
       })
       .then(docs => {
         result.docs = docs.map(doc => {

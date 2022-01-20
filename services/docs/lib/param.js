@@ -1,5 +1,5 @@
 const helpers = require('../../../lib/modules/responseHelpers');
-const createObjectID = require('../../../lib/modules/createObjectID');
+const createObjectId = require('../../../lib/modules/createObjectId');
 const { can } = require('./modules/permissions');
 const { ObjectId } = require('mongodb');
 const {
@@ -29,7 +29,7 @@ module.exports.attachResource = function(options) {
 
       // Is ID well-formed ?
       if (req.params.id) {
-        req.filter = { _id: createObjectID(req.params.id) };
+        req.filter = { _id: createObjectId(req.params.id) };
         if (!req.filter._id) {
           return helpers.error(res, new Error("Can't recognize id"));
         }

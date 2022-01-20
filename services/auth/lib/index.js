@@ -8,7 +8,7 @@ const handlers = require('./handlers');
 const debug = require('debug')('campsi');
 const authUser = require('./middleware/authUser');
 const session = require('./middleware/session');
-const createObjectID = require('../../../lib/modules/createObjectID');
+const createObjectId = require('../../../lib/modules/createObjectId');
 
 module.exports = class AuthService extends CampsiService {
   initialize() {
@@ -88,7 +88,7 @@ module.exports = class AuthService extends CampsiService {
   }
 
   async fetchUsers(userIds) {
-    const filter = { _id: { $in: userIds.map(id => createObjectID(id)) } };
+    const filter = { _id: { $in: userIds.map(id => createObjectId(id)) } };
     const users = await this.db
       .collection('__users__')
       .find(filter)

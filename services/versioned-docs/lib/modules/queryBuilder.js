@@ -1,6 +1,7 @@
 const debug = require('debug')('campsi:service:docs');
 const forIn = require('for-in');
 const { ObjectId } = require('mongodb');
+const createObjectId = require('../../../../lib/modules/createObjectId');
 
 /**
  * Simple utility function that converts a list of arguments
@@ -32,18 +33,13 @@ function getStateFromOptions(options, propertyName) {
  * @param {boolean} doValidate
  * @returns {Promise}
  */
-function validate(resource, doc, doValidate) {
-  return new Promise((resolve, reject) => {
-    if (doValidate !== true) {
-      return resolve(true);
-    }
-    if (resource.validate(doc)) {
-      return resolve(true);
-    } else {
-      debug('model have %d error(s)', resource.validate.errors.length);
-      return reject(resource.validate.errors);
-    }
-  });
+function validate(resource, doc) {
+  if (resource.validate(doc)) {
+    return true;
+  } else {
+    debug('model have %d error(s)', resource.validate.errors.length);
+    throwresource.validate.errors;
+  }
 }
 
 module.exports.find = function find(options) {
@@ -63,37 +59,43 @@ module.exports.find = function find(options) {
  * @param {User} [options.user]
  * @returns {Promise}
  */
-module.exports.create = function createDoc(options) {
-  const state = getStateFromOptions(options);
-
-  return new Promise((resolve, reject) => {
-    validate(options.resource, options.data, state.validate)
-      .catch(reject)
-      .then(() => {
-        let doc = {
-          users: {},
-          states: {},
-          groups: []
-        };
-        if (options.parentId) {
-          doc.parentId = new ObjectId(options.parentId);
+module.exports.create = async options => {
+  const validate = await options.resource.validate(options.data);
+  if (!validate || options.resource.validate.errors?.length) {
+    throw new Error(
+      options.resource.validate.errors.map(e => e.message).join(', ')
+    );
+  }
+  const relsId = {};
+  if (options.resource.rels) {
+    Object.entries(options.resource.rels).map(([name, rel]) => {
+      if (options.data[`${rel.path}`]) {
+        const relId = createObjectId(options.data[`${rel.path}`]);
+        if (!relId) {
+          throw new Error(`Invalid ${rel.path}`);
         }
+        relsId[`${rel.path}`] = relId;
+      }
+    });
+  }
 
-        if (options.user) {
-          doc.users[String(options.user._id)] = {
-            roles: ['owner'],
-            addedAt: new Date(),
-            userId: options.user._id
-          };
-        }
-        doc.states[state.name] = {
-          createdAt: new Date(),
-          createdBy: options.user ? options.user._id : null,
-          data: options.data
-        };
-        resolve(doc);
-      });
-  });
+  let doc = {
+    revision: 1,
+    ...options.data,
+    ...relsId,
+    users: {},
+    groups: options.groups || [],
+    createdAt: new Date(),
+    createdBy: options.user ? options.user._id : null
+  };
+  if (options.user) {
+    doc.users[options.user._id.toString()] = {
+      roles: ['owner'],
+      addedAt: new Date(),
+      userId: options.user._id
+    };
+  }
+  return doc;
 };
 
 /**

@@ -84,56 +84,17 @@ module.exports.getDocuments = async (
   return result;
 };
 
-module.exports.createDocument = function(
-  resource,
-  data,
-  state,
-  user,
-  parentId,
-  groups
-) {
-  return new Promise((resolve, reject) => {
-    builder
-      .create({
-        resource,
-        data,
-        state,
-        user,
-        parentId
-      })
-      .then(async doc => {
-        if (doc.parentId) {
-          try {
-            const parent = await resource.currentCollection.findOne({
-              _id: doc.parentId
-            });
-            if (parent) {
-              doc.groups = parent.groups;
-            }
-          } catch (err) {}
-        }
-
-        if (groups.length) {
-          doc.groups = [...new Set([...doc.groups, ...groups])];
-        }
-
-        resource.currentCollection.insertOne(doc, (err, result) => {
-          if (err) return reject(err);
-          resolve(
-            Object.assign(
-              {
-                state: state,
-                id: result.ops[0]._id
-              },
-              result.ops[0].states[state]
-            )
-          );
-        });
-      })
-      .catch(error => {
-        return reject(error);
-      });
+module.exports.createDocument = async (resource, data, user, groups) => {
+  const doc = await builder.create({
+    resource,
+    data,
+    user,
+    groups
   });
+
+  const insert = await resource.currentCollection.insertOne(doc);
+  doc._id = insert.insertedId;
+  return doc;
 };
 
 module.exports.setDocument = function(resource, filter, data, state, user) {

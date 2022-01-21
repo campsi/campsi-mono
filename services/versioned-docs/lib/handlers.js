@@ -67,34 +67,19 @@ Object.defineProperty(module.exports.getDocuments, 'apidoc', {
   }
 });
 
-module.exports.postDoc = function(req, res) {
-  if (!!req.query?.parentId && !ObjectId.isValid(req.query.parentId)) {
-    return helpers.badRequest(res, new Error('Invalid parent id'));
-  }
-  documentService
-    .createDocument(
+module.exports.postDoc = async (req, res) => {
+  try {
+    const doc = await documentService.createDocument(
       req.resource,
       req.body,
-      req.state,
       req.user,
-      req?.query?.parentId,
       req.groups
-    )
-    .then(data => {
-      helpers.json(res, data);
-      return data;
-    })
-    .then(body =>
-      req.service.emit(
-        'document/created',
-        getEmitPayload(req, { documentId: body.id, data: body.data })
-      )
-    )
-    .catch(error => {
-      debug(error);
-      let func = helpers.validationError(res);
-      return func(error);
-    });
+    );
+    helpers.json(res, doc);
+    req.service.emit('document/created', getEmitPayload(req, { doc }));
+  } catch (e) {
+    return helpers.internalServerError(res, e);
+  }
 };
 
 // modify the state of a doc

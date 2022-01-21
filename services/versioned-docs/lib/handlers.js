@@ -180,18 +180,17 @@ module.exports.patchDoc = async (req, res) => {
 };
 
 // get a doc
-module.exports.getDoc = function(req, res) {
-  documentService
-    .getDocument(
-      req.resource,
-      req.filter,
-      req.query,
-      req.user,
-      req.state,
-      req.options.resources
-    )
-    .then(result => helpers.json(res, result))
-    .catch(err => helpers.notFound(res, err));
+module.exports.getDoc = async (req, res) => {
+  const doc = await documentService.getDocument(
+    req.resource,
+    req.filter,
+    req.query,
+    req.user,
+    req.state,
+    req.options.resources
+  );
+  if (!doc) return helpers.notFound(res, new Error('Document not found'));
+  return helpers.json(res, doc);
 };
 
 module.exports.delDoc = function(req, res) {

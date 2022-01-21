@@ -15,8 +15,7 @@ module.exports.getDocuments = async (
   user,
   query,
   sort,
-  pagination,
-  resources
+  pagination
 ) => {
   const queryBuilderOptions = {
     resource: resource,
@@ -185,116 +184,42 @@ module.exports.patchDocument = async (resource, filter, data, state, user) => {
   };
 };
 
-module.exports.getDocument = function(
+module.exports.getDocument = async (
   resource,
   filter,
   query,
   user,
-  state,
   resources
-) {
-  const requestedStates = getRequestedStatesFromQuery(resource, query);
-  const fields = { _id: 1, states: 1, users: 1, groups: 1 };
-  const match = { ...filter };
-  match[`states.${state}`] = { $exists: true };
-
-  if (!resource.isInheritable) {
-    return new Promise((resolve, reject) => {
-      resource.currentCollection.findOne(
-        match,
-        { projection: fields },
-        (err, doc) => {
-          if (err) return reject(err);
-          if (doc === null) {
-            return reject(new Error('Document Not Found'));
-          }
-          if (doc.states[state] === undefined) {
-            return reject(new Error('Document Not Found'));
-          }
-          const returnValue = prepareGetDocument({
-            doc,
-            state,
-            permissions,
-            requestedStates,
-            resource,
-            user
-          });
-          embedDocs
-            .one(resource, query.embed, user, returnValue.data, resources)
-            .then(doc => {
-              resolve(returnValue);
-            });
-        }
-      );
-    });
-  } else {
-    const pipeline = [
-      {
-        $match: match
-      },
-      {
-        $graphLookup: {
-          from: resource.currentCollection.collectionName,
-          startWith: '$parentId',
-          connectFromField: 'parentId',
-          connectToField: '_id',
-          as: 'parents'
-        }
-      },
-      {
-        $addFields: {
-          parent: {
-            $reduce: {
-              input: '$parents',
-              initialValue: {},
-              in: { $mergeObjects: { $reverseArray: '$parents' } }
-            }
-          }
-        }
-      },
-      {
-        $addFields: {
-          [`states.${state}.data`]: {
-            $mergeObjects: [
-              `$parent.states.${state}.data`,
-              `$$ROOT.states.${state}.data`
-            ]
-          }
-        }
-      },
-      {
-        $project: {
-          parents: 0,
-          parent: 0
+) => {
+  let aggregate = query?.with?.includes('creator') || false;
+  if (!aggregate) {
+    return await resource.currentCollection.findOne(filter);
+  }
+  const pipeline = [
+    { $match: filter },
+    {
+      $lookup: {
+        from: '__users__',
+        localField: 'createdBy',
+        foreignField: '_id',
+        as: 'tempUser'
+      }
+    },
+    {
+      $addFields: {
+        creator: {
+          $arrayElemAt: ['$tempUser', 0]
         }
       }
-    ];
-    return new Promise((resolve, reject) => {
-      resource.currentCollection
-        .aggregate(pipeline)
-        .toArray()
-        .then(documents => {
-          if (!documents || documents.length === 0) {
-            return reject(new Error('Document Not Found'));
-          }
-          const doc = documents[0];
-          const returnValue = prepareGetDocument({
-            doc,
-            state,
-            permissions,
-            requestedStates,
-            resource,
-            user
-          });
-          embedDocs
-            .one(resource, query.embed, user, returnValue.data, resources)
-            .then(doc => resolve(returnValue));
-        })
-        .catch(err => {
-          reject(err);
-        });
-    });
-  }
+    },
+    {
+      $project: {
+        tempUser: 0
+      }
+    }
+  ];
+  const docs = await resource.currentCollection.aggregate(pipeline).toArray();
+  return docs[0];
 };
 
 module.exports.getDocumentUsers = async (resource, filter) => {
@@ -485,18 +410,6 @@ module.exports.deleteDocument = function(resource, filter) {
       })
       .catch(err => err);
   }
-};
-
-const getDocumentChildren = async (documentId, resource) => {
-  return await resource.currentCollection
-    .aggregate([
-      {
-        $match: {
-          parentId: documentId
-        }
-      }
-    ])
-    .toArray();
 };
 
 const prepareGetDocument = settings => {

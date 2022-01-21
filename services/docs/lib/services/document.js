@@ -2,7 +2,7 @@ const builder = require('../modules/queryBuilder');
 const embedDocs = require('../modules/embedDocs');
 const paginateCursor = require('../../../../lib/modules/paginateCursor');
 const sortCursor = require('../../../../lib/modules/sortCursor');
-const createObjectID = require('../../../../lib/modules/createObjectID');
+const createObjectId = require('../../../../lib/modules/createObjectId');
 const permissions = require('../modules/permissions');
 
 // Helper functions
@@ -121,7 +121,7 @@ module.exports.getDocuments = function(
   });
 
   const cursor = !aggregate
-    ? resource.collection.find(dbQuery, dbFields)
+    ? resource.collection.find(dbQuery, { projection: dbFields })
     : resource.collection.aggregate(pipeline);
   const requestedStates = getRequestedStatesFromQuery(resource, query);
   let result = {};
@@ -232,15 +232,11 @@ module.exports.createDocument = function(
 
         resource.collection.insertOne(doc, (err, result) => {
           if (err) return reject(err);
-          resolve(
-            Object.assign(
-              {
-                state: state,
-                id: result.ops[0]._id
-              },
-              result.ops[0].states[state]
-            )
-          );
+          resolve({
+            state: state,
+            id: result.insertedId,
+            ...doc.states[state]
+          });
         });
       })
       .catch(error => {
@@ -282,7 +278,7 @@ module.exports.patchDocument = async (resource, filter, data, state, user) => {
   const update = await builder.patch({ resource, data, state, user });
 
   const updateDoc = await resource.collection.findOneAndUpdate(filter, update, {
-    returnOriginal: false
+    returnDocument: 'after'
   });
   if (!updateDoc.value) throw new Error('Not Found');
 
@@ -302,13 +298,13 @@ module.exports.getDocument = function(
   resources
 ) {
   const requestedStates = getRequestedStatesFromQuery(resource, query);
-  const fields = { _id: 1, states: 1, users: 1, groups: 1 };
+  const projection = { _id: 1, states: 1, users: 1, groups: 1 };
   const match = { ...filter };
   match[`states.${state}`] = { $exists: true };
 
   if (!resource.isInheritable) {
     return new Promise((resolve, reject) => {
-      resource.collection.findOne(match, { projection: fields }, (err, doc) => {
+      resource.collection.findOne(match, { projection }, (err, doc) => {
         if (err) return reject(err);
         if (doc === null) {
           return reject(new Error('Document Not Found'));
@@ -423,14 +419,14 @@ module.exports.addUserToDocument = function(resource, filter, userDetails) {
       const newUser = {
         roles: userDetails.roles,
         addedAt: new Date(),
-        userId: createObjectID(userDetails.userId) || userDetails.userId,
+        userId: createObjectId(userDetails.userId) || userDetails.userId,
         displayName: userDetails.displayName,
         infos: userDetails.infos
       };
       const ops = {
         $set: { [`users.${userDetails.userId}`]: newUser }
       };
-      const options = { returnOriginal: false, projection: { users: 1 } };
+      const options = { returnDocument: 'after', projection: { users: 1 } };
       resource.collection.findOneAndUpdate(
         filter,
         ops,
@@ -450,7 +446,7 @@ module.exports.addUserToDocument = function(resource, filter, userDetails) {
 module.exports.removeUserFromDocument = function(resource, filter, userId, db) {
   const removeUserFromDoc = new Promise((resolve, reject) => {
     const ops = { $unset: { [`users.${userId}`]: 1 } };
-    const options = { returnOriginal: false, projection: { users: 1 } };
+    const options = { returnDocument: 'after', projection: { users: 1 } };
     resource.collection.findOneAndUpdate(
       filter,
       ops,
@@ -466,7 +462,7 @@ module.exports.removeUserFromDocument = function(resource, filter, userId, db) {
   });
   const groups = [`${resource.label}_${filter._id}`];
   const removeGroupFromUser = new Promise((resolve, reject) => {
-    const filter = { _id: createObjectID(userId) };
+    const filter = { _id: createObjectId(userId) };
     const update = { $pull: { groups: { $in: groups } } };
     db.collection('__users__').updateOne(filter, update, (err, result) => {
       if (err) return reject(err);

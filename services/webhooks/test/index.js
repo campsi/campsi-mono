@@ -1,4 +1,4 @@
-const {ObjectID} = require('mongodb');
+const { ObjectId } = require('mongodb');
 const bodyParser = require('body-parser');
 
 process.env.NODE_CONFIG_DIR = './config';
@@ -21,7 +21,7 @@ campsi.app.use((req, res, next) => {
   req.user = {
     displayName: 'Test user',
     email: 'test@user.com',
-    _id: ObjectID()
+    _id: ObjectId()
   };
   next();
 });
@@ -37,17 +37,16 @@ campsi.on('campsi/ready', () => {
   campsi.listen(config.port);
 });
 
-process.on('uncaughtException', function () {
+process.on('uncaughtException', function() {
   debug('uncaughtException');
 });
 
-process.on('unhandledRejection', (reason) => {
+process.on('unhandledRejection', reason => {
   debug('unhandledRejection');
   debug(reason);
   process.exit(1);
 });
 
-campsi.start()
-  .catch((error) => {
-    debug(error);
-  });
+campsi.start().catch(error => {
+  debug(error);
+});

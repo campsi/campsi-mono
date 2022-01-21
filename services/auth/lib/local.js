@@ -7,7 +7,7 @@ const debug = require('debug')('campsi:auth:local');
 
 function getMissingParameters(payload, parameters) {
   return parameters.filter(
-    (paramName) => typeof payload[paramName] === 'undefined'
+    paramName => typeof payload[paramName] === 'undefined'
   );
 }
 
@@ -19,11 +19,11 @@ function dispatchUserSignupEvent(req, user) {
     token: user.identities.local.validationToken,
     data: user.data,
     requestBody: req.body,
-    requestHeaders: req.headers,
+    requestHeaders: req.headers
   });
 }
 
-module.exports.middleware = function (localProvider) {
+module.exports.middleware = function(localProvider) {
   return (req, res, next) => {
     req.authProvider = localProvider;
     state.serialize(req);
@@ -31,7 +31,7 @@ module.exports.middleware = function (localProvider) {
   };
 };
 
-module.exports.signin = function (req, res) {
+module.exports.signin = function(req, res) {
   // could be a one-liner, but I find this more explicit
   // the real signin method is the callback below
   return handlers.callback(req, res);
@@ -58,16 +58,16 @@ module.exports.callback = function localCallback(
         email: new RegExp(
           '^' + username.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$',
           'i'
-        ),
+        )
       },
-      { 'identities.local.username': username },
-    ],
+      { 'identities.local.username': username }
+    ]
   };
   debug('signin passport callback', username, password, filter);
   req.db
     .collection('__users__')
     .findOne(filter)
-    .then((user) => {
+    .then(user => {
       if (!user) {
         debug('tried to find user with username', username, 'but none found');
         done(null, null);
@@ -75,7 +75,7 @@ module.exports.callback = function localCallback(
       bcrypt.compare(
         password,
         user.identities.local.encryptedPassword,
-        function (err, isMatch) {
+        function(err, isMatch) {
           if (err) {
             debug(
               'bcrypt password compare error',
@@ -95,7 +95,7 @@ module.exports.callback = function localCallback(
     .catch(done);
 };
 
-module.exports.encryptPassword = function (password, saltRounds) {
+module.exports.encryptPassword = function(password, saltRounds) {
   function byteLength(str) {
     // returns the byte length of an utf8 string
     let s = str.length;
@@ -112,9 +112,9 @@ module.exports.encryptPassword = function (password, saltRounds) {
     if (byteLength(password) > 72) {
       reject(new Error('Password byte length must not exceed 72 bytes'));
     }
-    bcrypt.genSalt(saltRounds || 2, function (err, generatedSalt) {
+    bcrypt.genSalt(saltRounds || 2, function(err, generatedSalt) {
       if (err) return reject(err);
-      bcrypt.hash(password, generatedSalt, function (err, hash) {
+      bcrypt.hash(password, generatedSalt, function(err, hash) {
         if (err) return reject(err);
         resolve(hash);
       });
@@ -122,18 +122,18 @@ module.exports.encryptPassword = function (password, saltRounds) {
   });
 };
 
-module.exports.createRandomToken = function (username, salt) {
+module.exports.createRandomToken = function(username, salt) {
   return CryptoJS.AES.encrypt(
     new Date().toISOString() + username,
     salt
   ).toString();
 };
 
-module.exports.signup = function (req, res) {
+module.exports.signup = function(req, res) {
   const salt = req.authProvider.options.salt;
   const users = req.db.collection('__users__');
   const missingParameters = ['password', 'displayName', 'username'].filter(
-    (prop) => {
+    prop => {
       return typeof req.body[prop] === 'undefined' || req.body.prop === '';
     }
   );
@@ -143,35 +143,35 @@ module.exports.signup = function (req, res) {
       new Error(`missing parameters : ${missingParameters.join(', ')}`)
     );
   }
-  const insertUser = function (user) {
+  const insertUser = function(user) {
     return new Promise((resolve, reject) => {
       users
         .insertOne(user)
-        .then((result) =>
+        .then(result =>
           resolve(Object.assign({}, user, { _id: result.insertedId }))
         )
-        .catch((err) => {
+        .catch(err => {
           reject(err);
         });
     });
   };
-  const updateExistingNonLocalUser = function (user) {
+  const updateExistingNonLocalUser = function(user) {
     return new Promise((resolve, reject) => {
       users.findOneAndUpdate(
         {
           email: user.email,
-          'identities.local': { $exists: false },
+          'identities.local': { $exists: false }
         },
         {
           $set: {
             'identities.local': user.identities.local,
             email: user.email,
             data: user.data,
-            updatedAt: new Date(),
-          },
+            updatedAt: new Date()
+          }
         },
         {
-          returnOriginal: false,
+          returnDocument: 'after'
         },
         (err, result) => {
           return err
@@ -184,7 +184,7 @@ module.exports.signup = function (req, res) {
   const email = String(req.body.email || req.body.username).toLowerCase();
   module.exports
     .encryptPassword(req.body.password)
-    .then((encryptedPassword) => {
+    .then(encryptedPassword => {
       let user = {
         displayName: req.body.displayName,
         email: email,
@@ -199,21 +199,21 @@ module.exports.signup = function (req, res) {
             validationToken: module.exports.createRandomToken(
               req.body.username,
               salt
-            ),
-          },
-        },
+            )
+          }
+        }
       };
 
       updateExistingNonLocalUser(user)
-        .then((updatedUser) => updatedUser || insertUser(user))
-        .then((insertedOrUpdatedUser) => {
+        .then(updatedUser => updatedUser || insertUser(user))
+        .then(insertedOrUpdatedUser => {
           handlers.callback(req, res);
           return insertedOrUpdatedUser;
         })
-        .then((loggedInUser) => dispatchUserSignupEvent(req, loggedInUser))
-        .catch((err) => handlers.redirectWithError(req, res, err));
+        .then(loggedInUser => dispatchUserSignupEvent(req, loggedInUser))
+        .catch(err => handlers.redirectWithError(req, res, err));
     })
-    .catch((passwordEncryptionError) => {
+    .catch(passwordEncryptionError => {
       debug('Password encryption error', passwordEncryptionError);
       return helpers.error(res, new Error('password encryption error'));
     });
@@ -229,7 +229,7 @@ module.exports.signup = function (req, res) {
  * @param {string} req.query.redirectURI
  * @param {*} res
  */
-module.exports.validate = function (req, res) {
+module.exports.validate = function(req, res) {
   if (!req.query.token) {
     return helpers.error(res, new Error('you must provide a validation token'));
   }
@@ -240,16 +240,18 @@ module.exports.validate = function (req, res) {
       { 'identities.local.validationToken': req.query.token },
       {
         $set: { 'identities.local.validated': true },
-        $unset: { 'identities.local.validationToken': '' },
+        $unset: { 'identities.local.validationToken': '' }
       },
-      { returnOriginal: false }
+      {
+        returnDocument: 'after'
+      }
     )
-    .then((result) => {
+    .then(result => {
       if (result.value) {
         req.service.emit('local/validated', {
           user: result.value,
           requestBody: req.body,
-          requestHeaders: req.headers,
+          requestHeaders: req.headers
         });
         req.user = result.value;
         debug('user validated', result.value);
@@ -262,7 +264,7 @@ module.exports.validate = function (req, res) {
         helpers.notFound(res, new Error('Validation Token not found'));
       }
     })
-    .catch((err) => {
+    .catch(err => {
       helpers.error(res, err);
     });
 };
@@ -277,7 +279,7 @@ module.exports.validate = function (req, res) {
  * @param res
  * @return {*}
  */
-module.exports.createResetPasswordToken = function (req, res) {
+module.exports.createResetPasswordToken = function(req, res) {
   const missingParams = getMissingParameters(req.body, ['email']);
   if (missingParams.length > 0) {
     return helpers.error(
@@ -300,29 +302,29 @@ module.exports.createResetPasswordToken = function (req, res) {
         email: new RegExp(
           '^' + req.body.email.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$',
           'i'
-        ),
+        )
       },
       {
         $set: {
           'identities.local.passwordResetToken': {
             value: token,
-            expiration: expirationDate,
-          },
-        },
+            expiration: expirationDate
+          }
+        }
       },
       {
-        returnOriginal: false,
+        returnDocument: 'after'
       }
     )
-    .then((out) => {
+    .then(out => {
       req.service.emit('local/passwordResetTokenCreated', {
         user: out.value,
         requestBody: req.body,
-        requestHeaders: req.headers,
+        requestHeaders: req.headers
       });
       return res.json({ success: true });
     })
-    .catch((err) => {
+    .catch(err => {
       return helpers.error(res, err);
     });
 };
@@ -335,7 +337,7 @@ module.exports.createResetPasswordToken = function (req, res) {
  * @param res
  * @return {*}
  */
-module.exports.resetPassword = function (req, res) {
+module.exports.resetPassword = function(req, res) {
   const missingParams = getMissingParameters(req.body, ['password', 'token']);
   if (missingParams.length > 0) {
     return helpers.error(
@@ -345,40 +347,41 @@ module.exports.resetPassword = function (req, res) {
   }
   module.exports
     .encryptPassword(req.body.password)
-    .then(function (encryptedPassword) {
+    .then(function(encryptedPassword) {
       const filter = {
         'identities.local.passwordResetToken.value': req.body.token,
-        'identities.local.passwordResetToken.expiration': { $gt: new Date() },
+        'identities.local.passwordResetToken.expiration': { $gt: new Date() }
       };
       const update = {
         $set: {
-          'identities.local.encryptedPassword': encryptedPassword,
+          'identities.local.encryptedPassword': encryptedPassword
         },
         $unset: {
           token: '',
-          passwordResetToken: '',
-        },
+          passwordResetToken: ''
+        }
       };
       req.db
         .collection('__users__')
         .findOneAndUpdate(filter, update)
-        .then((result) => {
+        .then(result => {
           if (!result.value) {
             throw new Error('wrong reset token');
           }
           // we set the username as a param because if the update succeeds,
           // the request is forwarded to the passport local callback and will
           // authorize the user with the new password
-          req.body.username = result.value.identities.local.username || result.value.email;
+          req.body.username =
+            result.value.identities.local.username || result.value.email;
           return handlers.callback(req, res);
         })
-        .catch((err) => handlers.redirectWithError(req, res, err));
+        .catch(err => handlers.redirectWithError(req, res, err));
     })
-    .catch((passwordEncryptionError) => {
+    .catch(passwordEncryptionError => {
       debug('Could not encrypt password', passwordEncryptionError);
       helpers.error({
         error: true,
-        message: 'an error occured while encrypting the password specified',
+        message: 'an error occured while encrypting the password specified'
       });
     });
 };

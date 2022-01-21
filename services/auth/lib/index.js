@@ -8,7 +8,7 @@ const handlers = require('./handlers');
 const debug = require('debug')('campsi');
 const authUser = require('./middleware/authUser');
 const session = require('./middleware/session');
-const createObjectID = require('../../../lib/modules/createObjectID');
+const createObjectId = require('../../../lib/modules/createObjectId');
 
 module.exports = class AuthService extends CampsiService {
   initialize() {
@@ -87,24 +87,16 @@ module.exports = class AuthService extends CampsiService {
       });
   }
 
-  fetchUsers(userIds) {
-    return new Promise((resolve, reject) => {
-      const filter = {
-        _id: {
-          $in: userIds.map(id => createObjectID(id))
-        }
-      };
-      this.db.collection('__users__').find(filter, (err, cursor) => {
-        if (err) return reject(err);
-        cursor.toArray((err, users) => {
-          if (err) return reject(err);
-          const map = users.reduce((map, user) => {
-            map[user._id.toString()] = user;
-            return map;
-          }, {});
-          resolve(userIds.map(userId => map[userId] || userId));
-        });
-      });
-    });
+  async fetchUsers(userIds) {
+    const filter = { _id: { $in: userIds.map(id => createObjectId(id)) } };
+    const users = await this.db
+      .collection('__users__')
+      .find(filter)
+      .toArray();
+    const map = users.reduce((map, user) => {
+      map[user._id.toString()] = user;
+      return map;
+    }, {});
+    return userIds.map(userId => map[userId] || userId);
   }
 };

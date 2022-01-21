@@ -8,7 +8,7 @@ const passport = require('@passport-next/passport');
 const editURL = require('edit-url');
 const state = require('./state');
 const debug = require('debug')('campsi:service:auth');
-const ObjectId = require('mongodb').ObjectId;
+const { ObjectId } = require('mongodb');
 
 function logout(req, res) {
   if (!req.user) {
@@ -75,7 +75,9 @@ function patchMe(req, res) {
 
   req.db
     .collection('__users__')
-    .findOneAndUpdate({ _id: req.user._id }, update, { returnOriginal: false })
+    .findOneAndUpdate({ _id: req.user._id }, update, {
+      returnDocument: 'after'
+    })
     .then(result => res.json(result.value))
     .catch(error => helpers.error(res, error));
 }
@@ -98,7 +100,7 @@ function createAnonymousUser(req, res) {
     .collection('__users__')
     .insertOne(insert)
     .then(insertResult => {
-      res.json(insertResult.ops[0]);
+      res.json({ _id: insertResult.insertedId, ...insert });
     });
 }
 
@@ -183,20 +185,19 @@ function getUserFilterFromQuery(query) {
   }
   return filter;
 }
-function getUsers(req, res) {
+async function getUsers(req, res) {
   if (req.user && req.user.isAdmin) {
-    req.db
-      .collection('__users__')
-      .find(
-        getUserFilterFromQuery(req.query),
-        { projection: { 'identities.local.encryptedPassword': 0 } },
-        (err, result) => {
-          if (err) {
-            return redirectWithError(req, res, err);
-          }
-          result.toArray().then(users => res.json(users));
-        }
-      );
+    try {
+      const users = await req.db
+        .collection('__users__')
+        .find(getUserFilterFromQuery(req.query), {
+          projection: { 'identities.local.encryptedPassword': 0 }
+        })
+        .toArray();
+      return res.json(users);
+    } catch (err) {
+      return redirectWithError(req, res, err);
+    }
   } else {
     redirectWithError(
       req,
@@ -220,7 +221,9 @@ function getAccessTokenForUser(req, res) {
     );
     req.db
       .collection('__users__')
-      .findOneAndUpdate({ _id: userId }, update, { returnOriginal: false })
+      .findOneAndUpdate({ _id: userId }, update, {
+        returnDocument: 'after'
+      })
       .then(result => {
         if (result.value) {
           if (!req.query.redirectURI) {
@@ -273,7 +276,12 @@ function inviteUser(req, res) {
   const dispatchInvitationEvent = function(payload) {
     req.service.emit('invitation/created', payload);
   };
-  const filter = { email: new RegExp('^' + req.body.email.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$', 'i') };
+  const filter = {
+    email: new RegExp(
+      '^' + req.body.email.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$',
+      'i'
+    )
+  };
   const update = { $set: { updatedAt: new Date() } };
 
   const groups = req?.query?.groups
@@ -289,7 +297,7 @@ function inviteUser(req, res) {
     .findOneAndUpdate(
       filter,
       update,
-      { returnNewDocument: true },
+      { returnDocument: 'after' },
       (err, result) => {
         if (err) {
           return helpers.error(res, err);
@@ -360,7 +368,7 @@ function acceptInvitation(req, res) {
       $unset: { [`identities.invitation-${req.params.invitationToken}`]: true }
     },
     {
-      returnOriginal: true
+      returnDocument: 'after'
     },
     (err, updateResult) => {
       if (err) return helpers.error(res, err);
@@ -413,7 +421,9 @@ function addGroupsToUser(req, res) {
 
   req.db
     .collection('__users__')
-    .findOneAndUpdate({ _id: req.user._id }, update, { returnOriginal: false })
+    .findOneAndUpdate({ _id: req.user._id }, update, {
+      returnDocument: 'after'
+    })
     .then(result => res.json(result.value))
     .catch(error => helpers.error(res, error));
 }

@@ -1,10 +1,10 @@
 const helpers = require('../../../lib/modules/responseHelpers');
-const createObjectID = require('../../../lib/modules/createObjectID');
+const createObjectId = require('../../../lib/modules/createObjectId');
 const debug = require('debug')('campsi:services:assets');
 
-module.exports.attachAsset = function (req, res, next, id) {
+module.exports.attachAsset = function(req, res, next, id) {
   req.service.collection
-    .findOne({ _id: createObjectID(id) })
+    .findOne({ _id: createObjectId(id) })
     .then(asset => {
       if (!asset) {
         return helpers.notFound(res);
@@ -18,7 +18,7 @@ module.exports.attachAsset = function (req, res, next, id) {
     });
 };
 
-module.exports.attachStorage = function (req, res, next) {
+module.exports.attachStorage = function(req, res, next) {
   req.storage = req.asset.storage
     ? req.service.options.storages[req.asset.storage]
     : req.service.options.getStorage();

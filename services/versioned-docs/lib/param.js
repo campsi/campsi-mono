@@ -31,7 +31,7 @@ module.exports.attachResource = function(options) {
       // USER can access RESOURCE/FILTER with METHOD?
       try {
         const filter = can(req.user, req.resource, req.method);
-        req.filter = { ...req.filter, filter };
+        req.filter = { ...req.filter, ...filter };
         next();
       } catch (err) {
         return helpers.unauthorized(res, err);

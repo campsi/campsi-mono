@@ -61,39 +61,31 @@ module.exports.getDocuments = async (
   const cursor = !aggregate
     ? resource.currentCollection.find(dbQuery)
     : resource.currentCollection.aggregate(pipeline);
+
   let result = {};
 
-  return new Promise((resolve, reject) => {
-    paginateCursor(cursor, pagination)
-      .then(info => {
-        result.count = info.count;
-        result.label = resource.label;
-        result.page = info.page;
-        result.perPage = info.perPage;
-        result.nav = {};
-        result.nav.first = 1;
-        result.nav.last = info.lastPage;
-        if (info.page > 1) {
-          result.nav.previous = info.page - 1;
-        }
-        if (info.page < info.lastPage) {
-          result.nav.next = info.page + 1;
-        }
-        if (sort) {
-          sortCursor(cursor, sort, '');
-        }
-        return cursor.toArray();
-      })
-      .then(docs => {
-        const hey = docs;
-      })
-      .then(() => {
-        return resolve(result);
-      })
-      .catch(err => {
-        return reject(err);
-      });
-  });
+  const { count, page, lastPage, perPage } = await paginateCursor(
+    cursor,
+    pagination
+  );
+  result = {
+    ...result,
+    count,
+    page,
+    perPage,
+    label: resource.label,
+    nav: {
+      first: 1,
+      last: lastPage,
+      previous: page > 1 ? page - 1 : undefined,
+      next: page < lastPage ? page + 1 : undefined
+    }
+  };
+  if (sort) {
+    sortCursor(cursor, sort, '');
+  }
+  result.docs = await cursor.toArray();
+  return result;
 };
 
 module.exports.createDocument = function(

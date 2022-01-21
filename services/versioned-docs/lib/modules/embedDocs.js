@@ -1,7 +1,7 @@
 const async = require('async');
 const ObjectId = require('mongodb').ObjectId;
 const findRefs = require('campsi-find-references');
-const createObjectId = require('campsi/lib/modules/createObjectId');
+const createObjectId = require('../../../../lib/modules/createObjectId');
 
 function fetchSubdoc(resource, reference) {
   const _id = reference.get();

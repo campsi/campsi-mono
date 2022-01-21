@@ -7,7 +7,6 @@ const debug = require('debug')('campsi:docs');
 const format = require('string-format');
 const csdAssign = require('./keywords/csdAssign');
 const csdVisibility = require('./keywords/csdVisibility');
-const ash = require('express-async-handler');
 
 /* Todo
  * [ ] filter document fields based on query parameter fields
@@ -28,7 +27,7 @@ module.exports = class VersionedDocsService extends CampsiService {
     });
     this.router.param('resource', param.attachResource(service.options));
     this.router.get('/', handlers.getResources);
-    this.router.get('/:resource', ash(handlers.getDocuments));
+    this.router.get('/:resource', handlers.getDocuments);
     /*    this.router.get('/:resource', handlers.getDocuments);
     this.router.get('/:resource/:id/users', handlers.getDocUsers);
     this.router.post('/:resource/:id/users', handlers.postDocUser);

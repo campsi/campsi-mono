@@ -19,14 +19,14 @@ const getEmitPayload = (req, additionalProps) => {
   );
 };
 
-module.exports.getDocuments = function(req, res) {
+module.exports.getDocuments = async (req, res) => {
   let pagination = {};
   let perPage = req.query.perPage || req.resource.perPage;
   if (perPage) pagination.perPage = perPage;
   if (req.query.page) pagination.page = req.query.page;
 
-  documentService
-    .getDocuments(
+  try {
+    const data = await documentService.getDocuments(
       req.resource,
       req.filter,
       req.user,
@@ -34,35 +34,32 @@ module.exports.getDocuments = function(req, res) {
       req.query.sort,
       pagination,
       req.options.resources
-    )
-    .then(data => {
-      let links = [];
-      forIn(data.nav, (page, rel) => {
-        if (page !== data.page) {
-          links.push(
-            '<{0}>; rel="{1}"'.format(
-              buildLink(req, page, ['perPage', 'sort']),
-              rel
-            )
-          );
-        }
-      });
-      let headers = {
-        'X-Total-Count': data.count,
-        'X-Page': data.page,
-        'X-Per-Page': data.perPage,
-        'X-Last-Page': data.nav.last,
-        'Access-Control-Expose-Headers':
-          'X-Total-Count, X-Page, X-Per-Page, X-Last-Page'
-      };
-      if (links.length) {
-        headers.Link = links.join(', ');
+    );
+
+    const links = [];
+    Object.entries(data.nav).map(([rel, page]) => {
+      if (!!page && page !== data.page) {
+        links.push(
+          `<${buildLink(req, page, ['perPage', 'sort'])}>; rel="${rel}"`
+        );
       }
-      helpers.json(res, data.docs, headers);
-    })
-    .catch(() => {
-      helpers.notFound(res);
     });
+
+    const headers = {
+      'X-Total-Count': data.count,
+      'X-Page': data.page,
+      'X-Per-Page': data.perPage,
+      'X-Last-Page': data.nav.last,
+      'Access-Control-Expose-Headers':
+        'X-Total-Count, X-Page, X-Per-Page, X-Last-Page'
+    };
+    if (links.length) {
+      headers.Link = links.join(', ');
+    }
+    return helpers.json(res, data.docs, headers);
+  } catch (e) {
+    return helpers.notFound(res);
+  }
 };
 Object.defineProperty(module.exports.getDocuments, 'apidoc', {
   value: {

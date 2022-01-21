@@ -12,96 +12,33 @@ const getRequestedStatesFromQuery = (resource, query) => {
   return query.states ? query.states.split(',') : Object.keys(resource.states);
 };
 
-module.exports.getDocuments = function(
+module.exports.getDocuments = async (
   resource,
   filter,
   user,
   query,
-  state,
   sort,
   pagination,
   resources
-) {
+) => {
   const queryBuilderOptions = {
     resource: resource,
     user: user,
-    query: query,
-    state: state
-  };
-  const filterState = {};
-  filterState[`states.${state}`] = { $exists: true };
-  const dbQuery = Object.assign(
-    filterState,
-    filter,
-    builder.find(queryBuilderOptions)
-  );
-
-  const dbFields = {
-    _id: 1,
-    states: 1,
-    users: 1,
-    groups: 1
+    query: query
   };
 
-  let aggregate = false;
-  if (resource.isInheritable || query?.with?.includes('creator')) {
-    aggregate = true;
-  }
+  const dbQuery = { ...filter, ...builder.find(queryBuilderOptions) };
+
+  let aggregate = query?.with?.includes('creator') || false;
 
   const pipeline = [{ $match: dbQuery }];
 
-  if (resource.isInheritable) {
-    dbFields.parentId = 1;
-    pipeline.push(
-      {
-        $graphLookup: {
-          from: resource.collection.collectionName,
-          startWith: '$parentId',
-          connectFromField: 'parentId',
-          connectToField: '_id',
-          as: 'parents'
-        }
-      },
-      {
-        $addFields: {
-          parent: {
-            $reduce: {
-              input: '$parents',
-              initialValue: {},
-              in: {
-                $mergeObjects: {
-                  $reverseArray: '$parents'
-                }
-              }
-            }
-          }
-        }
-      },
-      {
-        $addFields: {
-          [`states.${state}.data`]: {
-            $mergeObjects: [
-              `$parent.states.${state}.data`,
-              `$$ROOT.states.${state}.data`
-            ]
-          }
-        }
-      }
-    );
-  }
-
   if (query?.with?.includes('creator')) {
-    dbFields.creator = {
-      _id: 1,
-      displayName: 1,
-      email: 1
-    };
-
     pipeline.push(
       {
         $lookup: {
           from: '__users__',
-          localField: `states.${state}.createdBy`,
+          localField: 'createdBy',
           foreignField: '_id',
           as: 'tempUser'
         }
@@ -112,19 +49,20 @@ module.exports.getDocuments = function(
             $arrayElemAt: ['$tempUser', 0]
           }
         }
+      },
+      {
+        $project: {
+          tempUser: 0
+        }
       }
     );
   }
 
-  pipeline.push({
-    $project: dbFields
-  });
-
   const cursor = !aggregate
-    ? resource.collection.find(dbQuery, dbFields)
-    : resource.collection.aggregate(pipeline);
-  const requestedStates = getRequestedStatesFromQuery(resource, query);
+    ? resource.currentCollection.find(dbQuery)
+    : resource.currentCollection.aggregate(pipeline);
   let result = {};
+
   return new Promise((resolve, reject) => {
     paginateCursor(cursor, pagination)
       .then(info => {
@@ -142,51 +80,12 @@ module.exports.getDocuments = function(
           result.nav.next = info.page + 1;
         }
         if (sort) {
-          sortCursor(
-            cursor,
-            sort,
-            sort.indexOf('data') === 0 ? 'states.{}.data.'.format(state) : ''
-          );
+          sortCursor(cursor, sort, '');
         }
         return cursor.toArray();
       })
       .then(docs => {
-        result.docs = docs.map(doc => {
-          const currentState = doc.states[state] || {};
-          const allowedStates = permissions.getAllowedStatesFromDocForUser(
-            user,
-            resource,
-            'GET',
-            doc
-          );
-          const states = permissions.filterDocumentStates(
-            doc,
-            allowedStates,
-            requestedStates
-          );
-          const returnData = {
-            id: doc._id,
-            state: state,
-            states: states,
-            createdAt: currentState.createdAt,
-            createdBy: currentState.createdBy,
-            data: currentState.data || {}
-          };
-          if (resource.isInheritable && query?.with?.includes('parentId')) {
-            returnData.parentId = doc.parentId;
-          }
-          if (query?.with?.includes('creator')) {
-            returnData.creator = doc.creator;
-          }
-          return returnData;
-        });
-        return embedDocs.many(
-          resource,
-          query.embed,
-          user,
-          result.docs,
-          resources
-        );
+        const hey = docs;
       })
       .then(() => {
         return resolve(result);

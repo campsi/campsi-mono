@@ -31,7 +31,6 @@ module.exports.getDocuments = function(req, res) {
       req.filter,
       req.user,
       req.query,
-      req.state,
       req.query.sort,
       pagination,
       req.options.resources
@@ -207,9 +206,7 @@ module.exports.delDoc = function(req, res) {
 };
 
 module.exports.getResources = function(req, res) {
-  resourceService.getResources(req.options).then(result => {
-    return helpers.json(res, result);
-  });
+  return helpers.json(res, resourceService.getResources(req.options));
 };
 Object.defineProperty(module.exports.getResources, 'apidoc', {
   value: {

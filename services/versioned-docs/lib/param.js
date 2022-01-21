@@ -28,13 +28,14 @@ module.exports.attachResource = function(options) {
         ? getValidGroupsFromString(req.query.groups)
         : [];
 
-      // USER can access RESOURCE/FILTER with METHOD/STATE ?
-      can(req.user, req.resource, req.method, req.state)
-        .then(filter => {
-          req.filter = Object.assign({}, req.filter, filter);
-          next();
-        })
-        .catch(err => helpers.unauthorized(res, err));
+      // USER can access RESOURCE/FILTER with METHOD?
+      try {
+        const filter = can(req.user, req.resource, req.method);
+        req.filter = { ...req.filter, filter };
+        next();
+      } catch (err) {
+        return helpers.unauthorized(res, err);
+      }
     }
   };
 };

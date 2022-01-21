@@ -47,14 +47,10 @@ function validate(resource, doc, doValidate) {
 }
 
 module.exports.find = function find(options) {
-  let state = getStateFromOptions(options);
   let filter = {};
-
   if (options.query) {
     forIn(options.query, (val, prop) => {
-      if (prop.startsWith('data.')) {
-        filter[join('states', state.name, prop)] = val;
-      }
+      filter[`${prop}`] = val;
     });
   }
   return filter;

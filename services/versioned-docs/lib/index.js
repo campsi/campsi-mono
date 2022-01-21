@@ -1,8 +1,6 @@
 const CampsiService = require('../../../lib/service');
 const param = require('./param');
 const handlers = require('./handlers');
-const async = require('async');
-const forIn = require('for-in');
 const Ajv = require('ajv');
 const $RefParser = require('json-schema-ref-parser');
 const debug = require('debug')('campsi:docs');
@@ -29,7 +27,8 @@ module.exports = class VersionedDocsService extends CampsiService {
       next();
     });
     this.router.param('resource', param.attachResource(service.options));
-    this.router.get('/', ash(handlers.getResources));
+    this.router.get('/', handlers.getResources);
+    this.router.get('/:resource', ash(handlers.getDocuments));
     /*    this.router.get('/:resource', handlers.getDocuments);
     this.router.get('/:resource/:id/users', handlers.getDocUsers);
     this.router.post('/:resource/:id/users', handlers.postDocUser);
@@ -100,12 +99,12 @@ module.exports = class VersionedDocsService extends CampsiService {
             resource.schema = schema;
             resource.validate = ajvWriter.compile(schema);
             resource.filter = ajvReader.compile(schema);
+            return (service.options.resources[`${resName}`] = resource);
           }
         )
       );
     } catch (e) {
       debug(e);
-      debug(e.stack);
     }
   }
 
@@ -113,7 +112,7 @@ module.exports = class VersionedDocsService extends CampsiService {
     let desc = super.describe();
     desc.resources = {};
     desc.classes = this.options.classes;
-    forIn(this.options.resources, (resource, path) => {
+    Object.entries(this.options.resources).map(([path, resource]) => {
       desc.resources[path] = {
         label: resource.label,
         name: resource.path,

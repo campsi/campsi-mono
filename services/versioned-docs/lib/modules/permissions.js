@@ -1,101 +1,39 @@
-
-
 function isAllowedTo(permission, method) {
   return permission && (permission.includes(method) || permission === '*');
 }
 
-const PUBLIC_ERR_MESSAGE = 'resource is not public for this state and method';
+const PUBLIC_ERR_MESSAGE = 'resource is not public for this method';
 
-module.exports.can = function can(user, resource, method, state) {
-  return new Promise((resolve, reject) => {
-    if (typeof user === 'undefined') {
-      if (
-        !resource.permissions['public'] ||
-        !resource.permissions['public'][state]
-      ) {
-        return reject(new Error(PUBLIC_ERR_MESSAGE));
-      }
-      const publicPermissions = resource.permissions['public'][state];
-      const publicIsAllowed = isAllowedTo(publicPermissions, method);
-      return publicIsAllowed
-        ? resolve({})
-        : reject(new Error(PUBLIC_ERR_MESSAGE));
+module.exports.can = function can(user, resource, method) {
+  if (typeof user === 'undefined') {
+    if (!resource.permissions['public']) {
+      throw new Error(PUBLIC_ERR_MESSAGE);
     }
-    if (user.isAdmin) {
-      return resolve({});
-    }
-
-    /*
-     2 ways of allowing access to a document:
-        - by role: state and method dependent
-        - or if they share at least one common group
-     */
-    const allowedRoles = Object.keys(resource.permissions)
-      .filter((role) => {
-        return isAllowedTo(resource.permissions[role][state], method);
-      })
-      .concat(['owner']);
-
-    let filter = {
-      [`users.${user._id}.roles`]: { $elemMatch: { $in: allowedRoles } },
-    };
-
-    if (user.groups && user.groups.length) {
-      filter = { $or: [filter, { groups: { $in: user.groups } }] };
-    }
-    return resolve(filter);
-  });
-};
-
-module.exports.getAllowedStatesFromDocForUser = function (
-  user,
-  resource,
-  method,
-  doc
-) {
-  const getPublicStates = () => {
     const publicPermissions = resource.permissions['public'];
-    const publicPermissionsStates = Object.keys(publicPermissions);
-    return publicPermissionsStates.filter((stateName) =>
-      isAllowedTo(publicPermissions[stateName], method)
-    );
-  };
-  if (!user) {
-    return getPublicStates();
+    const publicIsAllowed = isAllowedTo(publicPermissions, method);
+    if (!publicIsAllowed) {
+      throw new Error(PUBLIC_ERR_MESSAGE);
+    }
+    return {};
   }
   if (user.isAdmin) {
-    return Object.keys(resource.states);
+    return {};
   }
-  const docUser = doc.users[user._id] || { roles: [] };
-  if (!Array.isArray(docUser.roles)) {
-    return getPublicStates();
+  /*
+    2 ways of allowing access to a document:
+      - by role: method dependent
+      - or if they share at least one common group
+  */
+  const allowedRoles = Object.keys(resource.permissions)
+    .filter(role => {
+      return isAllowedTo(resource.permissions[role], method);
+    })
+    .concat(['owner']);
+  let filter = {
+    [`users.${user._id}.roles`]: { $elemMatch: { $in: allowedRoles } }
+  };
+  if (user.groups && user.groups.length) {
+    filter = { $or: [filter, { groups: { $in: user.groups } }] };
   }
-  let allowedStates = [];
-  docUser.roles.forEach((role) => {
-    const permsForRole = resource.permissions[role];
-    if (!permsForRole) {
-      return;
-    }
-    const statesForRole = Object.keys(permsForRole);
-    allowedStates = allowedStates.concat(
-      statesForRole.filter((stateName) =>
-        isAllowedTo(permsForRole[stateName], method)
-      )
-    );
-  });
-  return allowedStates;
-};
-
-module.exports.filterDocumentStates = function (
-  document,
-  allowedStates,
-  requestedStates
-) {
-  return Object.keys(document.states || {})
-    .filter((docState) => requestedStates.includes(docState))
-    .filter((docState) => allowedStates.includes(docState))
-    .reduce((states, displayState) => {
-      states[displayState] = document.states[displayState];
-      return states;
-    }, {});
+  return filter;
 };

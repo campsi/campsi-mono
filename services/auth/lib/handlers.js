@@ -52,7 +52,7 @@ function updateMe(req, res) {
   req.db
     .collection('__users__')
     .findOneAndUpdate({ _id: req.user._id }, update, {
-      returnOriginal: false,
+      returnDocument: 'after',
       projection: { 'identities.local.encryptedPassword': 0 }
     })
     .then(result => res.json(result.value))

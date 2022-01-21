@@ -8,9 +8,6 @@ const permissions = require('../modules/permissions');
 // Helper functions
 const getDocUsersList = doc =>
   Object.keys(doc ? doc.users : []).map(k => doc.users[k]);
-const getRequestedStatesFromQuery = (resource, query) => {
-  return query.states ? query.states.split(',') : Object.keys(resource.states);
-};
 
 module.exports.getDocuments = async (
   resource,
@@ -108,7 +105,7 @@ module.exports.createDocument = function(
       .then(async doc => {
         if (doc.parentId) {
           try {
-            const parent = await resource.collection.findOne({
+            const parent = await resource.currentCollection.findOne({
               _id: doc.parentId
             });
             if (parent) {
@@ -121,7 +118,7 @@ module.exports.createDocument = function(
           doc.groups = [...new Set([...doc.groups, ...groups])];
         }
 
-        resource.collection.insertOne(doc, (err, result) => {
+        resource.currentCollection.insertOne(doc, (err, result) => {
           if (err) return reject(err);
           resolve(
             Object.assign(
@@ -150,7 +147,7 @@ module.exports.setDocument = function(resource, filter, data, state, user) {
         user: user
       })
       .then(update => {
-        resource.collection.updateOne(filter, update, (err, result) => {
+        resource.currentCollection.updateOne(filter, update, (err, result) => {
           if (err) return reject(err);
 
           if (result.modifiedCount !== 1) {
@@ -172,9 +169,13 @@ module.exports.setDocument = function(resource, filter, data, state, user) {
 module.exports.patchDocument = async (resource, filter, data, state, user) => {
   const update = await builder.patch({ resource, data, state, user });
 
-  const updateDoc = await resource.collection.findOneAndUpdate(filter, update, {
-    returnOriginal: false
-  });
+  const updateDoc = await resource.currentCollection.findOneAndUpdate(
+    filter,
+    update,
+    {
+      returnDocument: 'after'
+    }
+  );
   if (!updateDoc.value) throw new Error('Not Found');
 
   return {
@@ -199,28 +200,32 @@ module.exports.getDocument = function(
 
   if (!resource.isInheritable) {
     return new Promise((resolve, reject) => {
-      resource.collection.findOne(match, { projection: fields }, (err, doc) => {
-        if (err) return reject(err);
-        if (doc === null) {
-          return reject(new Error('Document Not Found'));
-        }
-        if (doc.states[state] === undefined) {
-          return reject(new Error('Document Not Found'));
-        }
-        const returnValue = prepareGetDocument({
-          doc,
-          state,
-          permissions,
-          requestedStates,
-          resource,
-          user
-        });
-        embedDocs
-          .one(resource, query.embed, user, returnValue.data, resources)
-          .then(doc => {
-            resolve(returnValue);
+      resource.currentCollection.findOne(
+        match,
+        { projection: fields },
+        (err, doc) => {
+          if (err) return reject(err);
+          if (doc === null) {
+            return reject(new Error('Document Not Found'));
+          }
+          if (doc.states[state] === undefined) {
+            return reject(new Error('Document Not Found'));
+          }
+          const returnValue = prepareGetDocument({
+            doc,
+            state,
+            permissions,
+            requestedStates,
+            resource,
+            user
           });
-      });
+          embedDocs
+            .one(resource, query.embed, user, returnValue.data, resources)
+            .then(doc => {
+              resolve(returnValue);
+            });
+        }
+      );
     });
   } else {
     const pipeline = [
@@ -229,7 +234,7 @@ module.exports.getDocument = function(
       },
       {
         $graphLookup: {
-          from: resource.collection.collectionName,
+          from: resource.currentCollection.collectionName,
           startWith: '$parentId',
           connectFromField: 'parentId',
           connectToField: '_id',
@@ -265,7 +270,7 @@ module.exports.getDocument = function(
       }
     ];
     return new Promise((resolve, reject) => {
-      resource.collection
+      resource.currentCollection
         .aggregate(pipeline)
         .toArray()
         .then(documents => {
@@ -293,14 +298,14 @@ module.exports.getDocument = function(
 };
 
 module.exports.getDocumentUsers = async (resource, filter) => {
-  const doc = await resource.collection.findOne(filter, {
+  const doc = await resource.currentCollection.findOne(filter, {
     projection: { users: 1 }
   });
   return getDocUsersList(doc);
 };
 
 module.exports.addUserToDocument = async (resource, filter, userDetails) => {
-  const document = resource.collection.findOne(filter);
+  const document = resource.currentCollection.findOne(filter);
   if (!document) return null;
   const newUser = {
     roles: userDetails.roles,
@@ -312,43 +317,25 @@ module.exports.addUserToDocument = async (resource, filter, userDetails) => {
   const ops = {
     $set: { [`users.${userDetails.userId}`]: newUser }
   };
-  const options = { returnOriginal: false, projection: { users: 1 } };
-
-  return new Promise((resolve, reject) => {
-    resource.collection.findOne(filter, (err, document) => {
-      if (err || !document) return reject(err || 'Document is null');
-      const newUser = {
-        roles: userDetails.roles,
-        addedAt: new Date(),
-        userId: createObjectId(userDetails.userId) || userDetails.userId,
-        displayName: userDetails.displayName,
-        infos: userDetails.infos
-      };
-      const ops = {
-        $set: { [`users.${userDetails.userId}`]: newUser }
-      };
-      const options = { returnOriginal: false, projection: { users: 1 } };
-      resource.collection.findOneAndUpdate(
-        filter,
-        ops,
-        options,
-        (err, result) => {
-          if (err) return reject(err);
-          if (!result.value) {
-            return reject(new Error('Not Found'));
-          }
-          resolve(getDocUsersList(result.value));
-        }
-      );
-    });
-  });
+  const options = { returnDocument: 'after', projection: { users: 1 } };
+  const doc = await resource.currentCollection.findOneAndUpdate(
+    filter,
+    ops,
+    options
+  );
+  return getDocUsersList(doc.value);
 };
 
-module.exports.removeUserFromDocument = function(resource, filter, userId, db) {
+module.exports.removeUserFromDocument = async (
+  resource,
+  filter,
+  userId,
+  db
+) => {
   const removeUserFromDoc = new Promise((resolve, reject) => {
     const ops = { $unset: { [`users.${userId}`]: 1 } };
-    const options = { returnOriginal: false, projection: { users: 1 } };
-    resource.collection.findOneAndUpdate(
+    const options = { returnDocument: 'after', projection: { users: 1 } };
+    resource.currentCollection.findOneAndUpdate(
       filter,
       ops,
       options,
@@ -361,17 +348,19 @@ module.exports.removeUserFromDocument = function(resource, filter, userId, db) {
       }
     );
   });
-  const groups = [`${resource.label}_${filter._id}`];
+
   const removeGroupFromUser = new Promise((resolve, reject) => {
     const filter = { _id: createObjectId(userId) };
-    const update = { $pull: { groups: { $in: groups } } };
+    const update = {
+      $pull: { groups: { $in: [`${resource.label}_${filter._id}`] } }
+    };
     db.collection('__users__').updateOne(filter, update, (err, result) => {
       if (err) return reject(err);
       return resolve(null);
     });
   });
 
-  return Promise.all([removeUserFromDoc, removeGroupFromUser]).then(
+  return await Promise.all([removeUserFromDoc, removeGroupFromUser]).then(
     values => values[0]
   );
 };
@@ -394,7 +383,7 @@ module.exports.setDocumentState = function(
           user: user
         })
         .then(ops => {
-          resource.collection.updateOne(filter, ops, (err, result) => {
+          resource.currentCollection.updateOne(filter, ops, (err, result) => {
             if (err) return reject(err);
 
             if (result.modifiedCount !== 1) {
@@ -426,7 +415,7 @@ module.exports.setDocumentState = function(
       reject(new Error(`Undefined state: ${fromState}`));
     }
 
-    resource.collection.findOne(filter, (err, document) => {
+    resource.currentCollection.findOne(filter, (err, document) => {
       if (err) return reject(err);
       const allowedPutStates = permissions.getAllowedStatesFromDocForUser(
         user,
@@ -454,14 +443,14 @@ module.exports.setDocumentState = function(
 
 module.exports.deleteDocument = function(resource, filter) {
   if (!resource.isInheritable) {
-    return resource.collection.deleteOne(filter);
+    return resource.currentCollection.deleteOne(filter);
   } else {
-    return resource.collection
+    return resource.currentCollection
       .findOne(filter)
       .then(async docToDelete => {
         const children = await getDocumentChildren(filter._id, resource);
         if (!children.length) {
-          await resource.collection.deleteOne(filter);
+          await resource.currentCollection.deleteOne(filter);
           return {};
         }
         Object.keys(docToDelete.states).forEach((stateName, index) => {
@@ -485,10 +474,13 @@ module.exports.deleteDocument = function(resource, filter) {
         await Promise.all(
           children.map(
             async child =>
-              await resource.collection.replaceOne({ _id: child._id }, child)
+              await resource.currentCollection.replaceOne(
+                { _id: child._id },
+                child
+              )
           )
         );
-        await resource.collection.deleteOne(filter);
+        await resource.currentCollection.deleteOne(filter);
         return {};
       })
       .catch(err => err);
@@ -496,7 +488,7 @@ module.exports.deleteDocument = function(resource, filter) {
 };
 
 const getDocumentChildren = async (documentId, resource) => {
-  return await resource.collection
+  return await resource.currentCollection
     .aggregate([
       {
         $match: {

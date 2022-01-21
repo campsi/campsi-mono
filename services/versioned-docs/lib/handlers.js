@@ -233,43 +233,51 @@ module.exports.getDocUsers = async (req, res) => {
 
 module.exports.postDocUser = async (req, res) => {
   try {
-    const users = await documentService.addUserToDocument(
+    const usersId = await documentService.addUserToDocument(
       req.resource,
       req.filter,
       req.body
     );
-    if (!users) return helpers.notFound(res, new Error('Document not found'));
+    if (!usersId?.length)
+      return helpers.notFound(res, new Error('Document not found'));
+    const users = await userService.fetchUsers(
+      usersId,
+      req.options,
+      req.service.server
+    );
+
+    helpers.json(res, users);
+
+    return req.service.emit(
+      'document/users/added',
+      getEmitPayload(req, { addedUserId: req.body.userId })
+    );
   } catch (e) {
     return helpers.internalServerError(res, e);
   }
-
-  documentService
-    .addUserToDocument(req.resource, req.filter, req.body)
-    .then(users =>
-      userService.fetchUsers(users, req.options, req.service.server)
-    )
-    .then(result => helpers.json(res, result))
-    .then(() =>
-      req.service.emit(
-        'document/users/added',
-        getEmitPayload(req, { addedUserId: req.body.userId })
-      )
-    )
-    .catch(err => helpers.notFound(res, err));
 };
 
-module.exports.delDocUser = function(req, res) {
-  documentService
-    .removeUserFromDocument(req.resource, req.filter, req.params.user, req.db)
-    .then(users =>
-      userService.fetchUsers(users, req.options, req.service.server)
-    )
-    .then(result => helpers.json(res, result))
-    .then(() =>
-      req.service.emit(
-        'document/users/removed',
-        getEmitPayload(req, { removedUserId: req.params.user })
-      )
-    )
-    .catch(err => helpers.notFound(res, err));
+module.exports.delDocUser = async (req, res) => {
+  try {
+    const usersId = await documentService.removeUserFromDocument(
+      req.resource,
+      req.filter,
+      req.params.user,
+      req.db
+    );
+    if (!usersId) return helpers.notFound(res, new Error('Document not found'));
+
+    const users = await userService.fetchUsers(
+      usersId,
+      req.options,
+      req.service.server
+    );
+    helpers.json(res, users);
+    return req.service.emit(
+      'document/users/removed',
+      getEmitPayload(req, { removedUserId: req.params.user })
+    );
+  } catch (e) {
+    return helpers.internalServerError(res, e);
+  }
 };

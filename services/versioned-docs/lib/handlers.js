@@ -58,7 +58,7 @@ module.exports.getDocuments = async (req, res) => {
     }
     return helpers.json(res, data.docs, headers);
   } catch (e) {
-    return helpers.notFound(res);
+    return helpers.internalServerError(res, e);
   }
 };
 Object.defineProperty(module.exports.getDocuments, 'apidoc', {
@@ -212,17 +212,37 @@ Object.defineProperty(module.exports.getResources, 'apidoc', {
   }
 });
 
-module.exports.getDocUsers = function(req, res) {
-  documentService
-    .getDocumentUsers(req.resource, req.filter)
-    .then(users =>
-      userService.fetchUsers(users, req.options, req.service.server)
-    )
-    .then(fetchedUsers => helpers.json(res, fetchedUsers))
-    .catch(err => helpers.notFound(res, err));
+module.exports.getDocUsers = async (req, res) => {
+  try {
+    const usersId = await documentService.getDocumentUsers(
+      req.resource,
+      req.filter
+    );
+    if (!usersId.length)
+      return helpers.notFound(res, new Error('Document not found'));
+    const users = await userService.fetchUsers(
+      usersId,
+      req.options,
+      req.service.server
+    );
+    return helpers.json(res, users);
+  } catch (e) {
+    return helpers.internalServerError(res, e);
+  }
 };
 
-module.exports.postDocUser = function(req, res) {
+module.exports.postDocUser = async (req, res) => {
+  try {
+    const users = await documentService.addUserToDocument(
+      req.resource,
+      req.filter,
+      req.body
+    );
+    if (!users) return helpers.notFound(res, new Error('Document not found'));
+  } catch (e) {
+    return helpers.internalServerError(res, e);
+  }
+
   documentService
     .addUserToDocument(req.resource, req.filter, req.body)
     .then(users =>

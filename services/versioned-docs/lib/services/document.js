@@ -292,22 +292,28 @@ module.exports.getDocument = function(
   }
 };
 
-module.exports.getDocumentUsers = function(resource, filter) {
-  return new Promise((resolve, reject) => {
-    resource.collection.findOne(
-      filter,
-      { projection: { users: 1 } },
-      (err, doc) => {
-        if (err) {
-          return reject(err);
-        }
-        return resolve(getDocUsersList(doc));
-      }
-    );
+module.exports.getDocumentUsers = async (resource, filter) => {
+  const doc = await resource.collection.findOne(filter, {
+    projection: { users: 1 }
   });
+  return getDocUsersList(doc);
 };
 
-module.exports.addUserToDocument = function(resource, filter, userDetails) {
+module.exports.addUserToDocument = async (resource, filter, userDetails) => {
+  const document = resource.collection.findOne(filter);
+  if (!document) return null;
+  const newUser = {
+    roles: userDetails.roles,
+    addedAt: new Date(),
+    userId: createObjectId(userDetails.userId) || userDetails.userId,
+    displayName: userDetails.displayName,
+    infos: userDetails.infos
+  };
+  const ops = {
+    $set: { [`users.${userDetails.userId}`]: newUser }
+  };
+  const options = { returnOriginal: false, projection: { users: 1 } };
+
   return new Promise((resolve, reject) => {
     resource.collection.findOne(filter, (err, document) => {
       if (err || !document) return reject(err || 'Document is null');

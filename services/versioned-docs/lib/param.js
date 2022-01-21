@@ -11,12 +11,10 @@ module.exports.attachResource = function(options) {
     if (req.params.resource) {
       req.resource = options.resources[req.params.resource];
 
-      // Unknown resource ?
       if (!req.resource) {
         return helpers.notFound(res);
       }
 
-      // Is ID well-formed ?
       if (req.params.id) {
         req.filter = { _id: createObjectId(req.params.id) };
         if (!req.filter._id) {

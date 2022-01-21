@@ -2,13 +2,14 @@ const async = require('async');
 const debug = require('debug')('campsi:service:assets');
 const paginateCursor = require('../../../../lib/modules/paginateCursor');
 const sortCursor = require('../../../../lib/modules/sortCursor');
+const { ObjectId } = require('mongodb');
 
-module.exports.getAssets = function (service, pagination, sort) {
+module.exports.getAssets = function(service, pagination, sort) {
   return new Promise((resolve, reject) => {
     const cursor = service.collection.find({});
     let result = {};
     paginateCursor(cursor, pagination)
-      .then((info) => {
+      .then(info => {
         result.count = info.count;
         result.page = info.page;
         result.perPage = info.perPage;
@@ -23,69 +24,83 @@ module.exports.getAssets = function (service, pagination, sort) {
         }
         sortCursor(cursor, sort);
         return cursor.toArray();
-      }).then((docs) => {
+      })
+      .then(docs => {
         result.assets = docs;
         resolve(result);
-      }).catch((err) => {
+      })
+      .catch(err => {
         debug('Get assets error: %s', err.message);
         reject(err);
       });
   });
 };
 
-module.exports.createAsset = function (service, files, user, headers) {
+module.exports.createAsset = function(service, files, user, headers) {
   return new Promise((resolve, reject) => {
     if (!files || !files.length) {
-      return reject(new Error('Can\'t find file'));
+      return reject(new Error("Can't find file"));
     }
 
-    async.each(files, (file, cb) => {
-      const storage = service.options.getStorage(file, user, headers);
+    async.each(
+      files,
+      (file, cb) => {
+        const storage = service.options.getStorage(file, user, headers);
 
-      function onError (err) {
-        debug('Post asset error: %s', err);
-        file.error = true;
-        cb();
+        function onError(err) {
+          debug('Post asset error: %s', err);
+          file.error = true;
+          cb();
+        }
+
+        function onSuccess() {
+          file.stream.destroy();
+          delete file.stream;
+          delete file.fieldname;
+          cb();
+        }
+
+        if (user) {
+          file.createdBy = user._id;
+        }
+
+        file.createdAt = new Date();
+        file.createdFrom = {
+          origin: headers.origin,
+          referer: headers.referer,
+          ua: headers['user-agent']
+        };
+
+        file.storage = storage.options.name;
+
+        storage
+          .store(file)
+          .then(storageStream => {
+            file.stream
+              .pipe(storageStream)
+              .on('uploadSuccess', onSuccess)
+              .on('uploadError', onError);
+          })
+          .catch(onError);
+      },
+      () => {
+        files = files.map(file => {
+          return { _id: new ObjectId(), ...file };
+        });
+        service.collection.insertMany(files).then(result => {
+          resolve(files);
+        });
       }
-
-      function onSuccess () {
-        file.stream.destroy();
-        delete file.stream;
-        delete file.fieldname;
-        cb();
-      }
-
-      if (user) {
-        file.createdBy = user._id;
-      }
-
-      file.createdAt = new Date();
-      file.createdFrom = {
-        origin: headers.origin,
-        referer: headers.referer,
-        ua: headers['user-agent']
-      };
-
-      file.storage = storage.options.name;
-
-      storage.store(file).then((storageStream) => {
-        file.stream.pipe(storageStream)
-          .on('uploadSuccess', onSuccess)
-          .on('uploadError', onError);
-      }).catch(onError);
-    }, () => {
-      service.collection.insertMany(files).then((result) => {
-        resolve(result.ops);
-      });
-    });
+    );
   });
 };
 
-module.exports.deleteAsset = function (service, storage, asset) {
+module.exports.deleteAsset = function(service, storage, asset) {
   return new Promise((resolve, reject) => {
-    storage.deleteAsset(asset)
-      .then(() => service.collection.deleteOne({_id: asset._id}))
-      .then((result) => resolve(result))
-      .catch((error) => reject(error));
+    storage
+      .deleteAsset(asset)
+      .then(() => service.collection.deleteOne({ _id: asset._id }))
+      .then(result => resolve(result))
+      .catch(error => reject(error));
   });
 };

@@ -116,7 +116,7 @@ A document is an instance of a resource. It has an `id` and a value for each def
 #### Anatomy of a document
 ```javascript
 let doc = {
-	id: ObjectID("58205e4fa5dc6c3b381a0e9b"),
+	id: ObjectId("58205e4fa5dc6c3b381a0e9b"),
     states: {
     	published: {
         	createdAt: "2016-11-07 10:58:23.950Z",

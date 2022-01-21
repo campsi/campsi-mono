@@ -3,7 +3,7 @@ process.env.NODE_CONFIG_DIR = './test/config';
 process.env.NODE_ENV = 'test';
 
 // Require the dev-dependencies
-const {MongoClient} = require('mongodb');
+const { MongoClient } = require('mongodb');
 const mongoUriBuilder = require('mongo-uri-builder');
 const debug = require('debug')('campsi:test');
 const async = require('async');
@@ -25,27 +25,30 @@ const services = {
 };
 
 // Helpers
-function createPizza (data, state) {
-  return new Promise(function (resolve, reject) {
+function createPizza(data, state) {
+  return new Promise(function(resolve, reject) {
     let resource = campsi.services.get('docs').options.resources['pizzas'];
-    builder.create({
-      user: null,
-      data: data,
-      resource: resource,
-      state: state
-    }).then((doc) => {
-      resource.collection.insertOne(doc, (err, result) => {
-        if (err) return reject(err);
-        resolve(result.ops[0]._id);
+    builder
+      .create({
+        user: null,
+        data: data,
+        resource: resource,
+        state: state
+      })
+      .then(doc => {
+        resource.collection.insertOne(doc, (err, result) => {
+          if (err) return reject(err);
+          resolve(result.insertedId);
+        });
+      })
+      .catch(error => {
+        reject(error);
       });
-    }).catch((error) => {
-      reject(error);
-    });
   });
 }
 
 describe('State', () => {
-  beforeEach((done) => {
+  beforeEach(done => {
     // Empty the database
     const mongoUri = mongoUriBuilder(config.campsi.mongo);
     MongoClient.connect(mongoUri, (err, client) => {
@@ -61,14 +64,14 @@ describe('State', () => {
           done();
         });
 
-        campsi.start().catch((err) => {
+        campsi.start().catch(err => {
           debug('Error: %s', err);
         });
       });
     });
   });
 
-  afterEach((done) => {
+  afterEach(done => {
     server.close();
     done();
   });
@@ -77,9 +80,10 @@ describe('State', () => {
    * Test the /POST docs/pizzas/:state route
    */
   describe('/POST docs/pizzas/:state', () => {
-    it('it should create a document', (done) => {
-      let data = {'name': 'test'};
-      chai.request(campsi.app)
+    it('it should create a document', done => {
+      let data = { name: 'test' };
+      chai
+        .request(campsi.app)
         .post('/docs/pizzas/working_draft')
         .set('content-type', 'application/json')
         .send(data)
@@ -102,11 +106,12 @@ describe('State', () => {
    * Test the /GET docs/pizzas/:id/:state route
    */
   describe('/GET docs/pizzas/:id/:state', () => {
-    it('it should retreive a document by id/state', (done) => {
-      let data = {'name': 'test'};
+    it('it should retreive a document by id/state', done => {
+      let data = { name: 'test' };
       createPizza(data, 'working_draft')
-        .then((id) => {
-          chai.request(campsi.app)
+        .then(id => {
+          chai
+            .request(campsi.app)
             .get('/docs/pizzas/{0}/working_draft'.format(id))
             .end((err, res) => {
               if (err) debug(`received an error from chai: ${err.message}`);
@@ -122,15 +127,16 @@ describe('State', () => {
               done();
             });
         })
-        .catch((err) => {
+        .catch(err => {
           throw err;
         });
     });
-    it('it should retreive a document by id/state with states', (done) => {
-      let data = {'name': 'test'};
+    it('it should retreive a document by id/state with states', done => {
+      let data = { name: 'test' };
       createPizza(data, 'working_draft')
-        .then((id) => {
-          chai.request(campsi.app)
+        .then(id => {
+          chai
+            .request(campsi.app)
             .get('/docs/pizzas/{0}/working_draft?states='.format(id))
             .end((err, res) => {
               if (err) debug(`received an error from chai: ${err.message}`);
@@ -155,15 +161,16 @@ describe('State', () => {
               done();
             });
         })
-        .catch((err) => {
+        .catch(err => {
           throw err;
         });
     });
-    it('it should retreive a document by id/state with states empty', (done) => {
-      let data = {'name': 'test'};
+    it('it should retreive a document by id/state with states empty', done => {
+      let data = { name: 'test' };
       createPizza(data, 'working_draft')
-        .then((id) => {
-          chai.request(campsi.app)
+        .then(id => {
+          chai
+            .request(campsi.app)
             .get('/docs/pizzas/{0}/working_draft?states=published'.format(id))
             .end((err, res) => {
               if (err) debug(`received an error from chai: ${err.message}`);
@@ -182,7 +189,7 @@ describe('State', () => {
               done();
             });
         })
-        .catch((err) => {
+        .catch(err => {
           throw err;
         });
     });
@@ -191,60 +198,67 @@ describe('State', () => {
    * Test the /PUT docs/pizzas/:id/:state route
    */
   describe('/PUT docs/pizzas/:id/:state', () => {
-    it('it should modify a document by id/state', (done) => {
-      let data = {'name': 'test'};
+    it('it should modify a document by id/state', done => {
+      let data = { name: 'test' };
       let modifiedData = {
-        'name': 'test put',
-        'base': 'cream'
+        name: 'test put',
+        base: 'cream'
       };
       createPizza(data, 'working_draft')
-        .then((id) => {
-          async.series([
-            function (cb) {
-              chai.request(campsi.app)
-                .put('/docs/pizzas/{0}/working_draft'.format(id))
-                .set('content-type', 'application/json')
-                .send(modifiedData)
-                .end((err, res) => {
-                  if (err) debug(`received an error from chai: ${err.message}`);
-                  res.should.have.status(200);
-                  res.should.be.json;
-                  res.body.should.be.a('object');
-                  res.body.should.have.property('id');
-                  res.body.id.should.be.eq(id.toString());
-                  res.body.should.have.property('state');
-                  res.body.state.should.be.eq('working_draft');
-                  res.body.should.have.property('data');
-                  res.body.data.should.be.eql(modifiedData);
-                  cb();
-                });
-            },
-            function (cb) {
-              chai.request(campsi.app)
-                .get('/docs/pizzas/{0}/working_draft'.format(id))
-                .end((err, res) => {
-                  if (err) debug(`received an error from chai: ${err.message}`);
-                  res.should.have.status(200);
-                  res.should.be.json;
-                  res.body.should.be.a('object');
-                  res.body.should.have.property('id');
-                  res.body.id.should.be.eq(id.toString());
-                  res.body.should.have.property('state');
-                  res.body.state.should.be.eq('working_draft');
-                  res.body.should.have.property('createdAt');
-                  res.body.should.have.property('createdBy');
-                  should.equal(res.body.createdBy, null);
-                  res.body.should.have.property('modifiedAt');
-                  res.body.should.have.property('modifiedBy');
-                  should.equal(res.body.modifiedBy, null);
-                  res.body.should.have.property('data');
-                  res.body.data.should.be.eql(modifiedData);
-                  cb();
-                });
-            }
-          ], done);
+        .then(id => {
+          async.series(
+            [
+              function(cb) {
+                chai
+                  .request(campsi.app)
+                  .put('/docs/pizzas/{0}/working_draft'.format(id))
+                  .set('content-type', 'application/json')
+                  .send(modifiedData)
+                  .end((err, res) => {
+                    if (err)
+                      debug(`received an error from chai: ${err.message}`);
+                    res.should.have.status(200);
+                    res.should.be.json;
+                    res.body.should.be.a('object');
+                    res.body.should.have.property('id');
+                    res.body.id.should.be.eq(id.toString());
+                    res.body.should.have.property('state');
+                    res.body.state.should.be.eq('working_draft');
+                    res.body.should.have.property('data');
+                    res.body.data.should.be.eql(modifiedData);
+                    cb();
+                  });
+              },
+              function(cb) {
+                chai
+                  .request(campsi.app)
+                  .get('/docs/pizzas/{0}/working_draft'.format(id))
+                  .end((err, res) => {
+                    if (err)
+                      debug(`received an error from chai: ${err.message}`);
+                    res.should.have.status(200);
+                    res.should.be.json;
+                    res.body.should.be.a('object');
+                    res.body.should.have.property('id');
+                    res.body.id.should.be.eq(id.toString());
+                    res.body.should.have.property('state');
+                    res.body.state.should.be.eq('working_draft');
+                    res.body.should.have.property('createdAt');
+                    res.body.should.have.property('createdBy');
+                    should.equal(res.body.createdBy, null);
+                    res.body.should.have.property('modifiedAt');
+                    res.body.should.have.property('modifiedBy');
+                    should.equal(res.body.modifiedBy, null);
+                    res.body.should.have.property('data');
+                    res.body.data.should.be.eql(modifiedData);
+                    cb();
+                  });
+              }
+            ],
+            done
+          );
         })
-        .catch((err) => {
+        .catch(err => {
           throw err;
         });
     });
@@ -253,15 +267,16 @@ describe('State', () => {
    * Test the /PUT docs/pizzas/:id/state route
    */
   describe('/PUT docs/pizzas/:id/state', () => {
-    it('it should not modify a document state by id', (done) => {
-      let data = {'name': 'test'};
+    it('it should not modify a document state by id', done => {
+      let data = { name: 'test' };
       let stateData = {
-        'from': 'working_draft',
-        'to': 'published'
+        from: 'working_draft',
+        to: 'published'
       };
       createPizza(data, 'working_draft')
-        .then((id) => {
-          chai.request(campsi.app)
+        .then(id => {
+          chai
+            .request(campsi.app)
             .put('/docs/pizzas/{0}/state'.format(id))
             .set('content-type', 'application/json')
             .send(stateData)
@@ -275,7 +290,7 @@ describe('State', () => {
               done();
             });
         })
-        .catch((err) => {
+        .catch(err => {
           throw err;
         });
     });
@@ -284,11 +299,12 @@ describe('State', () => {
    * Test the /DELETE docs/pizzas/:id/state route
    */
   describe('/DELETE docs/pizzas/:id/state', () => {
-    it('it should delete a document by id', (done) => {
-      let data = {'name': 'test'};
+    it('it should delete a document by id', done => {
+      let data = { name: 'test' };
       createPizza(data, 'working_draft')
-        .then((id) => {
-          chai.request(campsi.app)
+        .then(id => {
+          chai
+            .request(campsi.app)
             .delete('/docs/pizzas/{0}/working_draft'.format(id))
             .end((err, res) => {
               if (err) debug(`received an error from chai: ${err.message}`);
@@ -298,12 +314,13 @@ describe('State', () => {
               done();
             });
         })
-        .catch((err) => {
+        .catch(err => {
           throw err;
         });
     });
-    it('it should return an error when document doesn\'t exist', (done) => {
-      chai.request(campsi.app)
+    it("it should return an error when document doesn't exist", done => {
+      chai
+        .request(campsi.app)
         .delete('/docs/pizzas/589acbcda5756516b07cb18f/working_draft')
         .end((err, res) => {
           if (err) debug(`received an error from chai: ${err.message}`);
@@ -314,8 +331,9 @@ describe('State', () => {
           done();
         });
     });
-    it('it should return an error when document id is malformed', (done) => {
-      chai.request(campsi.app)
+    it('it should return an error when document id is malformed', done => {
+      chai
+        .request(campsi.app)
         .delete('/docs/pizzas/589acbcda57/working_draft')
         .end((err, res) => {
           if (err) debug(`received an error from chai: ${err.message}`);

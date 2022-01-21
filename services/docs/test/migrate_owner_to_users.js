@@ -3,7 +3,7 @@ process.env.NODE_CONFIG_DIR = './test/config';
 process.env.NODE_ENV = 'test';
 
 // Require the dev-dependencies
-const {MongoClient} = require('mongodb');
+const { MongoClient } = require('mongodb');
 const mongoUriBuilder = require('mongo-uri-builder');
 const debug = require('debug')('campsi:test');
 const chai = require('chai');
@@ -25,31 +25,34 @@ const services = {
 };
 
 // Helpers
-function createPizza (data, state, ownerId) {
-  return new Promise(function (resolve, reject) {
+function createPizza(data, state, ownerId) {
+  return new Promise(function(resolve, reject) {
     let resource = campsi.services.get('docs').options.resources['pizzas'];
-    builder.create({
-      user: null,
-      data: data,
-      resource: resource,
-      state: state
-    }).then((doc) => {
-      doc.ownedBy = ownerId;
-      delete doc.users;
-      resource.collection.insertOne(doc, (err, result) => {
-        if (err) return reject(err);
-        resolve(result.ops[0]._id);
+    builder
+      .create({
+        user: null,
+        data: data,
+        resource: resource,
+        state: state
+      })
+      .then(doc => {
+        doc.ownedBy = ownerId;
+        delete doc.users;
+        resource.collection.insertOne(doc, (err, result) => {
+          if (err) return reject(err);
+          resolve(result.insertedId);
+        });
+      })
+      .catch(error => {
+        reject(error);
       });
-    }).catch((error) => {
-      reject(error);
-    });
   });
 }
 
-function getPizzaById (id) {
-  return new Promise(function (resolve, reject) {
+function getPizzaById(id) {
+  return new Promise(function(resolve, reject) {
     let resource = campsi.services.get('docs').options.resources['pizzas'];
-    resource.collection.findOne({_id: id}, (err, pizza) => {
+    resource.collection.findOne({ _id: id }, (err, pizza) => {
       return err ? reject(err) : resolve(pizza);
     });
   });
@@ -57,7 +60,7 @@ function getPizzaById (id) {
 
 // Our parent block
 describe('CRUD', () => {
-  beforeEach((done) => {
+  beforeEach(done => {
     // Empty the database
     const mongoUri = mongoUriBuilder(config.campsi.mongo);
     MongoClient.connect(mongoUri, (err, client) => {
@@ -73,19 +76,19 @@ describe('CRUD', () => {
           done();
         });
 
-        campsi.start().catch((err) => {
+        campsi.start().catch(err => {
           debug('Error: %s', err);
         });
       });
     });
   });
 
-  afterEach((done) => {
+  afterEach(done => {
     server.close();
     done();
   });
   it('it should create a pizza and add the owner in the users array', done => {
-    createPizza({name: 'margarita'}, 'published').then(id => {
+    createPizza({ name: 'margarita' }, 'published').then(id => {
       getPizzaById(id).then(pizza => {
         pizza.should.have.property('ownedBy');
         migrate([], campsi.db, ['docs.docs.pizzas'], () => {
@@ -99,7 +102,7 @@ describe('CRUD', () => {
   });
 
   it('it should create a pizza and add the owner in the users array', done => {
-    createPizza({name: 'margarita'}, 'published').then(id => {
+    createPizza({ name: 'margarita' }, 'published').then(id => {
       getPizzaById(id).then(pizza => {
         pizza.should.have.property('ownedBy');
         migrate(['--remove-ownedBy'], campsi.db, ['docs.docs.pizzas'], () => {

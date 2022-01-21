@@ -5,7 +5,7 @@ const userService = require('./services/user');
 const forIn = require('for-in');
 const buildLink = require('../../../lib/modules/buildLink');
 const debug = require('debug')('campsi:docs');
-const { ObjectID } = require('mongodb');
+const { ObjectId } = require('mongodb');
 
 const getEmitPayload = (req, additionalProps) => {
   return Object.assign(
@@ -71,7 +71,7 @@ Object.defineProperty(module.exports.getDocuments, 'apidoc', {
 });
 
 module.exports.postDoc = function(req, res) {
-  if (!!req.query?.parentId && !ObjectID.isValid(req.query.parentId)) {
+  if (!!req.query?.parentId && !ObjectId.isValid(req.query.parentId)) {
     return helpers.badRequest(res, new Error('Invalid parent id'));
   }
   documentService

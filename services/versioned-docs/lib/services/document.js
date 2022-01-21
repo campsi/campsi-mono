@@ -2,7 +2,7 @@ const builder = require('../modules/queryBuilder');
 const embedDocs = require('../modules/embedDocs');
 const paginateCursor = require('../../../../lib/modules/paginateCursor');
 const sortCursor = require('../../../../lib/modules/sortCursor');
-const createObjectID = require('../../../../lib/modules/createObjectID');
+const createObjectId = require('../../../../lib/modules/createObjectId');
 const permissions = require('../modules/permissions');
 
 // Helper functions
@@ -322,7 +322,7 @@ module.exports.addUserToDocument = function(resource, filter, userDetails) {
       const newUser = {
         roles: userDetails.roles,
         addedAt: new Date(),
-        userId: createObjectID(userDetails.userId) || userDetails.userId,
+        userId: createObjectId(userDetails.userId) || userDetails.userId,
         displayName: userDetails.displayName,
         infos: userDetails.infos
       };
@@ -365,7 +365,7 @@ module.exports.removeUserFromDocument = function(resource, filter, userId, db) {
   });
   const groups = [`${resource.label}_${filter._id}`];
   const removeGroupFromUser = new Promise((resolve, reject) => {
-    const filter = { _id: createObjectID(userId) };
+    const filter = { _id: createObjectId(userId) };
     const update = { $pull: { groups: { $in: groups } } };
     db.collection('__users__').updateOne(filter, update, (err, result) => {
       if (err) return reject(err);

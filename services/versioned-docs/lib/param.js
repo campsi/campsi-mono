@@ -16,17 +16,6 @@ module.exports.attachResource = function(options) {
         return helpers.notFound(res);
       }
 
-      // Is state defined for this resource ?
-      const state = req.params.state || req.query.state;
-      if (state) {
-        if (typeof req.resource.states[state] === 'undefined') {
-          return helpers.notFound(res);
-        }
-        req.state = state;
-      } else {
-        req.state = req.resource.defaultState;
-      }
-
       // Is ID well-formed ?
       if (req.params.id) {
         req.filter = { _id: createObjectID(req.params.id) };

@@ -130,7 +130,19 @@ module.exports.getDocRevisions = async (req, res) => {
 };
 
 module.exports.getDocRevision = async (req, res) => {
-  const docRevision = '';
+  try {
+    const docRevision = await documentService.getDocumentRevision(
+      req.resource,
+      req.filter,
+      req.query,
+      req.params.revision
+    );
+    if (!docRevision)
+      return helpers.notFound(res, new Error('Document not found'));
+    return helpers.json(res, docRevision);
+  } catch (e) {
+    return helpers.internalServerError(res, e);
+  }
 };
 
 module.exports.delDoc = function(req, res) {

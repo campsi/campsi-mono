@@ -4,6 +4,7 @@ const paginateCursor = require('../../../../lib/modules/paginateCursor');
 const sortCursor = require('../../../../lib/modules/sortCursor');
 const createObjectId = require('../../../../lib/modules/createObjectId');
 const permissions = require('../modules/permissions');
+const { ObjectId } = require('mongodb');
 
 // Helper functions
 const getDocUsersList = doc =>
@@ -209,29 +210,30 @@ module.exports.getDocument = async (resource, filter, query) => {
 };
 
 module.exports.getDocumentRevisions = async (resource, filter, query) => {
-  const pipeline = [
-    { $match: filter },
-    {
-      $lookup: {
-        from: `${resource.revisionCollection.s.namespace.collection}`,
-        localField: '_id',
-        foreignField: 'currentId',
-        as: 'revision'
-      }
-    },
-    {
-      $unwind: {
-        path: '$revision',
-        preserveNullAndEmptyArrays: false
-      }
-    },
-    {
-      $replaceRoot: {
-        newRoot: '$revision'
-      }
-    }
-  ];
-  return await resource.currentCollection.aggregate(pipeline).toArray();
+  const { _id: currentId, rest } = filter;
+  return await resource.revisionCollection
+    .find({ currentId, ...rest })
+    .toArray();
+};
+
+module.exports.getDocumentRevision = async (
+  resource,
+  filter,
+  query,
+  revision
+) => {
+  const revisionId = createObjectId(revision);
+  if (!revisionId && !Number.isInteger(parseInt(revision))) {
+    throw new Error('The revision you provided is invalid');
+  }
+  const { _id: currentId, rest } = filter;
+  const revFilter = { currentId, ...rest };
+  if (revisionId) {
+    revFilter._id = revisionId;
+  } else {
+    revFilter.revision = parseInt(revision);
+  }
+  return await resource.revisionCollection.findOne(revFilter);
 };
 
 module.exports.getDocumentUsers = async (resource, filter) => {

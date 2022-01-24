@@ -26,8 +26,11 @@ module.exports = class VersionedDocsService extends CampsiService {
     this.router.get('/:resource/:id/users', handlers.getDocUsers);
     this.router.post('/:resource/:id/users', handlers.postDocUser);
     this.router.delete('/:resource/:id/users/:user', handlers.delDocUser);
+    this.router.get('/:resource/:id/revisions/', handlers.getDocRevisions);
     // get doc revision
+    // get doc revisions
     // get doc version
+    // get doc versions
     this.router.get('/:resource/:id', handlers.getDoc);
     this.router.post('/:resource', handlers.postDoc);
     this.router.patch('/:resource/:id', handlers.updateDoc);
@@ -36,9 +39,6 @@ module.exports = class VersionedDocsService extends CampsiService {
 
 
 
-    this.router.post('/:resource', handlers.postDoc);
-    this.router.put('/:resource/:id', handlers.putDoc);
-    this.router.patch('/:resource/:id', handlers.patchDoc);
     this.router.delete('/:resource/:id', handlers.delDoc);
     this.router.delete('/:resource/:id/:state', handlers.delDoc);*/
 

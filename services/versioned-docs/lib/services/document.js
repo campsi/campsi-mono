@@ -141,8 +141,6 @@ module.exports.updateDocument = async (resource, filter, data, user) => {
     );
   }
 
-  // TODO: check if there's any diff ?
-
   const { _id, ...original } = originalDoc;
   // we validate & prepare the future current document
   const updatedDocument = await builder.replace({
@@ -178,13 +176,7 @@ module.exports.updateDocument = async (resource, filter, data, user) => {
   return { _id, ...updatedDocument };
 };
 
-module.exports.getDocument = async (
-  resource,
-  filter,
-  query,
-  user,
-  resources
-) => {
+module.exports.getDocument = async (resource, filter, query) => {
   let aggregate = query?.with?.includes('creator') || false;
   if (!aggregate) {
     return await resource.currentCollection.findOne(filter);
@@ -214,6 +206,32 @@ module.exports.getDocument = async (
   ];
   const docs = await resource.currentCollection.aggregate(pipeline).toArray();
   return docs[0];
+};
+
+module.exports.getDocumentRevisions = async (resource, filter, query) => {
+  const pipeline = [
+    { $match: filter },
+    {
+      $lookup: {
+        from: `${resource.revisionCollection.s.namespace.collection}`,
+        localField: '_id',
+        foreignField: 'currentId',
+        as: 'revision'
+      }
+    },
+    {
+      $unwind: {
+        path: '$revision',
+        preserveNullAndEmptyArrays: false
+      }
+    },
+    {
+      $replaceRoot: {
+        newRoot: '$revision'
+      }
+    }
+  ];
+  return await resource.currentCollection.aggregate(pipeline).toArray();
 };
 
 module.exports.getDocumentUsers = async (resource, filter) => {

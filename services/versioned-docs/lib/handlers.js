@@ -98,22 +98,39 @@ module.exports.updateDoc = async (req, res) => {
   } catch (err) {
     if (err.message.includes('not found')) return helpers.notFound(res, err);
     if (err.message.includes('duplicate')) return helpers.conflict(res);
-    return helpers.error(res, err);
+    return helpers.internalServerError(res, e);
   }
 };
 
-// get a doc
 module.exports.getDoc = async (req, res) => {
-  const doc = await documentService.getDocument(
-    req.resource,
-    req.filter,
-    req.query,
-    req.user,
-    req.state,
-    req.options.resources
-  );
-  if (!doc) return helpers.notFound(res, new Error('Document not found'));
-  return helpers.json(res, doc);
+  try {
+    const doc = await documentService.getDocument(
+      req.resource,
+      req.filter,
+      req.query
+    );
+    if (!doc) return helpers.notFound(res, new Error('Document not found'));
+    return helpers.json(res, doc);
+  } catch (e) {
+    return helpers.internalServerError(res, e);
+  }
+};
+
+module.exports.getDocRevisions = async (req, res) => {
+  try {
+    const docRevisions = await documentService.getDocumentRevisions(
+      req.resource,
+      req.filter,
+      req.query
+    );
+    return helpers.json(res, docRevisions);
+  } catch (e) {
+    return helpers.internalServerError(res, e);
+  }
+};
+
+module.exports.getDocRevision = async (req, res) => {
+  const docRevision = '';
 };
 
 module.exports.delDoc = function(req, res) {

@@ -82,67 +82,12 @@ module.exports.postDoc = async (req, res) => {
   }
 };
 
-// modify the state of a doc
-module.exports.putDocState = function(req, res) {
-  documentService
-    .setDocumentState(
-      req.resource,
-      req.filter,
-      req.body.from,
-      req.body.to,
-      req.user
-    )
-    .then(result => helpers.json(res, result))
-    .then(() =>
-      req.service.emit(
-        'document/state/changed',
-        getEmitPayload(req, { to: req.body.to, from: req.body.from })
-      )
-    )
-    .catch(err => {
-      switch (err.message) {
-        case 'Validation Error':
-          return helpers.validationError(res);
-        case 'Not Found':
-          return helpers.notFound(res);
-        default:
-          return helpers.error(res, err);
-      }
-    });
-};
-
-// modify a doc
-module.exports.putDoc = function(req, res) {
-  documentService
-    .setDocument(req.resource, req.filter, req.body, req.state, req.user)
-    .then(result => helpers.json(res, result))
-    .then(() =>
-      req.service.emit(
-        'document/updated',
-        getEmitPayload(req, { data: req.body })
-      )
-    )
-    .catch(err => {
-      switch (err.message) {
-        case 'Validation Error': {
-          let func = helpers.validationError(res);
-          return func(err);
-        }
-        case 'Not Found':
-          return helpers.notFound(res);
-        default:
-          return helpers.error(res, err);
-      }
-    });
-};
-
-module.exports.patchDoc = async (req, res) => {
+module.exports.updateDoc = async (req, res) => {
   try {
-    const result = await documentService.patchDocument(
+    const result = await documentService.updateDocument(
       req.resource,
       req.filter,
       req.body,
-      req.state,
       req.user
     );
     helpers.json(res, result);
@@ -151,16 +96,9 @@ module.exports.patchDoc = async (req, res) => {
       getEmitPayload(req, { data: req.body })
     );
   } catch (err) {
-    switch (err.message) {
-      case 'Validation Error': {
-        let func = helpers.validationError(res);
-        return func(err);
-      }
-      case 'Not Found':
-        return helpers.notFound(res);
-      default:
-        return helpers.error(res, err);
-    }
+    if (err.message.includes('not found')) return helpers.notFound(res, err);
+    if (err.message.includes('duplicate')) return helpers.conflict(res);
+    return helpers.error(res, err);
   }
 };
 

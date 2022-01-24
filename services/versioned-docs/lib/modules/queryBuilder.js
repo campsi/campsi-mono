@@ -9,22 +9,9 @@ const createObjectId = require('../../../../lib/modules/createObjectId');
  * @param {string} properties
  * @return {string}
  */
-function join(...properties) {
+const join = (...properties) => {
   return properties.join('.');
-}
-/**
- * Retreive the state object descriptor from its name
- * @param {object} options
- * @param {string} [propertyName]
- * @returns {State}
- */
-function getStateFromOptions(options, propertyName) {
-  propertyName = propertyName || 'state';
-  const stateName = options[propertyName] || options.resource.defaultState;
-  let stateObj = options.resource.states[stateName] || { validate: false };
-  stateObj.name = stateName;
-  return stateObj;
-}
+};
 
 /**
  * Validate a document against its resource
@@ -33,14 +20,32 @@ function getStateFromOptions(options, propertyName) {
  * @param {boolean} doValidate
  * @returns {Promise}
  */
-function validate(resource, doc) {
-  if (resource.validate(doc)) {
+const validate = async (resource, doc) => {
+  if (await resource.validate(doc)) {
     return true;
   } else {
     debug('model have %d error(s)', resource.validate.errors.length);
-    throwresource.validate.errors;
+    throw new Error(
+      resource.validate.errors.map(e => `${e.dataPath} ${e.message}`).join(', ')
+    );
   }
-}
+};
+
+const buildRelsId = (resource, doc) => {
+  const relsId = {};
+  if (resource.rels) {
+    Object.entries(resource.rels).map(([name, rel]) => {
+      if (doc[`${rel.path}`]) {
+        const relId = createObjectId(doc[`${rel.path}`]);
+        if (!relId) {
+          throw new Error(`Invalid ${rel.path}`);
+        }
+        relsId[`${rel.path}`] = relId;
+      }
+    });
+  }
+  return relsId;
+};
 
 module.exports.find = function find(options) {
   let filter = {};
@@ -60,27 +65,11 @@ module.exports.find = function find(options) {
  * @returns {Promise}
  */
 module.exports.create = async options => {
-  const validate = await options.resource.validate(options.data);
-  if (!validate || options.resource.validate.errors?.length) {
-    throw new Error(
-      options.resource.validate.errors.map(e => e.message).join(', ')
-    );
-  }
-  const relsId = {};
-  if (options.resource.rels) {
-    Object.entries(options.resource.rels).map(([name, rel]) => {
-      if (options.data[`${rel.path}`]) {
-        const relId = createObjectId(options.data[`${rel.path}`]);
-        if (!relId) {
-          throw new Error(`Invalid ${rel.path}`);
-        }
-        relsId[`${rel.path}`] = relId;
-      }
-    });
-  }
+  await validate(options.resource, options.data);
+  const relsId = buildRelsId(options.resource, options.data);
 
-  let doc = {
-    revision: 1,
+  const doc = {
+    revision: options.revision || 1,
     ...options.data,
     ...relsId,
     users: {},
@@ -98,55 +87,18 @@ module.exports.create = async options => {
   return doc;
 };
 
-/**
- *
- * @param {object} options.data
- * @param {Resource} options.resource
- * @param {string} [options.state]
- * @param {object} [options.user]
- *
- * @returns {Promise}
- */
-module.exports.update = function updateDoc(options) {
-  const state = getStateFromOptions(options);
-  return new Promise((resolve, reject) => {
-    validate(options.resource, options.data, state.validate)
-      .catch(reject)
-      .then(() => {
-        let ops = { $set: {} };
-        ops.$set[join('states', state.name, 'modifiedAt')] = new Date();
-        ops.$set[join('states', state.name, 'modifiedBy')] = options.user
-          ? options.user.id
-          : null;
-        ops.$set[join('states', state.name, 'data')] = options.data;
-        return resolve(ops);
-      });
-  });
-};
+module.exports.replace = async options => {
+  await validate(options.resource, options.data);
+  const relsId = buildRelsId(options.resource, options.data);
 
-module.exports.patch = async options => {
-  const state = getStateFromOptions(options);
-  try {
-    await validate(options.resource, options.data, state.validate);
-  } catch (e) {
-    throw new Error(`Validation Error: `);
-  }
-
-  let ops = { $set: {}, $unset: {} };
-  ops.$set[join('states', state.name, 'modifiedAt')] = new Date();
-  ops.$set[join('states', state.name, 'modifiedBy')] = options.user
-    ? options.user._id
-    : null;
-
-  for (const [key, value] of Object.entries(options.data)) {
-    const operator = value === null || value === undefined ? '$unset' : '$set';
-    ops[operator][join('states', state.name, 'data', key)] = value;
-  }
-
-  if (Object.keys(ops.$unset).length === 0) {
-    delete ops.$unset;
-  }
-  return ops;
+  return {
+    ...options.originalDoc,
+    ...options.data,
+    ...relsId,
+    revision: options.originalDoc.revision + 1,
+    updatedAt: new Date(),
+    updatedBy: options.user ? options.user._id : null
+  };
 };
 
 module.exports.deleteFilter = function deleteDoc(options) {
@@ -154,29 +106,4 @@ module.exports.deleteFilter = function deleteDoc(options) {
   filter._id = options.id;
   filter.states = {};
   return filter;
-};
-
-/**
- *
- * @param {string} options.from
- * @param {string} options.to
- * @param {Object} options.user
- * @param {Resource} options.resource
- * @param {Object} [options.doc]
- * @returns {Promise}
- */
-module.exports.setState = function setDocState(options) {
-  const stateTo = getStateFromOptions(options, 'to');
-
-  return new Promise((resolve, reject) => {
-    validate(options.resource, options.doc, stateTo.validate)
-      .catch(reject)
-      .then(() => {
-        let ops = { $rename: {}, $set: {} };
-        ops.$rename[join('states', options.from)] = join('states', options.to);
-        ops.$set.modifiedAt = new Date();
-        ops.$set.modifiedBy = options.user ? options.user.id : null;
-        return resolve(ops);
-      });
-  });
 };

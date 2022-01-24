@@ -30,6 +30,7 @@ module.exports = class VersionedDocsService extends CampsiService {
     // get doc version
     this.router.get('/:resource/:id', handlers.getDoc);
     this.router.post('/:resource', handlers.postDoc);
+    this.router.patch('/:resource/:id', handlers.updateDoc);
     /*
 
 

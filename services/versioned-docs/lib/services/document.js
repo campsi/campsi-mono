@@ -89,7 +89,8 @@ module.exports.createDocument = async (resource, data, user, groups) => {
     resource,
     data,
     user,
-    groups
+    groups,
+    revision: 1
   });
 
   const insert = await resource.currentCollection.insertOne(doc);
@@ -126,23 +127,55 @@ module.exports.setDocument = function(resource, filter, data, state, user) {
   });
 };
 
-module.exports.patchDocument = async (resource, filter, data, state, user) => {
-  const update = await builder.patch({ resource, data, state, user });
+module.exports.updateDocument = async (resource, filter, data, user) => {
+  if (!data.revision) {
+    throw new Error('You must provide a revision');
+  }
+  const originalDoc = await resource.currentCollection.findOne(filter);
+  if (!originalDoc) {
+    throw new Error('Document not found');
+  }
+  if (data.revision !== originalDoc.revision) {
+    throw new Error(
+      `The revision you provided is incorrect. Current revision: ${originalDoc.revision}`
+    );
+  }
 
-  const updateDoc = await resource.currentCollection.findOneAndUpdate(
-    filter,
-    update,
-    {
-      returnDocument: 'after'
-    }
+  // TODO: check if there's any diff ?
+
+  const { _id, ...original } = originalDoc;
+  // we validate & prepare the future current document
+  const updatedDocument = await builder.replace({
+    resource,
+    data,
+    user,
+    originalDoc: original
+  });
+
+  const previousRevisionDoc = { currentId: originalDoc._id, ...original };
+  const previousRevisionInsert = await resource.revisionCollection.insertOne(
+    previousRevisionDoc
   );
-  if (!updateDoc.value) throw new Error('Not Found');
-
-  return {
-    id: filter._id,
-    state: state,
-    data: updateDoc.value.states[state].data
-  };
+  // at this point, if no error is thrown, that means that we can go on & replace the old current doc with the new one
+  let failed;
+  try {
+    const replacedDocument = await resource.currentCollection.replaceOne(
+      filter,
+      updatedDocument
+    );
+    failed =
+      replacedDocument.modifiedCount === 0 ? 'no document was replaced' : false;
+  } catch (e) {
+    failed = e.message;
+  }
+  if (failed) {
+    // somehow the replacement has failed: we need to delete the previously inserted doc in revision collection, to revert back to the initial state
+    await resource.revisionCollection.deleteOne({
+      _id: previousRevisionInsert.insertedId
+    });
+    throw new Error(`Current document replacement failed: ${failed}`);
+  }
+  return { _id, ...updatedDocument };
 };
 
 module.exports.getDocument = async (

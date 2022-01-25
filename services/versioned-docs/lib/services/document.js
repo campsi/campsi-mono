@@ -99,35 +99,6 @@ module.exports.createDocument = async (resource, data, user, groups) => {
   return doc;
 };
 
-module.exports.setDocument = function(resource, filter, data, state, user) {
-  return new Promise((resolve, reject) => {
-    builder
-      .update({
-        resource: resource,
-        data: data,
-        state: state,
-        user: user
-      })
-      .then(update => {
-        resource.currentCollection.updateOne(filter, update, (err, result) => {
-          if (err) return reject(err);
-
-          if (result.modifiedCount !== 1) {
-            return reject(new Error('Not Found'));
-          }
-          resolve({
-            id: filter._id,
-            state: state,
-            data: data
-          });
-        });
-      })
-      .catch(() => {
-        return reject(new Error('Validation Error'));
-      });
-  });
-};
-
 module.exports.updateDocument = async (resource, filter, data, user) => {
   if (!data.revision) {
     throw new Error('You must provide a revision');
@@ -210,9 +181,8 @@ module.exports.getDocument = async (resource, filter, query) => {
 };
 
 module.exports.getDocumentRevisions = async (resource, filter, query) => {
-  const { _id: currentId, rest } = filter;
   return await resource.revisionCollection
-    .find({ currentId, ...rest })
+    .find({ currentId: filter._id })
     .toArray();
 };
 
@@ -226,14 +196,46 @@ module.exports.getDocumentRevision = async (
   if (!revisionId && !Number.isInteger(parseInt(revision))) {
     throw new Error('The revision you provided is invalid');
   }
-  const { _id: currentId, rest } = filter;
-  const revFilter = { currentId, ...rest };
+  const revFilter = { currentId: filter._id };
   if (revisionId) {
     revFilter._id = revisionId;
   } else {
     revFilter.revision = parseInt(revision);
   }
   return await resource.revisionCollection.findOne(revFilter);
+};
+
+module.exports.getDocumentVersions = async (resource, filter, query) => {
+  return await resource.versionCollection
+    .find({ currentId: filter._id })
+    .toArray();
+};
+
+module.exports.setDocumentVersion = async (
+  resource,
+  filter,
+  data,
+  user,
+  revision
+) => {
+  const lastVersionDoc = await resource.versionCollection.findOne(
+    { currentId: filter._id },
+    { sort: { version: -1 } }
+  );
+
+  const version = {
+    currentId: filter._id,
+    version: (lastVersionDoc?.version ?? 0) + 1,
+    name: data.name,
+    revisionId: revision._id,
+    publishedAt: new Date(),
+    publishedBy: user?._id ?? null
+  };
+  const insertVersion = await resource.versionCollection.insertOne(version);
+  return {
+    _id: insertVersion.insertedId,
+    ...version
+  };
 };
 
 module.exports.getDocumentUsers = async (resource, filter) => {
@@ -302,82 +304,6 @@ module.exports.removeUserFromDocument = async (
   return await Promise.all([removeUserFromDoc, removeGroupFromUser]).then(
     values => values[0]
   );
-};
-
-module.exports.setDocumentState = function(
-  resource,
-  filter,
-  fromState,
-  toState,
-  user
-) {
-  return new Promise((resolve, reject) => {
-    const doSetState = function(document) {
-      builder
-        .setState({
-          doc: document,
-          from: fromState,
-          to: toState,
-          resource: resource,
-          user: user
-        })
-        .then(ops => {
-          resource.currentCollection.updateOne(filter, ops, (err, result) => {
-            if (err) return reject(err);
-
-            if (result.modifiedCount !== 1) {
-              return reject(new Error('Not Found'));
-            }
-
-            resolve({
-              doc: document,
-              state: {
-                from: fromState,
-                to: toState
-              }
-            });
-          });
-        })
-        .catch(err => {
-          reject(err);
-        });
-    };
-
-    const stateTo = resource.states[toState];
-    const stateFrom = resource.states[fromState];
-
-    if (typeof stateTo === 'undefined') {
-      reject(new Error(`Undefined state: ${toState}`));
-    }
-
-    if (typeof stateFrom === 'undefined') {
-      reject(new Error(`Undefined state: ${fromState}`));
-    }
-
-    resource.currentCollection.findOne(filter, (err, document) => {
-      if (err) return reject(err);
-      const allowedPutStates = permissions.getAllowedStatesFromDocForUser(
-        user,
-        resource,
-        'PUT',
-        document
-      );
-      const allowedGetStates = permissions.getAllowedStatesFromDocForUser(
-        user,
-        resource,
-        'GET',
-        document
-      );
-      if (
-        allowedPutStates.includes(toState) &&
-        allowedGetStates.includes(fromState)
-      ) {
-        doSetState(document.states[fromState].data);
-      } else {
-        reject(new Error('Unauthorized'));
-      }
-    });
-  });
 };
 
 module.exports.deleteDocument = function(resource, filter) {

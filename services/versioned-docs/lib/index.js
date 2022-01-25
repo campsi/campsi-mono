@@ -31,7 +31,12 @@ module.exports = class VersionedDocsService extends CampsiService {
       '/:resource/:id/revisions/:revision',
       handlers.getDocRevision
     );
-    // get doc revision
+    this.router.post(
+      '/:resource/:id/revisions/:revision[:]set-as-version',
+      handlers.setDocVersion
+    );
+    this.router.get('/:resource/:id/versions/', handlers.getDocVersions);
+
     // get doc version
     // get doc versions
     this.router.get('/:resource/:id', handlers.getDoc);
@@ -70,7 +75,6 @@ module.exports = class VersionedDocsService extends CampsiService {
             await resource.currentCollection.createIndexes([
               { key: { 'users.$**': 1 } },
               { key: { revision: 1 } },
-              { key: { createdBy: 1 } },
               ...relIndexes
             ]);
 
@@ -78,19 +82,14 @@ module.exports = class VersionedDocsService extends CampsiService {
               { currentId: 1, revision: 1 },
               { unique: true }
             );
-            await resource.revisionCollection.createIndexes([
-              { key: { createdBy: 1 } },
-              { key: { createdAt: 1 } }
-            ]);
 
             await resource.versionCollection.createIndex(
-              { revisionId: 1, version: 1 },
+              { currentId: 1, version: 1 },
               { unique: true }
             );
             await resource.versionCollection.createIndexes([
               { key: { currentId: 1 } },
-              { key: { publishedBy: 1 } },
-              { key: { publishedAt: 1 } }
+              { key: { revisionId: 1 } }
             ]);
 
             const schema = await $RefParser.dereference(

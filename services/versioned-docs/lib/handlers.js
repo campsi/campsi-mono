@@ -95,9 +95,9 @@ module.exports.updateDoc = async (req, res) => {
       'document/updated',
       getEmitPayload(req, { data: req.body })
     );
-  } catch (err) {
-    if (err.message.includes('not found')) return helpers.notFound(res, err);
-    if (err.message.includes('duplicate')) return helpers.conflict(res);
+  } catch (e) {
+    if (e.message.includes('not found')) return helpers.notFound(res, e);
+    if (e.message.includes('duplicate')) return helpers.conflict(res);
     return helpers.internalServerError(res, e);
   }
 };
@@ -140,6 +140,44 @@ module.exports.getDocRevision = async (req, res) => {
     if (!docRevision)
       return helpers.notFound(res, new Error('Document not found'));
     return helpers.json(res, docRevision);
+  } catch (e) {
+    return helpers.internalServerError(res, e);
+  }
+};
+
+module.exports.setDocVersion = async (req, res) => {
+  try {
+    const docRevision = await documentService.getDocumentRevision(
+      req.resource,
+      req.filter,
+      req.query,
+      req.params.revision
+    );
+    if (!docRevision)
+      return helpers.notFound(res, new Error('Document not found'));
+
+    const version = await documentService.setDocumentVersion(
+      req.resource,
+      req.filter,
+      req.body,
+      req.user,
+      docRevision
+    );
+    return helpers.json(res, version);
+  } catch (e) {
+    if (e.message.includes('duplicate')) return helpers.conflict(res);
+    return helpers.internalServerError(res, e);
+  }
+};
+
+module.exports.getDocVersions = async (req, res) => {
+  try {
+    const docVersions = await documentService.getDocumentVersions(
+      req.resource,
+      req.filter,
+      req.query
+    );
+    return helpers.json(res, docVersions);
   } catch (e) {
     return helpers.internalServerError(res, e);
   }

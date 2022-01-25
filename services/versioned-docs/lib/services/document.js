@@ -211,6 +211,25 @@ module.exports.getDocumentVersions = async (resource, filter, query) => {
     .toArray();
 };
 
+module.exports.getDocumentVersion = async (
+  resource,
+  filter,
+  query,
+  version
+) => {
+  const versionId = createObjectId(version);
+  if (!versionId && !Number.isInteger(parseInt(version))) {
+    throw new Error('The version you provided is invalid');
+  }
+  const verFilter = { currentId: filter._id };
+  if (versionId) {
+    verFilter._id = versionId;
+  } else {
+    verFilter.version = parseInt(version);
+  }
+  return await resource.versionCollection.findOne(verFilter);
+};
+
 module.exports.setDocumentVersion = async (
   resource,
   filter,

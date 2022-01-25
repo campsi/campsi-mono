@@ -183,6 +183,20 @@ module.exports.getDocVersions = async (req, res) => {
   }
 };
 
+module.exports.getDocVersion = async (req, res) => {
+  try {
+    const docVersion = await documentService.getDocumentVersion(
+      req.resource,
+      req.filter,
+      req.query,
+      req.params.version
+    );
+    return helpers.json(res, docVersion);
+  } catch (e) {
+    return helpers.internalServerError(res, e);
+  }
+};
+
 module.exports.delDoc = function(req, res) {
   documentService
     .deleteDocument(req.resource, req.filter)

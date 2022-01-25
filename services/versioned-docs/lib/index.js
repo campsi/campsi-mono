@@ -36,9 +36,8 @@ module.exports = class VersionedDocsService extends CampsiService {
       handlers.setDocVersion
     );
     this.router.get('/:resource/:id/versions/', handlers.getDocVersions);
+    this.router.get('/:resource/:id/versions/:version', handlers.getDocVersion);
 
-    // get doc version
-    // get doc versions
     this.router.get('/:resource/:id', handlers.getDoc);
     this.router.post('/:resource', handlers.postDoc);
     this.router.patch('/:resource/:id', handlers.updateDoc);
@@ -85,6 +84,10 @@ module.exports = class VersionedDocsService extends CampsiService {
 
             await resource.versionCollection.createIndex(
               { currentId: 1, version: 1 },
+              { unique: true }
+            );
+            await resource.versionCollection.createIndex(
+              { revisionId: 1, version: 1 },
               { unique: true }
             );
             await resource.versionCollection.createIndexes([

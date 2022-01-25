@@ -76,7 +76,7 @@ module.exports.postDoc = async (req, res) => {
       req.groups
     );
     helpers.json(res, doc);
-    req.service.emit('document/created', getEmitPayload(req, { doc }));
+    return req.service.emit('document/created', getEmitPayload(req, { doc }));
   } catch (e) {
     return helpers.internalServerError(res, e);
   }
@@ -91,7 +91,7 @@ module.exports.updateDoc = async (req, res) => {
       req.user
     );
     helpers.json(res, result);
-    req.service.emit(
+    return req.service.emit(
       'document/updated',
       getEmitPayload(req, { data: req.body })
     );
@@ -197,12 +197,18 @@ module.exports.getDocVersion = async (req, res) => {
   }
 };
 
-module.exports.delDoc = function(req, res) {
-  documentService
-    .deleteDocument(req.resource, req.filter)
-    .then(result => helpers.json(res, result))
-    .then(() => req.service.emit('document/deleted', getEmitPayload(req)))
-    .catch(err => helpers.notFound(res, err));
+module.exports.delDoc = async (req, res) => {
+  try {
+    const result = await documentService.deleteDocument(
+      req.resource,
+      req.filter
+    );
+    helpers.json(res, result);
+    return req.service.emit('document/deleted', getEmitPayload(req));
+  } catch (e) {
+    if (e.message.includes('not found')) return helpers.notFound(res, e);
+    return helpers.internalServerError(res, e);
+  }
 };
 
 module.exports.getResources = function(req, res) {

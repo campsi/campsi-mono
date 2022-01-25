@@ -3,7 +3,7 @@ const param = require('./param');
 const handlers = require('./handlers');
 const Ajv = require('ajv');
 const $RefParser = require('json-schema-ref-parser');
-const debug = require('debug')('campsi:docs');
+const debug = require('debug')('campsi:versioned-docs');
 const format = require('string-format');
 const csdAssign = require('./keywords/csdAssign');
 const csdVisibility = require('./keywords/csdVisibility');
@@ -37,17 +37,10 @@ module.exports = class VersionedDocsService extends CampsiService {
     );
     this.router.get('/:resource/:id/versions/', handlers.getDocVersions);
     this.router.get('/:resource/:id/versions/:version', handlers.getDocVersion);
-
     this.router.get('/:resource/:id', handlers.getDoc);
     this.router.post('/:resource', handlers.postDoc);
     this.router.patch('/:resource/:id', handlers.updateDoc);
-    /*
-
-
-
-
     this.router.delete('/:resource/:id', handlers.delDoc);
-    this.router.delete('/:resource/:id/:state', handlers.delDoc);*/
 
     let ajvWriter = new Ajv({ useAssign: true });
     csdAssign(ajvWriter);

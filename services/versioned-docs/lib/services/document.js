@@ -325,75 +325,10 @@ module.exports.removeUserFromDocument = async (
   );
 };
 
-module.exports.deleteDocument = function(resource, filter) {
-  if (!resource.isInheritable) {
-    return resource.currentCollection.deleteOne(filter);
-  } else {
-    return resource.currentCollection
-      .findOne(filter)
-      .then(async docToDelete => {
-        const children = await getDocumentChildren(filter._id, resource);
-        if (!children.length) {
-          await resource.currentCollection.deleteOne(filter);
-          return {};
-        }
-        Object.keys(docToDelete.states).forEach((stateName, index) => {
-          children.forEach(child => {
-            if (!child.states[stateName]) {
-              child.states[stateName] = docToDelete.states[stateName];
-            } else {
-              child.states[stateName].data = Object.assign(
-                docToDelete.states[stateName].data,
-                child.states[stateName].data
-              );
-            }
-            delete child.parentId;
-            if (!!docToDelete.parentId) {
-              child.parentId = docToDelete.parentId;
-            }
-            return child;
-          });
-        });
-
-        await Promise.all(
-          children.map(
-            async child =>
-              await resource.currentCollection.replaceOne(
-                { _id: child._id },
-                child
-              )
-          )
-        );
-        await resource.currentCollection.deleteOne(filter);
-        return {};
-      })
-      .catch(err => err);
-  }
-};
-
-const prepareGetDocument = settings => {
-  const { doc, state, permissions, requestedStates, resource, user } = settings;
-  const currentState = doc.states[state] || {};
-  const allowedStates = permissions.getAllowedStatesFromDocForUser(
-    user,
-    resource,
-    'GET',
-    doc
-  );
-
-  return {
-    id: doc._id,
-    state: state,
-    createdAt: currentState.createdAt,
-    createdBy: currentState.createdBy,
-    modifiedAt: currentState.modifiedAt,
-    modifiedBy: currentState.modifiedBy,
-    data: currentState.data || {},
-    groups: doc.groups || [],
-    states: permissions.filterDocumentStates(
-      doc,
-      allowedStates,
-      requestedStates
-    )
-  };
+module.exports.deleteDocument = async (resource, filter) => {
+  return await Promise.all([
+    resource.versionCollection.deleteOne({ currentId: filter._id }),
+    resource.revisionCollection.deleteOne({ currentId: filter._id }),
+    resource.currentCollection.deleteOne({ _id: filter._id })
+  ]);
 };

@@ -1,14 +1,35 @@
+const { diff } = require('just-diff');
+const { ObjectId } = require('mongodb');
 const builder = require('../modules/queryBuilder');
-const embedDocs = require('../modules/embedDocs');
 const paginateCursor = require('../../../../lib/modules/paginateCursor');
 const sortCursor = require('../../../../lib/modules/sortCursor');
 const createObjectId = require('../../../../lib/modules/createObjectId');
-const permissions = require('../modules/permissions');
-const { ObjectId } = require('mongodb');
 
 // Helper functions
 const getDocUsersList = doc =>
   Object.keys(doc ? doc.users : []).map(k => doc.users[k]);
+
+const getDocumentDataOnly = doc => {
+  const {
+    _id,
+    revision,
+    users,
+    groups,
+    createdAt,
+    createdBy,
+    updatedAt,
+    updatedBy,
+    ...data
+  } = doc;
+
+  // ObjectId are stored as ObjectId in DB, but related properties are received as string in payload. We need them all as string for further diff
+  Object.entries(data).map(([key, value]) => {
+    if (value instanceof ObjectId) {
+      data[key] = value.toString();
+    }
+  });
+  return data;
+};
 
 module.exports.getDocuments = async (
   resource,
@@ -112,7 +133,12 @@ module.exports.updateDocument = async (resource, filter, data, user) => {
       `The revision you provided is incorrect. Current revision: ${originalDoc.revision}`
     );
   }
-
+  const originalDocData = getDocumentDataOnly(originalDoc);
+  const updatedData = getDocumentDataOnly(data);
+  const docDiff = diff(originalDocData, updatedData);
+  if (!docDiff.length) {
+    return originalDoc;
+  }
   const { _id, ...original } = originalDoc;
   // we validate & prepare the future current document
   const updatedDocument = await builder.replace({

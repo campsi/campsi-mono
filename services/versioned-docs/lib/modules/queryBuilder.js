@@ -2,6 +2,7 @@ const debug = require('debug')('campsi:service:docs');
 const forIn = require('for-in');
 const { ObjectId } = require('mongodb');
 const createObjectId = require('../../../../lib/modules/createObjectId');
+const { diff } = require('just-diff');
 
 /**
  * Simple utility function that converts a list of arguments

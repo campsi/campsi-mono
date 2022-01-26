@@ -51,8 +51,22 @@ const buildRelsId = (resource, doc) => {
 module.exports.find = function find(options) {
   let filter = {};
   if (options.query) {
-    forIn(options.query, (val, prop) => {
-      filter[`${prop}`] = val;
+    const relsPathes = Object.entries(options.resource.rels || []).map(
+      ([name, rel]) => {
+        return rel.path;
+      }
+    );
+    Object.entries(options.query).map(([prop, val]) => {
+      if (prop.startsWith('data.')) {
+        prop = prop.slice(5);
+        if (relsPathes.includes(prop)) {
+          val = createObjectId(val);
+          if (!val) {
+            throw new Error(`Invalid ${prop}`);
+          }
+        }
+        filter[`${prop}`] = val;
+      }
     });
   }
   return filter;

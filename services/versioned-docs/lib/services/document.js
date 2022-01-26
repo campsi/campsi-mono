@@ -63,8 +63,17 @@ module.exports.getDocuments = async (
       },
       {
         $addFields: {
-          creator: {
+          tempUser: {
             $arrayElemAt: ['$tempUser', 0]
+          }
+        }
+      },
+      {
+        $addFields: {
+          creator: {
+            _id: '$tempUser._id',
+            displayName: '$tempUser.displayName',
+            email: '$tempUser.emai'
           }
         }
       },

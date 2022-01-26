@@ -9,7 +9,6 @@ const getEmitPayload = (req, additionalProps) => {
     {
       documentId: req.params.id,
       userId: req.user ? req.user._id : null,
-      state: req.state,
       resource: req.resource
     },
     additionalProps || {}

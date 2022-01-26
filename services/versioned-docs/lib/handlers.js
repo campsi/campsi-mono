@@ -2,10 +2,7 @@ const helpers = require('../../../lib/modules/responseHelpers');
 const resourceService = require('./services/resource');
 const documentService = require('./services/document');
 const userService = require('./services/user');
-const forIn = require('for-in');
 const buildLink = require('../../../lib/modules/buildLink');
-const debug = require('debug')('campsi:docs');
-const { ObjectId } = require('mongodb');
 
 const getEmitPayload = (req, additionalProps) => {
   return Object.assign(

@@ -1,25 +1,10 @@
-const debug = require('debug')('campsi:service:docs');
-const forIn = require('for-in');
-const { ObjectId } = require('mongodb');
+const debug = require('debug')('campsi:service:versioned-docs');
 const createObjectId = require('../../../../lib/modules/createObjectId');
-const { diff } = require('just-diff');
-
-/**
- * Simple utility function that converts a list of arguments
- * into a dot notation string
- * @param {string} properties
- * @return {string}
- */
-const join = (...properties) => {
-  return properties.join('.');
-};
-
 /**
  * Validate a document against its resource
  * @param {object} resource
  * @param {object} doc
- * @param {boolean} doValidate
- * @returns {Promise}
+ * @returns {boolean|Error}
  */
 const validate = async (resource, doc) => {
   if (await resource.validate(doc)) {
@@ -51,7 +36,7 @@ const buildRelsId = (resource, doc) => {
 module.exports.find = function find(options) {
   let filter = {};
   if (options.query) {
-    const relsPathes = Object.entries(options.resource.rels || []).map(
+    const relsPath = Object.entries(options.resource.rels || []).map(
       ([name, rel]) => {
         return rel.path;
       }
@@ -59,7 +44,7 @@ module.exports.find = function find(options) {
     Object.entries(options.query).map(([prop, val]) => {
       if (prop.startsWith('data.')) {
         prop = prop.slice(5);
-        if (relsPathes.includes(prop)) {
+        if (relsPath.includes(prop)) {
           val = createObjectId(val);
           if (!val) {
             throw new Error(`Invalid ${prop}`);
@@ -73,11 +58,8 @@ module.exports.find = function find(options) {
 };
 /**
  *
- * @param {Object} options.data
- * @param {Resource} options.resource
- * @param {String} [options.state]
- * @param {User} [options.user]
- * @returns {Promise}
+ * @param {Object} options  {data, resource, user}
+ * @returns {Object}
  */
 module.exports.create = async options => {
   await validate(options.resource, options.data);
@@ -114,11 +96,4 @@ module.exports.replace = async options => {
     updatedAt: new Date(),
     updatedBy: options.user ? options.user._id : null
   };
-};
-
-module.exports.deleteFilter = function deleteDoc(options) {
-  let filter = {};
-  filter._id = options.id;
-  filter.states = {};
-  return filter;
 };

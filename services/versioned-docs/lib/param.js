@@ -1,7 +1,6 @@
 const helpers = require('../../../lib/modules/responseHelpers');
 const createObjectId = require('../../../lib/modules/createObjectId');
 const { can } = require('./modules/permissions');
-const { ObjectId } = require('mongodb');
 const {
   getValidGroupsFromString
 } = require('../../../lib/modules/groupsHelpers');

@@ -31,6 +31,40 @@ const getDocumentDataOnly = doc => {
   return data;
 };
 
+const getDocumentCreatorPipeline = () => {
+  return [
+    {
+      $lookup: {
+        from: '__users__',
+        localField: 'createdBy',
+        foreignField: '_id',
+        as: 'tempUser'
+      }
+    },
+    {
+      $addFields: {
+        tempUser: {
+          $arrayElemAt: ['$tempUser', 0]
+        }
+      }
+    },
+    {
+      $addFields: {
+        creator: {
+          _id: '$tempUser._id',
+          displayName: '$tempUser.displayName',
+          email: '$tempUser.email'
+        }
+      }
+    },
+    {
+      $project: {
+        tempUser: 0
+      }
+    }
+  ];
+};
+
 module.exports.getDocuments = async (
   resource,
   filter,
@@ -52,37 +86,7 @@ module.exports.getDocuments = async (
   const pipeline = [{ $match: dbQuery }];
 
   if (query?.with?.includes('creator')) {
-    pipeline.push(
-      {
-        $lookup: {
-          from: '__users__',
-          localField: 'createdBy',
-          foreignField: '_id',
-          as: 'tempUser'
-        }
-      },
-      {
-        $addFields: {
-          tempUser: {
-            $arrayElemAt: ['$tempUser', 0]
-          }
-        }
-      },
-      {
-        $addFields: {
-          creator: {
-            _id: '$tempUser._id',
-            displayName: '$tempUser.displayName',
-            email: '$tempUser.emai'
-          }
-        }
-      },
-      {
-        $project: {
-          tempUser: 0
-        }
-      }
-    );
+    pipeline.push(...getDocumentCreatorPipeline());
   }
 
   const cursor = !aggregate
@@ -142,12 +146,14 @@ module.exports.updateDocument = async (resource, filter, data, user) => {
       `The revision you provided is incorrect. Current revision: ${originalDoc.revision}`
     );
   }
+
   const originalDocData = getDocumentDataOnly(originalDoc);
   const updatedData = getDocumentDataOnly(data);
   const docDiff = diff(originalDocData, updatedData);
   if (!docDiff.length) {
     return originalDoc;
   }
+
   const { _id, ...original } = originalDoc;
   // we validate & prepare the future current document
   const updatedDocument = await builder.replace({
@@ -188,29 +194,7 @@ module.exports.getDocument = async (resource, filter, query) => {
   if (!aggregate) {
     return await resource.currentCollection.findOne(filter);
   }
-  const pipeline = [
-    { $match: filter },
-    {
-      $lookup: {
-        from: '__users__',
-        localField: 'createdBy',
-        foreignField: '_id',
-        as: 'tempUser'
-      }
-    },
-    {
-      $addFields: {
-        creator: {
-          $arrayElemAt: ['$tempUser', 0]
-        }
-      }
-    },
-    {
-      $project: {
-        tempUser: 0
-      }
-    }
-  ];
+  const pipeline = [{ $match: filter }, ...getDocumentCreatorPipeline()];
   const docs = await resource.currentCollection.aggregate(pipeline).toArray();
   return docs[0];
 };

@@ -93,7 +93,7 @@ module.exports.updateDoc = async (req, res) => {
     );
   } catch (e) {
     if (e.message.includes('not found')) return helpers.notFound(res, e);
-    if (e.message.includes('duplicate')) return helpers.conflict(res);
+    if (e.message.includes('duplicate')) return helpers.conflict(res, e);
     return helpers.internalServerError(res, e);
   }
 };
@@ -161,7 +161,7 @@ module.exports.setDocVersion = async (req, res) => {
     );
     return helpers.json(res, version);
   } catch (e) {
-    if (e.message.includes('duplicate')) return helpers.conflict(res);
+    if (e.message.includes('duplicate')) return helpers.conflict(res, e);
     return helpers.internalServerError(res, e);
   }
 };

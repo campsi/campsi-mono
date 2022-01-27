@@ -77,6 +77,10 @@ module.exports = class VersionedDocsService extends CampsiService {
               { unique: true }
             );
             await resource.versionCollection.createIndex(
+              { currentId: 1, revisionId: 1 },
+              { unique: true }
+            );
+            await resource.versionCollection.createIndex(
               { currentId: 1, tag: 1 },
               { unique: true }
             );
@@ -84,10 +88,6 @@ module.exports = class VersionedDocsService extends CampsiService {
               { revisionId: 1, version: 1 },
               { unique: true }
             );
-            await resource.versionCollection.createIndexes([
-              { key: { currentId: 1 } },
-              { key: { revisionId: 1 } }
-            ]);
 
             const schema = await $RefParser.dereference(
               service.config.optionsBasePath + '/',

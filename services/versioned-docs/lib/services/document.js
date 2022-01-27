@@ -265,7 +265,8 @@ module.exports.setDocumentVersion = async (
     currentId: filter._id,
     version: (lastVersionDoc?.version ?? 0) + 1,
     name: data.name,
-    tag: data.tag,
+    tag:
+      data.tag ?? `${(lastVersionDoc?.version ?? 0) + 1}.${revision.revision}`,
     revisionId: revision._id,
     publishedAt: new Date(),
     publishedBy: user?._id ?? null

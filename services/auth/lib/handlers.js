@@ -3,7 +3,6 @@ const {
   getValidGroupsFromString
 } = require('../../../lib/modules/groupsHelpers');
 const builder = require('./modules/queryBuilder');
-const forIn = require('for-in');
 const passport = require('@passport-next/passport');
 const editURL = require('edit-url');
 const state = require('./state');
@@ -106,7 +105,7 @@ function createAnonymousUser(req, res) {
 
 function getProviders(req, res) {
   let ret = [];
-  forIn(req.authProviders, (provider, name) => {
+  Object.entries(req.authProviders).map(([name, provider]) => {
     ret.push({
       name: name,
       title: provider.title,

@@ -2,7 +2,6 @@ const CampsiService = require('../../../lib/service');
 const param = require('./param');
 const handlers = require('./handlers');
 const async = require('async');
-const forIn = require('for-in');
 const Ajv = require('ajv');
 const $RefParser = require('json-schema-ref-parser');
 const debug = require('debug')('campsi:docs');
@@ -81,7 +80,7 @@ module.exports = class DocsService extends CampsiService {
     let desc = super.describe();
     desc.resources = {};
     desc.classes = this.options.classes;
-    forIn(this.options.resources, (resource, path) => {
+    Object.entries(this.options.resources).map(([path, resource]) => {
       desc.resources[path] = {
         label: resource.label,
         name: resource.path,

@@ -15,6 +15,14 @@ const getEmitPayload = (req, additionalProps) => {
   );
 };
 
+const getETagFromIfMatch = req => {
+  const etag = req.headers['if-match'];
+  if (!etag) {
+    throw new Error('Missing If-Match header');
+  }
+  return etag;
+};
+
 module.exports.getDocuments = async (req, res) => {
   let pagination = {};
   let perPage = req.query.perPage || req.resource.perPage;
@@ -71,6 +79,7 @@ module.exports.postDoc = async (req, res) => {
       req.user,
       req.groups
     );
+    res.set('ETag', `revision-${doc.revision}`);
     helpers.json(res, doc);
     return req.service.emit('document/created', getEmitPayload(req, { doc }));
   } catch (e) {
@@ -84,7 +93,8 @@ module.exports.updateDoc = async (req, res) => {
       req.resource,
       req.filter,
       req.body,
-      req.user
+      req.user,
+      getETagFromIfMatch(req)
     );
     helpers.json(res, result);
     return req.service.emit(
@@ -94,6 +104,8 @@ module.exports.updateDoc = async (req, res) => {
   } catch (e) {
     if (e.message.includes('not found')) return helpers.notFound(res, e);
     if (e.message.includes('duplicate')) return helpers.conflict(res, e);
+    if (e.message.includes('Precondition Failed'))
+      return helpers.preconditionFailed(res, e);
     return helpers.internalServerError(res, e);
   }
 };
@@ -106,6 +118,7 @@ module.exports.getDoc = async (req, res) => {
       req.query
     );
     if (!doc) return helpers.notFound(res, new Error('Document not found'));
+    res.set('ETag', `revision-${doc.revision}`);
     return helpers.json(res, doc);
   } catch (e) {
     return helpers.internalServerError(res, e);

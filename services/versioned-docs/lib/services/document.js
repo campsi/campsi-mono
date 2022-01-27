@@ -65,6 +65,14 @@ const getDocumentCreatorPipeline = () => {
   ];
 };
 
+const getRevisionFromETag = etag => {
+  const revision = parseInt(etag.slice(9));
+  if (!Number.isInteger(revision)) {
+    throw new Error('Wrong ETag revision');
+  }
+  return revision;
+};
+
 module.exports.getDocuments = async (
   resource,
   filter,
@@ -133,7 +141,7 @@ module.exports.createDocument = async (resource, data, user, groups) => {
   return doc;
 };
 
-module.exports.updateDocument = async (resource, filter, data, user) => {
+module.exports.updateDocument = async (resource, filter, data, user, etag) => {
   if (!data.revision) {
     throw new Error('You must provide a revision');
   }
@@ -141,6 +149,11 @@ module.exports.updateDocument = async (resource, filter, data, user) => {
   if (!originalDoc) {
     throw new Error('Document not found');
   }
+  const ETagRevision = getRevisionFromETag(etag);
+  if (ETagRevision !== originalDoc.revision) {
+    throw new Error('Precondition Failed: ETag revision mismatch');
+  }
+
   if (data.revision !== originalDoc.revision) {
     throw new Error(
       `The revision you provided is incorrect. Current revision: ${originalDoc.revision}`

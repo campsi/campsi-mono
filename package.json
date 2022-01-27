@@ -55,7 +55,6 @@
     "string-format": "^2.0.0",
     "stripe": "^8.194.0",
     "unique-slug": "^2.0.0",
-    "uuid": "^3.4.0",
     "yargs": "^16.1.0"
   },
   "devDependencies": {
@@ -92,5 +91,9 @@
     "index.js",
     "lib/",
     "services/"
-  ]
+  ],
+  "engines": {
+    "node": ">=14.17.0",
+    "npm": ">=7"
+  }
 }

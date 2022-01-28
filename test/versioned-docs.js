@@ -12,7 +12,6 @@ chai.use(chaiHttp);
 chai.should();
 
 const services = {
-  Auth: require('../services/auth/lib'),
   VersionedDocs: require('../services/versioned-docs/lib')
 };
 

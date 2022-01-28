@@ -3,7 +3,6 @@ process.env.NODE_ENV = 'test';
 
 const chai = require('chai');
 const chaiHttp = require('chai-http');
-const { ObjectId } = require('mongodb');
 const debug = require('debug')('campsi:test');
 const config = require('config');
 const setupBeforeEach = require('./helpers/setupBeforeEach');
@@ -292,8 +291,3 @@ describe('VersionedDocs API', () => {
     });
   });
 });
-
-/*
-  TODO :
-    delete a document (with all its revisions/versions)
- */

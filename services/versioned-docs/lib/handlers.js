@@ -200,6 +200,8 @@ module.exports.getDocVersion = async (req, res) => {
       req.query,
       req.params.version
     );
+    if (!docVersion)
+      return helpers.notFound(res, new Error('Document not found'));
     return helpers.json(res, docVersion);
   } catch (e) {
     return helpers.internalServerError(res, e);

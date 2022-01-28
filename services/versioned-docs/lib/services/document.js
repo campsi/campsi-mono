@@ -238,6 +238,7 @@ module.exports.getDocumentRevision = async (
 };
 
 module.exports.getDocumentVersions = async (resource, filter, query) => {
+  const pipeline = [];
   return await resource.versionCollection
     .find({ currentId: filter._id })
     .toArray();
@@ -250,7 +251,8 @@ module.exports.getDocumentVersion = async (
   version
 ) => {
   const versionId = createObjectId(version);
-  if (!versionId && !Number.isInteger(parseInt(version))) {
+  const versionNumber = parseInt(version);
+  if (!versionId && !Number.isInteger(versionNumber)) {
     throw new Error('The version you provided is invalid');
   }
   const verFilter = { currentId: filter._id };
@@ -259,7 +261,47 @@ module.exports.getDocumentVersion = async (
   } else {
     verFilter.version = parseInt(version);
   }
-  return await resource.versionCollection.findOne(verFilter);
+
+  const pipeline = [
+    {
+      $match: verFilter
+    },
+    {
+      $lookup: {
+        from: `${resource.revisionCollection.s.namespace.collection}`,
+        localField: 'revisionId',
+        foreignField: '_id',
+        as: 'revision'
+      }
+    },
+    {
+      $addFields: {
+        revision: {
+          $arrayElemAt: ['$revision', 0]
+        }
+      }
+    },
+    {
+      $project: {
+        'revision._id': 0,
+        'revision.revision': 0
+      }
+    },
+    {
+      $replaceRoot: {
+        newRoot: {
+          $mergeObjects: ['$revision', '$$ROOT']
+        }
+      }
+    },
+    {
+      $project: {
+        revision: 0
+      }
+    }
+  ];
+  const doc = await resource.versionCollection.aggregate(pipeline).toArray();
+  return doc[0];
 };
 
 module.exports.setDocumentVersion = async (

@@ -150,8 +150,8 @@ describe('VersionedDocs API', () => {
     });
   });
 
-  describe('/GET all document revision', () => {
-    it('it should return an array of document revision', async () => {
+  describe('/GET all document revisions', () => {
+    it('it should return an array of document revisions', async () => {
       const res = await chai
         .request(context.campsi.app)
         .get(`/versioneddocs/contracts/${current._id}/revisions/`);
@@ -198,12 +198,102 @@ describe('VersionedDocs API', () => {
       res.body.message.should.be.equal('The revision you provided is invalid');
     });
   });
+
+  describe('/POST set a revision as a new version', () => {
+    it('it should create a version', async () => {
+      const res = await chai
+        .request(context.campsi.app)
+        .post(
+          `/versioneddocs/contracts/${current._id}/revisions/${revision._id}:set-as-version`
+        );
+      res.should.have.status(200);
+      res.should.be.json;
+      res.body.should.be.an('object');
+      res.body.currentId.should.be.equal(current._id.toString());
+      res.body.version.should.be.eq(1);
+      res.body.should.have.property('publishedAt');
+      version = { ...res.body };
+      try {
+      } catch (e) {
+        debug(`received an error from chai: ${e.message}`);
+      }
+    });
+  });
+
+  describe('/GET all document versions', () => {
+    it('it should return an array of document versions', async () => {
+      const res = await chai
+        .request(context.campsi.app)
+        .get(`/versioneddocs/contracts/${current._id}/versions/`);
+      res.should.have.status(200);
+      res.should.be.json;
+      res.body.should.be.an('array');
+      res.body.length.should.be.eq(1);
+      res.body[0].currentId.should.be.equal(current._id.toString());
+      res.body[0]._id.should.be.equal(version._id.toString());
+    });
+  });
+
+  describe('/GET a specific version', () => {
+    it('it should return a document version (by id)', async () => {
+      const res = await chai
+        .request(context.campsi.app)
+        .get(`/versioneddocs/contracts/${current._id}/versions/${version._id}`);
+      res.should.have.status(200);
+      res.should.be.json;
+      res.body.should.be.an('object');
+      res.body._id.should.be.equal(version._id.toString());
+      res.body.currentId.should.be.equal(current._id.toString());
+    });
+    it('it should return a document version (by version number)', async () => {
+      const res = await chai
+        .request(context.campsi.app)
+        .get(`/versioneddocs/contracts/${current._id}/versions/1`);
+      res.should.have.status(200);
+      res.should.be.json;
+      res.body.should.be.an('object');
+      res.body._id.should.be.equal(version._id.toString());
+      res.body.currentId.should.be.equal(current._id.toString());
+    });
+    it('it should return a document version (by tag)', async () => {
+      const res = await chai
+        .request(context.campsi.app)
+        .get(
+          `/versioneddocs/contracts/${current._id}/versions/?tag=${version.tag}`
+        );
+      res.should.have.status(200);
+      res.should.be.json;
+      res.body.should.be.an('object');
+      res.body._id.should.be.equal(version._id.toString());
+      res.body.currentId.should.be.equal(current._id.toString());
+    });
+    it('it should return an error for wrong version query param', async () => {
+      const res = await chai
+        .request(context.campsi.app)
+        .get(`/versioneddocs/contracts/${current._id}/versions/whatever`);
+      res.should.have.status(500);
+      res.should.be.json;
+      res.body.should.be.an('object');
+      res.body.should.have.property('message');
+      res.body.message.should.be.equal('The version you provided is invalid');
+    });
+  });
+
+  describe('/DELETE a document and all its versions/revisions', () => {
+    it('it should return an array of mongoDB DeleteResult', async () => {
+      const res = await chai
+        .request(context.campsi.app)
+        .delete(`/versioneddocs/contracts/${current._id}`);
+      res.should.have.status(200);
+      res.should.be.json;
+      res.body.should.be.an('array');
+      res.body.length.should.be.eq(3);
+      res.body[0].deletedCount.should.be.equal(1);
+    });
+  });
 });
 
 /*
   TODO :
-    get all its versions
-    get a specific version (by number or id)
-    get a specific version by tag
     delete a document (with all its revisions/versions)
  */

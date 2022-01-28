@@ -74,7 +74,7 @@ module.exports.postDoc = async (req, res) => {
       req.user,
       req.groups
     );
-    res.set('ETag', `revision-${doc.revision}`);
+    res.set('ETag', doc.revision);
     helpers.json(res, doc);
     return req.service.emit('document/created', getEmitPayload(req, { doc }));
   } catch (e) {
@@ -91,7 +91,7 @@ module.exports.updateDoc = async (req, res) => {
       req.user,
       getETagFromIfMatch(req)
     );
-    res.set('ETag', `revision-${result.revision}`);
+    res.set('ETag', result.revision);
     helpers.json(res, result);
     return req.service.emit(
       'document/updated',
@@ -114,7 +114,7 @@ module.exports.getDoc = async (req, res) => {
       req.query
     );
     if (!doc) return helpers.notFound(res, new Error('Document not found'));
-    res.set('ETag', `revision-${doc.revision}`);
+    res.set('ETag', doc.revision);
     return helpers.json(res, doc);
   } catch (e) {
     return helpers.internalServerError(res, e);

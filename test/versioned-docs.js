@@ -98,7 +98,7 @@ describe('VersionedDocs API', () => {
       const res = await chai
         .request(context.campsi.app)
         .patch(`/versioneddocs/contracts/${current._id}`)
-        .set('If-Match', `revision-${current.revision}`)
+        .set('If-Match', current.revision)
         .send({ ...revision, revision: current.revision });
       res.should.have.status(200);
       res.should.be.json;
@@ -132,7 +132,7 @@ describe('VersionedDocs API', () => {
       const res = await chai
         .request(context.campsi.app)
         .patch(`/versioneddocs/contracts/${current._id}`)
-        .set('If-Match', `revision-${current.revision + 1}`)
+        .set('If-Match', current.revision + 1)
         .send({ ...revision, revision: current.revision });
       res.should.have.status(412);
       res.should.be.json;

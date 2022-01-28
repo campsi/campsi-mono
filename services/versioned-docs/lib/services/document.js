@@ -105,14 +105,6 @@ const getDocumentVersionsPipeline = (resource, filter) => {
   ];
 };
 
-const getRevisionFromETag = etag => {
-  const revision = parseInt(etag.slice(9));
-  if (!Number.isInteger(revision)) {
-    throw new Error('Wrong ETag revision');
-  }
-  return revision;
-};
-
 module.exports.getDocuments = async (
   resource,
   filter,
@@ -189,8 +181,7 @@ module.exports.updateDocument = async (resource, filter, data, user, etag) => {
   if (!originalDoc) {
     throw new Error('Document not found');
   }
-  const ETagRevision = getRevisionFromETag(etag);
-  if (ETagRevision !== originalDoc.revision) {
+  if (parseInt(etag) !== originalDoc.revision) {
     throw new Error('Precondition Failed: ETag revision mismatch');
   }
 

@@ -4,8 +4,8 @@ const handlers = require('./handlers');
 const Ajv = require('ajv');
 const $RefParser = require('json-schema-ref-parser');
 const debug = require('debug')('campsi:versioned-docs');
-const csdAssign = require('./keywords/csdAssign');
-const csdVisibility = require('./keywords/csdVisibility');
+const csdAssign = require('../../../lib/keywords/csdAssign');
+const csdVisibility = require('../../../lib/keywords/csdVisibility');
 
 module.exports = class VersionedDocsService extends CampsiService {
   initialize() {

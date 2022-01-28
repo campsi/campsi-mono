@@ -1,0 +1,32 @@
+{
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "_id": {
+      "type": "string",
+      "pattern": "^[a-f\\d]{24}$"
+    },
+    "content": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "config": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "projectId": {
+      "type": "string",
+      "pattern": "^[a-f\\d]{24}$"
+    }
+  },
+  "required": ["projectId", "content", "config"],
+  "title": "versioned contract",
+  "description": "new structure for contracts, with revision and version",
+  "resources": [
+    "project"
+  ]
+}

@@ -96,6 +96,7 @@ module.exports.updateDoc = async (req, res) => {
       req.user,
       getETagFromIfMatch(req)
     );
+    res.set('ETag', `revision-${result.revision}`);
     helpers.json(res, result);
     return req.service.emit(
       'document/updated',

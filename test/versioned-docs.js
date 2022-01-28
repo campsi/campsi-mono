@@ -149,12 +149,59 @@ describe('VersionedDocs API', () => {
       }
     });
   });
+
+  describe('/GET all document revision', () => {
+    it('it should return an array of document revision', async () => {
+      const res = await chai
+        .request(context.campsi.app)
+        .get(`/versioneddocs/contracts/${current._id}/revisions/`);
+      res.should.have.status(200);
+      res.should.be.json;
+      res.body.should.be.an('array');
+      res.body.length.should.be.eq(1);
+      res.body[0].currentId.should.be.equal(current._id.toString());
+      revision = { ...res.body[0] };
+    });
+  });
+
+  describe('/GET a specific document revision', () => {
+    it('it should return a document revision (by id)', async () => {
+      const res = await chai
+        .request(context.campsi.app)
+        .get(
+          `/versioneddocs/contracts/${current._id}/revisions/${revision._id}`
+        );
+      res.should.have.status(200);
+      res.should.be.json;
+      res.body.should.be.an('object');
+      res.body._id.should.be.equal(revision._id.toString());
+      res.body.currentId.should.be.equal(current._id.toString());
+    });
+    it('it should return a document revision (by revision number)', async () => {
+      const res = await chai
+        .request(context.campsi.app)
+        .get(`/versioneddocs/contracts/${current._id}/revisions/1`);
+      res.should.have.status(200);
+      res.should.be.json;
+      res.body.should.be.an('object');
+      res.body._id.should.be.equal(revision._id.toString());
+      res.body.currentId.should.be.equal(current._id.toString());
+    });
+    it('it should return an error for wrong revision query param', async () => {
+      const res = await chai
+        .request(context.campsi.app)
+        .get(`/versioneddocs/contracts/${current._id}/revisions/whatever`);
+      res.should.have.status(500);
+      res.should.be.json;
+      res.body.should.be.an('object');
+      res.body.should.have.property('message');
+      res.body.message.should.be.equal('The revision you provided is invalid');
+    });
+  });
 });
 
 /*
   TODO :
-    get all its revision
-    get a specific revision (by number or id)
     get all its versions
     get a specific version (by number or id)
     get a specific version by tag

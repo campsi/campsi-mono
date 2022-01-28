@@ -282,9 +282,10 @@ module.exports.getDocumentVersions = async (resource, filter, query) => {
   if (query.tag) {
     verFilter.tag = query.tag;
   }
-  return await resource.versionCollection
+  const versions = await resource.versionCollection
     .aggregate(getDocumentVersionsPipeline(resource, verFilter))
     .toArray();
+  return !!query.tag ? versions[0] : versions;
 };
 
 module.exports.getDocumentVersion = async (

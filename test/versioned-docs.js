@@ -130,6 +130,24 @@ describe('VersionedDocs API', () => {
         debug(`received an error from chai: ${e.message}`);
       }
     });
+    it('it should return an error due to wrong If-Match header', async () => {
+      const res = await chai
+        .request(context.campsi.app)
+        .patch(`/versioneddocs/contracts/${current._id}`)
+        .set('If-Match', `revision-${current.revision + 1}`)
+        .send({ ...revision, revision: current.revision });
+      res.should.have.status(412);
+      res.should.be.json;
+      res.body.should.be.an('object');
+      res.body.should.have.property('message');
+      res.body.message.should.be.eq(
+        'Precondition Failed: ETag revision mismatch'
+      );
+      try {
+      } catch (e) {
+        debug(`received an error from chai: ${e.message}`);
+      }
+    });
   });
 });
 

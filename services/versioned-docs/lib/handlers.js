@@ -65,11 +65,6 @@ module.exports.getDocuments = async (req, res) => {
     return helpers.internalServerError(res, e);
   }
 };
-Object.defineProperty(module.exports.getDocuments, 'apidoc', {
-  value: {
-    summary: 'Get documents'
-  }
-});
 
 module.exports.postDoc = async (req, res) => {
   try {
@@ -226,12 +221,6 @@ module.exports.delDoc = async (req, res) => {
 module.exports.getResources = function(req, res) {
   return helpers.json(res, resourceService.getResources(req.options));
 };
-Object.defineProperty(module.exports.getResources, 'apidoc', {
-  value: {
-    summary: 'Get all resources',
-    description: 'List all resources from schema.'
-  }
-});
 
 module.exports.getDocUsers = async (req, res) => {
   try {

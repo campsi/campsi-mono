@@ -65,6 +65,46 @@ const getDocumentCreatorPipeline = () => {
   ];
 };
 
+const getDocumentVersionsPipeline = (resource, filter) => {
+  return [
+    {
+      $match: filter
+    },
+    {
+      $lookup: {
+        from: `${resource.revisionCollection.s.namespace.collection}`,
+        localField: 'revisionId',
+        foreignField: '_id',
+        as: 'revision'
+      }
+    },
+    {
+      $unwind: {
+        path: '$revision',
+        preserveNullAndEmptyArrays: false
+      }
+    },
+    {
+      $project: {
+        'revision._id': 0,
+        'revision.revision': 0
+      }
+    },
+    {
+      $replaceRoot: {
+        newRoot: {
+          $mergeObjects: ['$revision', '$$ROOT']
+        }
+      }
+    },
+    {
+      $project: {
+        revision: 0
+      }
+    }
+  ];
+};
+
 const getRevisionFromETag = etag => {
   const revision = parseInt(etag.slice(9));
   if (!Number.isInteger(revision)) {
@@ -238,9 +278,12 @@ module.exports.getDocumentRevision = async (
 };
 
 module.exports.getDocumentVersions = async (resource, filter, query) => {
-  const pipeline = [];
+  const verFilter = { currentId: filter._id };
+  if (query.tag) {
+    verFilter.tag = query.tag;
+  }
   return await resource.versionCollection
-    .find({ currentId: filter._id })
+    .aggregate(getDocumentVersionsPipeline(resource, verFilter))
     .toArray();
 };
 
@@ -261,46 +304,9 @@ module.exports.getDocumentVersion = async (
   } else {
     verFilter.version = parseInt(version);
   }
-
-  const pipeline = [
-    {
-      $match: verFilter
-    },
-    {
-      $lookup: {
-        from: `${resource.revisionCollection.s.namespace.collection}`,
-        localField: 'revisionId',
-        foreignField: '_id',
-        as: 'revision'
-      }
-    },
-    {
-      $addFields: {
-        revision: {
-          $arrayElemAt: ['$revision', 0]
-        }
-      }
-    },
-    {
-      $project: {
-        'revision._id': 0,
-        'revision.revision': 0
-      }
-    },
-    {
-      $replaceRoot: {
-        newRoot: {
-          $mergeObjects: ['$revision', '$$ROOT']
-        }
-      }
-    },
-    {
-      $project: {
-        revision: 0
-      }
-    }
-  ];
-  const doc = await resource.versionCollection.aggregate(pipeline).toArray();
+  const doc = await resource.versionCollection
+    .aggregate(getDocumentVersionsPipeline(resource, verFilter))
+    .toArray();
   return doc[0];
 };
 

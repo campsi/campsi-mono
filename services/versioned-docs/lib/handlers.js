@@ -30,41 +30,37 @@ module.exports.getDocuments = async (req, res, next) => {
   if (perPage) pagination.perPage = perPage;
   if (req.query.page) pagination.page = req.query.page;
 
-  try {
-    const data = await documentService.getDocuments(
-      req.resource,
-      req.filter,
-      req.user,
-      req.query,
-      req.query.sort,
-      pagination,
-      req.options.resources
-    );
+  const data = await documentService.getDocuments(
+    req.resource,
+    req.filter,
+    req.user,
+    req.query,
+    req.query.sort,
+    pagination,
+    req.options.resources
+  );
 
-    const links = [];
-    Object.entries(data.nav).map(([rel, page]) => {
-      if (!!page && page !== data.page) {
-        links.push(
-          `<${buildLink(req, page, ['perPage', 'sort'])}>; rel="${rel}"`
-        );
-      }
-    });
-
-    const headers = {
-      'X-Total-Count': data.count,
-      'X-Page': data.page,
-      'X-Per-Page': data.perPage,
-      'X-Last-Page': data.nav.last,
-      'Access-Control-Expose-Headers':
-        'X-Total-Count, X-Page, X-Per-Page, X-Last-Page'
-    };
-    if (links.length) {
-      headers.Link = links.join(', ');
+  const links = [];
+  Object.entries(data.nav).map(([rel, page]) => {
+    if (!!page && page !== data.page) {
+      links.push(
+        `<${buildLink(req, page, ['perPage', 'sort'])}>; rel="${rel}"`
+      );
     }
-    return helpers.json(res, data.docs, headers);
-  } catch (e) {
-    return helpers.internalServerError(res, e);
+  });
+
+  const headers = {
+    'X-Total-Count': data.count,
+    'X-Page': data.page,
+    'X-Per-Page': data.perPage,
+    'X-Last-Page': data.nav.last,
+    'Access-Control-Expose-Headers':
+      'X-Total-Count, X-Page, X-Per-Page, X-Last-Page'
+  };
+  if (links.length) {
+    headers.Link = links.join(', ');
   }
+  return helpers.json(res, data.docs, headers);
 };
 
 module.exports.postDoc = async (req, res, next) => {

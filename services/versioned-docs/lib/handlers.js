@@ -3,6 +3,7 @@ const resourceService = require('./services/resource');
 const documentService = require('./services/document');
 const userService = require('./services/user');
 const buildLink = require('../../../lib/modules/buildLink');
+const createError = require('http-errors');
 
 const getEmitPayload = (req, additionalProps) => {
   return Object.assign(
@@ -23,7 +24,7 @@ const getETagFromIfMatch = req => {
   return etag;
 };
 
-module.exports.getDocuments = async (req, res) => {
+module.exports.getDocuments = async (req, res, next) => {
   let pagination = {};
   let perPage = req.query.perPage || req.resource.perPage;
   if (perPage) pagination.perPage = perPage;
@@ -66,101 +67,76 @@ module.exports.getDocuments = async (req, res) => {
   }
 };
 
-module.exports.postDoc = async (req, res) => {
-  try {
-    const doc = await documentService.createDocument(
-      req.resource,
-      req.body,
-      req.user,
-      req.groups
-    );
-    res.set('ETag', doc.revision);
-    helpers.json(res, doc);
-    return req.service.emit('document/created', getEmitPayload(req, { doc }));
-  } catch (e) {
-    return helpers.internalServerError(res, e);
-  }
+module.exports.postDoc = async (req, res, next) => {
+  const doc = await documentService.createDocument(
+    req.resource,
+    req.body,
+    req.user,
+    req.groups
+  );
+  res.set('ETag', doc.revision);
+  helpers.json(res, doc);
+  return req.service.emit('document/created', getEmitPayload(req, { doc }));
 };
 
-module.exports.updateDoc = async (req, res) => {
-  try {
-    const result = await documentService.updateDocument(
-      req.resource,
-      req.filter,
-      req.body,
-      req.user,
-      getETagFromIfMatch(req)
-    );
-    res.set('ETag', result.revision);
-    helpers.json(res, result);
-    return req.service.emit(
-      'document/updated',
-      getEmitPayload(req, { data: req.body })
-    );
-  } catch (e) {
-    if (e.message.includes('not found')) return helpers.notFound(res, e);
-    if (e.message.includes('duplicate')) return helpers.conflict(res, e);
-    if (e.message.includes('Precondition Failed'))
-      return helpers.preconditionFailed(res, e);
-    return helpers.internalServerError(res, e);
-  }
+module.exports.updateDoc = async (req, res, next) => {
+  const result = await documentService.updateDocument(
+    req.resource,
+    req.filter,
+    req.body,
+    req.user,
+    getETagFromIfMatch(req)
+  );
+  res.set('ETag', result.revision);
+  helpers.json(res, result);
+  return req.service.emit(
+    'document/updated',
+    getEmitPayload(req, { data: req.body })
+  );
 };
 
-module.exports.getDoc = async (req, res) => {
-  try {
-    const doc = await documentService.getDocument(
-      req.resource,
-      req.filter,
-      req.query
-    );
-    if (!doc) return helpers.notFound(res, new Error('Document not found'));
-    res.set('ETag', doc.revision);
-    return helpers.json(res, doc);
-  } catch (e) {
-    return helpers.internalServerError(res, e);
-  }
+module.exports.getDoc = async (req, res, next) => {
+  const doc = await documentService.getDocument(
+    req.resource,
+    req.filter,
+    req.query
+  );
+  if (!doc) return next(new createError.NotFound('Document not found'));
+  res.set('ETag', doc.revision);
+  return helpers.json(res, doc);
 };
 
-module.exports.getDocRevisions = async (req, res) => {
-  try {
-    const docRevisions = await documentService.getDocumentRevisions(
-      req.resource,
-      req.filter,
-      req.query
-    );
-    return helpers.json(res, docRevisions);
-  } catch (e) {
-    return helpers.internalServerError(res, e);
-  }
+module.exports.getDocRevisions = async (req, res, next) => {
+  const docRevisions = await documentService.getDocumentRevisions(
+    req.resource,
+    req.filter,
+    req.query
+  );
+  return helpers.json(res, docRevisions);
 };
 
-module.exports.getDocRevision = async (req, res) => {
-  try {
-    const docRevision = await documentService.getDocumentRevision(
-      req.resource,
-      req.filter,
-      req.query,
-      req.params.revision
-    );
-    if (!docRevision)
-      return helpers.notFound(res, new Error('Document not found'));
-    return helpers.json(res, docRevision);
-  } catch (e) {
-    return helpers.internalServerError(res, e);
-  }
+module.exports.getDocRevision = async (req, res, next) => {
+  const docRevision = await documentService.getDocumentRevision(
+    req.resource,
+    req.filter,
+    req.query,
+    req.params.revision
+  );
+  if (!docRevision)
+    return next(new createError.NotFound('Document revision not found'));
+  return helpers.json(res, docRevision);
 };
 
-module.exports.setDocVersion = async (req, res) => {
-  try {
-    const docRevision = await documentService.getDocumentRevision(
-      req.resource,
-      req.filter,
-      req.query,
-      req.params.revision
-    );
-    if (!docRevision)
-      return helpers.notFound(res, new Error('Document not found'));
+module.exports.setDocVersion = async (req, res, next) => {
+  const docRevision = await documentService.getDocumentRevision(
+    req.resource,
+    req.filter,
+    req.query,
+    req.params.revision
+  );
+  if (!docRevision) return next(new createError.NotFound('Document not found'));
 
+  try {
     const version = await documentService.setDocumentVersion(
       req.resource,
       req.filter,
@@ -170,124 +146,102 @@ module.exports.setDocVersion = async (req, res) => {
     );
     return helpers.json(res, version);
   } catch (e) {
-    if (e.message.includes('duplicate')) return helpers.conflict(res, e);
-    return helpers.internalServerError(res, e);
-  }
-};
-
-module.exports.getDocVersions = async (req, res) => {
-  try {
-    const docVersions = await documentService.getDocumentVersions(
-      req.resource,
-      req.filter,
-      req.query
+    next(
+      new createError.Conflict(
+        `The revision you provided (${req.params.revision}) has already been set as version`
+      )
     );
-    return helpers.json(res, docVersions);
-  } catch (e) {
-    return helpers.internalServerError(res, e);
   }
 };
 
-module.exports.getDocVersion = async (req, res) => {
-  try {
-    const docVersion = await documentService.getDocumentVersion(
-      req.resource,
-      req.filter,
-      req.query,
-      req.params.version
-    );
-    if (!docVersion)
-      return helpers.notFound(res, new Error('Document not found'));
-    return helpers.json(res, docVersion);
-  } catch (e) {
-    return helpers.internalServerError(res, e);
-  }
+module.exports.getDocVersions = async (req, res, next) => {
+  const docVersions = await documentService.getDocumentVersions(
+    req.resource,
+    req.filter,
+    req.query
+  );
+  return helpers.json(res, docVersions);
 };
 
-module.exports.delDoc = async (req, res) => {
-  try {
-    const result = await documentService.deleteDocument(
-      req.resource,
-      req.filter
-    );
-    helpers.json(res, result);
-    return req.service.emit('document/deleted', getEmitPayload(req));
-  } catch (e) {
-    if (e.message.includes('not found')) return helpers.notFound(res, e);
-    return helpers.internalServerError(res, e);
-  }
+module.exports.getDocVersion = async (req, res, next) => {
+  const docVersion = await documentService.getDocumentVersion(
+    req.resource,
+    req.filter,
+    req.query,
+    req.params.version
+  );
+  if (!docVersion) return next(new createError.NotFound('Document not found'));
+  return helpers.json(res, docVersion);
 };
 
-module.exports.getResources = function(req, res) {
+module.exports.delDoc = async (req, res, next) => {
+  const doc = await documentService.getDocument(
+    req.resource,
+    req.filter,
+    req.query
+  );
+  if (!doc) return next(new createError.NotFound('Document not found'));
+  const result = await documentService.deleteDocument(req.resource, req.filter);
+  helpers.json(res, result);
+  return req.service.emit('document/deleted', getEmitPayload(req));
+};
+
+module.exports.getResources = function(req, res, next) {
   return helpers.json(res, resourceService.getResources(req.options));
 };
 
-module.exports.getDocUsers = async (req, res) => {
-  try {
-    const usersId = await documentService.getDocumentUsers(
-      req.resource,
-      req.filter
-    );
-    if (!usersId.length)
-      return helpers.notFound(res, new Error('Document not found'));
-    const users = await userService.fetchUsers(
-      usersId,
-      req.options,
-      req.service.server
-    );
-    return helpers.json(res, users);
-  } catch (e) {
-    return helpers.internalServerError(res, e);
-  }
+module.exports.getDocUsers = async (req, res, next) => {
+  const usersId = await documentService.getDocumentUsers(
+    req.resource,
+    req.filter
+  );
+  if (!usersId.length) return next(createError(404, 'Document not found'));
+  const users = await userService.fetchUsers(
+    usersId,
+    req.options,
+    req.service.server
+  );
+  return helpers.json(res, users);
 };
 
-module.exports.postDocUser = async (req, res) => {
-  try {
-    const usersId = await documentService.addUserToDocument(
-      req.resource,
-      req.filter,
-      req.body
-    );
-    if (!usersId?.length)
-      return helpers.notFound(res, new Error('Document not found'));
-    const users = await userService.fetchUsers(
-      usersId,
-      req.options,
-      req.service.server
-    );
+module.exports.postDocUser = async (req, res, next) => {
+  const usersId = await documentService.addUserToDocument(
+    req.resource,
+    req.filter,
+    req.body
+  );
+  if (!usersId?.length) return next(createError(404, 'Document not found'));
+  const users = await userService.fetchUsers(
+    usersId,
+    req.options,
+    req.service.server
+  );
 
-    helpers.json(res, users);
+  helpers.json(res, users);
 
-    return req.service.emit(
-      'document/users/added',
-      getEmitPayload(req, { addedUserId: req.body.userId })
-    );
-  } catch (e) {
-    return helpers.internalServerError(res, e);
-  }
+  return req.service.emit(
+    'document/users/added',
+    getEmitPayload(req, { addedUserId: req.body.userId })
+  );
 };
 
-module.exports.delDocUser = async (req, res) => {
-  try {
-    const usersId = await documentService.removeUserFromDocument(
-      req.resource,
-      req.filter,
-      req.params.user,
-      req.db
-    );
-    if (!usersId) return helpers.notFound(res, new Error('Document not found'));
+module.exports.delDocUser = async (req, res, next) => {
+  const usersId = await documentService.removeUserFromDocument(
+    req.resource,
+    req.filter,
+    req.params.user,
+    req.db
+  );
+  if (!usersId) return next(createError(404, 'Document not found'));
 
-    const users = await userService.fetchUsers(
-      usersId,
-      req.options,
-      req.service.server
-    );
-    helpers.json(res, users);
-    return req.service.emit(
-      'document/users/removed',
-      getEmitPayload(req, { removedUserId: req.params.user })
-    );
-  } catch (e) {
-    return helpers.internalServerError(res, e);
-  }
+  const users = await userService.fetchUsers(
+    usersId,
+    req.options,
+    req.service.server
+  );
+  helpers.json(res, users);
+  return req.service.emit(
+    'document/users/removed',
+    getEmitPayload(req, { removedUserId: req.params.user })
+  );
 };

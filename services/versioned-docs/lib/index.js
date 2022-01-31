@@ -6,6 +6,7 @@ const $RefParser = require('json-schema-ref-parser');
 const debug = require('debug')('campsi:versioned-docs');
 const csdAssign = require('../../../lib/keywords/csdAssign');
 const csdVisibility = require('../../../lib/keywords/csdVisibility');
+const createError = require('http-errors');
 
 module.exports = class VersionedDocsService extends CampsiService {
   initialize() {
@@ -19,25 +20,28 @@ module.exports = class VersionedDocsService extends CampsiService {
     });
     this.router.param('resource', param.attachResource(service.options));
     this.router.get('/', handlers.getResources);
-    this.router.get('/:resource', handlers.getDocuments);
-    this.router.get('/:resource/:id/users', handlers.getDocUsers);
-    this.router.post('/:resource/:id/users', handlers.postDocUser);
-    this.router.delete('/:resource/:id/users/:user', handlers.delDocUser);
-    this.router.get('/:resource/:id/revisions/', handlers.getDocRevisions);
-    this.router.get(
+    this.router.getAsync('/:resource', handlers.getDocuments);
+    this.router.getAsync('/:resource/:id/users', handlers.getDocUsers);
+    this.router.postAsync('/:resource/:id/users', handlers.postDocUser);
+    this.router.deleteAsync('/:resource/:id/users/:user', handlers.delDocUser);
+    this.router.getAsync('/:resource/:id/revisions/', handlers.getDocRevisions);
+    this.router.getAsync(
       '/:resource/:id/revisions/:revision',
       handlers.getDocRevision
     );
-    this.router.post(
+    this.router.postAsync(
       '/:resource/:id/revisions/:revision[:]set-as-version',
       handlers.setDocVersion
     );
-    this.router.get('/:resource/:id/versions/', handlers.getDocVersions);
-    this.router.get('/:resource/:id/versions/:version', handlers.getDocVersion);
-    this.router.get('/:resource/:id', handlers.getDoc);
-    this.router.post('/:resource', handlers.postDoc);
-    this.router.patch('/:resource/:id', handlers.updateDoc);
-    this.router.delete('/:resource/:id', handlers.delDoc);
+    this.router.getAsync('/:resource/:id/versions/', handlers.getDocVersions);
+    this.router.getAsync(
+      '/:resource/:id/versions/:version',
+      handlers.getDocVersion
+    );
+    this.router.getAsync('/:resource/:id', handlers.getDoc);
+    this.router.postAsync('/:resource', handlers.postDoc);
+    this.router.patchAsync('/:resource/:id', handlers.updateDoc);
+    this.router.deleteAsync('/:resource/:id', handlers.delDoc);
 
     let ajvWriter = new Ajv({ useAssign: true });
     csdAssign(ajvWriter);

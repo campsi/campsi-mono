@@ -26,6 +26,7 @@
     "mongodb": "^3.1.10"
   },
   "dependencies": {
+    "@awaitjs/express": "^0.9.0",
     "@passport-next/passport": "^2.1.1",
     "@passport-next/passport-facebook": "^3.1.1",
     "@passport-next/passport-google-oauth2": "^1.0.0",
@@ -44,6 +45,7 @@
     "edit-url": "^1.0.1",
     "express-session": "^1.16.1",
     "for-in": "^1.0.2",
+    "http-errors": "^2.0.0",
     "json-schema-ref-parser": "^5.0.3",
     "just-diff": "^5.0.1",
     "mkdirp": "^0.5.5",

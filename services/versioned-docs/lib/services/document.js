@@ -4,6 +4,7 @@ const builder = require('../modules/queryBuilder');
 const paginateCursor = require('../../../../lib/modules/paginateCursor');
 const sortCursor = require('../../../../lib/modules/sortCursor');
 const createObjectId = require('../../../../lib/modules/createObjectId');
+const createError = require('http-errors');
 
 // Helper functions
 const getDocUsersList = doc =>
@@ -174,22 +175,21 @@ module.exports.createDocument = async (resource, data, user, groups) => {
 };
 
 module.exports.updateDocument = async (resource, filter, data, user, etag) => {
-  if (!data.revision) {
-    throw new Error('You must provide a revision');
-  }
-  const originalDoc = await resource.currentCollection.findOne(filter);
-  if (!originalDoc) {
-    throw new Error('Document not found');
-  }
-  if (parseInt(etag) !== originalDoc.revision) {
-    throw new Error('Precondition Failed: ETag revision mismatch');
-  }
+  if (!data.revision)
+    throw new createError.BadRequest('You must provide a revision');
 
-  if (data.revision !== originalDoc.revision) {
-    throw new Error(
+  const originalDoc = await resource.currentCollection.findOne(filter);
+  if (!originalDoc) throw new createError.NotFound('Document not found');
+
+  if (parseInt(etag) !== originalDoc.revision)
+    throw new createError.PreconditionFailed(
+      'Precondition Failed: ETag revision mismatch'
+    );
+
+  if (data.revision !== originalDoc.revision)
+    throw new createError.BadRequest(
       `The revision you provided is incorrect. Current revision: ${originalDoc.revision}`
     );
-  }
 
   const originalDocData = getDocumentDataOnly(originalDoc);
   const updatedData = getDocumentDataOnly(data);
@@ -375,7 +375,7 @@ module.exports.removeUserFromDocument = async (
       (err, result) => {
         if (err) return reject(err);
         if (!result.value) {
-          return reject(new Error('Not Found'));
+          return reject(new createError.NotFound('Document not found'));
         }
         resolve(getDocUsersList(result.value));
       }

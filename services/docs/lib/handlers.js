@@ -2,7 +2,6 @@ const helpers = require('../../../lib/modules/responseHelpers');
 const resourceService = require('./services/resource');
 const documentService = require('./services/document');
 const userService = require('./services/user');
-const forIn = require('for-in');
 const buildLink = require('../../../lib/modules/buildLink');
 const debug = require('debug')('campsi:docs');
 const { ObjectId } = require('mongodb');
@@ -38,13 +37,10 @@ module.exports.getDocuments = function(req, res) {
     )
     .then(data => {
       let links = [];
-      forIn(data.nav, (page, rel) => {
-        if (page !== data.page) {
+      Object.entries(data.nav).map(([rel, page]) => {
+        if (!!page && page !== data.page) {
           links.push(
-            '<{0}>; rel="{1}"'.format(
-              buildLink(req, page, ['perPage', 'sort']),
-              rel
-            )
+            `<${buildLink(req, page, ['perPage', 'sort'])}>; rel="${rel}"`
           );
         }
       });

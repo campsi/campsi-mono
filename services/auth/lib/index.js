@@ -1,5 +1,4 @@
 const CampsiService = require('../../../lib/service');
-const forIn = require('for-in');
 const local = require('./local');
 const passportMiddleware = require('./passportMiddleware');
 const passport = require('@passport-next/passport');
@@ -19,7 +18,7 @@ module.exports = class AuthService extends CampsiService {
   }
 
   prepareAuthProviders() {
-    forIn(this.options.providers, (provider, name) => {
+    Object.entries(this.options.providers).map(([name, provider]) => {
       provider.options.passReqToCallback = true;
       provider.options.scope = provider.scope;
       provider.name = name;

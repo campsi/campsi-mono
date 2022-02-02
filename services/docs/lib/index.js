@@ -6,8 +6,8 @@ const Ajv = require('ajv');
 const $RefParser = require('json-schema-ref-parser');
 const debug = require('debug')('campsi:docs');
 const format = require('string-format');
-const csdAssign = require('./keywords/csdAssign');
-const csdVisibility = require('./keywords/csdVisibility');
+const csdAssign = require('../../../lib/keywords/csdAssign');
+const csdVisibility = require('../../../lib/keywords/csdVisibility');
 
 /* Todo
  * [ ] filter document fields based on query parameter fields

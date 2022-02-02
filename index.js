@@ -113,7 +113,7 @@
 /**
  * @name AssetMetadata
  * @type {Object}
- * @property {ObjectID} _id
+ * @property {ObjectId} _id
  * @property {String} path
  * @property {String} filename
  * @property {String} originalname

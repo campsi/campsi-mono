@@ -82,6 +82,48 @@ module.exports = {
           })
         }
       }
+    },
+    versioneddocs: {
+      title: 'Versioned docs',
+      description: 'Versioned docs db structure',
+      options: {
+        usersFetcher: async (usersId, server) => {
+          const users = await server.services
+            .get('auth')
+            .fetchUsers(usersId.map(u => u.userId));
+          return users.map(u => {
+            return u._id
+              ? {
+                  displayName: u.displayName,
+                  email: u.email,
+                  data: u.data,
+                  _id: u._id
+                }
+              : { _id: u };
+          });
+        },
+        dbPrefix: 'versioned-docs',
+        classes: {
+          default: { permissions: { owner: '*', public: '*' } }
+        },
+        resources: {
+          contracts: {
+            label: 'versioned-contract',
+            class: 'default',
+            schema: require('../schemas/versioned-contract.schema'),
+            rels: {
+              project: {
+                path: 'projectId',
+                collection: 'docs.vault.projects',
+                resource: 'projects',
+                embed: false,
+                fields: ['_id', 'name', 'websiteURL']
+              }
+            }
+          }
+        }
+      },
+      optionsBasePath: path.dirname(path.join(__dirname, '../'))
     }
   }
 };

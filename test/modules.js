@@ -5,7 +5,6 @@ process.env.NODE_ENV = 'test';
 const chai = require('chai');
 const chaiHttp = require('chai-http');
 const express = require('express');
-const express = require('express');
 const buildLink = require('../lib/modules/buildLink');
 const createObjectId = require('../lib/modules/createObjectId');
 const format = require('string-format');

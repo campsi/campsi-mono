@@ -400,8 +400,8 @@ module.exports.removeUserFromDocument = async (
 
 module.exports.deleteDocument = async (resource, filter) => {
   return await Promise.all([
-    resource.versionCollection.deleteOne({ currentId: filter._id }),
-    resource.revisionCollection.deleteOne({ currentId: filter._id }),
+    resource.versionCollection.deleteMany({ currentId: filter._id }),
+    resource.revisionCollection.deleteMany({ currentId: filter._id }),
     resource.currentCollection.deleteOne({ _id: filter._id })
   ]);
 };

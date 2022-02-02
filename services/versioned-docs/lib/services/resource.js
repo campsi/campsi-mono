@@ -1,5 +1,3 @@
-const forIn = require('for-in');
-
 module.exports.getResources = function(options) {
   let result = { resources: [] };
   result.classes = options.classes;

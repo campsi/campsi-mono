@@ -72,9 +72,20 @@ const getDocumentVersionsPipeline = (resource, filter) => {
       $match: filter
     },
     {
+      $addFields: {
+        version: '$$ROOT'
+      }
+    },
+    {
+      $project: {
+        version: 1,
+        _id: 0
+      }
+    },
+    {
       $lookup: {
         from: `${resource.revisionCollection.s.namespace.collection}`,
-        localField: 'revisionId',
+        localField: 'version.revisionId',
         foreignField: '_id',
         as: 'revision'
       }

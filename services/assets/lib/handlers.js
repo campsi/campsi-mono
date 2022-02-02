@@ -3,10 +3,9 @@ const path = require('path');
 const helpers = require('../../../lib/modules/responseHelpers');
 const http = require('http');
 const serviceAsset = require('./services/asset');
-const forIn = require('for-in');
 const buildLink = require('../../../lib/modules/buildLink');
 
-module.exports.postAssets = function postAssets (req, res) {
+module.exports.postAssets = function postAssets(req, res) {
   // TODO create our own structure for files, be independent from multer
   serviceAsset
     .createAsset(req.service, req.files, req.user, req.headers)
@@ -14,7 +13,7 @@ module.exports.postAssets = function postAssets (req, res) {
     .catch(() => helpers.error(res));
 };
 
-module.exports.getAssets = function getAssets (req, res) {
+module.exports.getAssets = function getAssets(req, res) {
   let pagination = {};
   pagination.perPage = req.query.perPage;
   pagination.page = req.query.page;
@@ -23,13 +22,10 @@ module.exports.getAssets = function getAssets (req, res) {
     .getAssets(req.service, pagination, req.query.sort)
     .then(data => {
       let links = [];
-      forIn(data.nav, (page, rel) => {
-        if (page !== data.page) {
+      Object.entries(data.nav).map(([rel, page]) => {
+        if (!!page && page !== data.page) {
           links.push(
-            '<{0}>; rel="{1}"'.format(
-              buildLink(req, page, ['perPage', 'sort']),
-              rel
-            )
+            `<${buildLink(req, page, ['perPage', 'sort'])}>; rel="${rel}"`
           );
         }
       });
@@ -49,13 +45,13 @@ module.exports.getAssets = function getAssets (req, res) {
     });
 };
 
-module.exports.sendLocalFile = function sendLocalFile (req, res) {
+module.exports.sendLocalFile = function sendLocalFile(req, res) {
   res.sendFile(
     path.join(req.service.options.storages.local.dataPath, req.params[0])
   );
 };
 
-module.exports.streamAsset = function streamAsset (req, res) {
+module.exports.streamAsset = function streamAsset(req, res) {
   if (req.storage.streamAsset) {
     return req.storage.streamAsset(req.asset).pipe(res);
   }
@@ -66,7 +62,7 @@ module.exports.streamAsset = function streamAsset (req, res) {
       {
         headers: { Connection: 'keep-alive' }
       },
-      function (newRes) {
+      function(newRes) {
         let headers = newRes.headers;
         headers['Content-Disposition'] = 'attachment; filename="{0}"'.format(
           req.asset.originalName
@@ -78,7 +74,7 @@ module.exports.streamAsset = function streamAsset (req, res) {
         newRes.pipe(res);
       }
     )
-    .on('error', function (err) {
+    .on('error', function(err) {
       debug('Streaming error: %s', err);
       res.statusCode = 500;
       res.json({
@@ -90,7 +86,7 @@ module.exports.streamAsset = function streamAsset (req, res) {
   req.pipe(newReq);
 };
 
-module.exports.getAssetMetadata = function getAssetMetadata (req, res) {
+module.exports.getAssetMetadata = function getAssetMetadata(req, res) {
   res.json(req.asset);
 };
 
@@ -98,7 +94,7 @@ module.exports.getAssetMetadata = function getAssetMetadata (req, res) {
  * @param {ExpressRequest} req
  * @param res
  */
-module.exports.deleteAsset = function deleteAsset (req, res) {
+module.exports.deleteAsset = function deleteAsset(req, res) {
   serviceAsset
     .deleteAsset(req.service, req.storage, req.asset)
     .then(result => helpers.json(res, result))

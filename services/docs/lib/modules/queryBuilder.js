@@ -1,5 +1,4 @@
 const debug = require('debug')('campsi:service:docs');
-const forIn = require('for-in');
 const { ObjectId } = require('mongodb');
 
 /**
@@ -51,7 +50,7 @@ module.exports.find = function find(options) {
   let filter = {};
 
   if (options.query) {
-    forIn(options.query, (val, prop) => {
+    Object.entries(options.query).map(([prop, val]) => {
       if (prop.startsWith('data.')) {
         filter[join('states', state.name, prop)] = val;
       }

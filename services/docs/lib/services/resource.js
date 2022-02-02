@@ -1,8 +1,6 @@
-const forIn = require('for-in');
-
-module.exports.getResources = function (options) {
-  let result = {resources: []};
-  forIn(options.resources, (resource, id) => {
+module.exports.getResources = function(options) {
+  let result = { resources: [] };
+  Object.entries(options.resources).map(([id, resource]) => {
     result.resources.push({
       id: id,
       label: resource.label,
@@ -13,7 +11,6 @@ module.exports.getResources = function (options) {
       schema: resource.schema
     });
   });
-
   result.classes = options.classes;
 
   return Promise.resolve(result);

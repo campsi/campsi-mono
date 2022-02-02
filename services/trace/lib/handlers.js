@@ -1,7 +1,6 @@
 const debug = require('debug')('campsi:service:trace');
-const forIn = require('for-in');
 
-module.exports.traceRequest = function (req, res) {
+module.exports.traceRequest = function(req, res) {
   req.service.emit('request', {
     method: req.method,
     url: req.url,
@@ -9,7 +8,7 @@ module.exports.traceRequest = function (req, res) {
   });
   debug('========== Incoming Request ==========');
   debug(req.method + ' ' + req.url);
-  forIn(req.headers, (value, name) => {
+  Object.entries(req.headers).map(([name, value]) => {
     debug('> ' + name + ': ' + value);
   });
   if (req.is('application/json')) {
@@ -21,5 +20,5 @@ module.exports.traceRequest = function (req, res) {
   if (req.is('multipart/form-data')) {
     debug(req.body);
   }
-  res.json({message: 'OK'});
+  res.json({ message: 'OK' });
 };

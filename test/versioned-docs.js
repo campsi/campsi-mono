@@ -228,7 +228,7 @@ describe('VersionedDocs API', () => {
       res.body.should.be.an('array');
       res.body.length.should.be.eq(1);
       res.body[0].currentId.should.be.equal(current._id.toString());
-      res.body[0]._id.should.be.equal(version._id.toString());
+      res.body[0].version._id.should.be.equal(version._id.toString());
     });
   });
 
@@ -240,7 +240,7 @@ describe('VersionedDocs API', () => {
       res.should.have.status(200);
       res.should.be.json;
       res.body.should.be.an('object');
-      res.body._id.should.be.equal(version._id.toString());
+      res.body.version._id.should.be.equal(version._id.toString());
       res.body.currentId.should.be.equal(current._id.toString());
     });
     it('it should return a document version (by version number)', async () => {
@@ -250,7 +250,7 @@ describe('VersionedDocs API', () => {
       res.should.have.status(200);
       res.should.be.json;
       res.body.should.be.an('object');
-      res.body._id.should.be.equal(version._id.toString());
+      res.body.version._id.should.be.equal(version._id.toString());
       res.body.currentId.should.be.equal(current._id.toString());
     });
     it('it should return a document version (by tag)', async () => {
@@ -262,7 +262,7 @@ describe('VersionedDocs API', () => {
       res.should.have.status(200);
       res.should.be.json;
       res.body.should.be.an('object');
-      res.body._id.should.be.equal(version._id.toString());
+      res.body.version._id.should.be.equal(version._id.toString());
       res.body.currentId.should.be.equal(current._id.toString());
     });
     it('it should return an error for wrong version query param', async () => {
@@ -286,7 +286,7 @@ describe('VersionedDocs API', () => {
       res.should.be.json;
       res.body.should.be.an('array');
       res.body.length.should.be.eq(3);
-      res.body[0].deletedCount.should.be.equal(1);
+      res.body[0].versionDeletedCount.should.be.equal(1);
     });
   });
 });

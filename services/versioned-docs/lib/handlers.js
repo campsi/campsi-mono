@@ -177,8 +177,14 @@ module.exports.delDoc = async (req, res, next) => {
     req.query
   );
   if (!doc) return next(new createError.NotFound('Document not found'));
+  const prefixes = ['version', 'revision', 'current'];
   const result = await documentService.deleteDocument(req.resource, req.filter);
-  helpers.json(res, result);
+  helpers.json(
+    res,
+    result.map((val, i) => {
+      return { [`${prefixes[i]}DeletedCount`]: val.deletedCount };
+    })
+  );
   return req.service.emit('document/deleted', getEmitPayload(req));
 };
 

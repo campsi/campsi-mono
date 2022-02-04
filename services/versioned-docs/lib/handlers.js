@@ -155,7 +155,6 @@ module.exports.setDocVersion = async (req, res, next) => {
     );
     return helpers.json(res, version);
   } catch (e) {
-    console.error(e);
     next(
       new createError.Conflict(
         `The revision you provided (${req.params.revision}) has already been set as version`

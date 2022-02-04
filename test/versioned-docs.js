@@ -211,10 +211,19 @@ describe('VersionedDocs API', () => {
       res.body.version.should.be.eq(1);
       res.body.should.have.property('publishedAt');
       version = { ...res.body };
-      try {
-      } catch (e) {
-        debug(`received an error from chai: ${e.message}`);
-      }
+    });
+    it('it should create a version based on current.revision', async () => {
+      const res = await chai
+        .request(context.campsi.app)
+        .post(
+          `/versioneddocs/contracts/${current._id}/revisions/${current.revision}:set-as-version`
+        );
+      res.should.have.status(200);
+      res.should.be.json;
+      res.body.should.be.an('object');
+      res.body.currentId.should.be.equal(current._id.toString());
+      res.body.version.should.be.eq(2);
+      res.body.should.have.property('publishedAt');
     });
   });
 
@@ -226,7 +235,7 @@ describe('VersionedDocs API', () => {
       res.should.have.status(200);
       res.should.be.json;
       res.body.should.be.an('array');
-      res.body.length.should.be.eq(1);
+      res.body.length.should.be.eq(2);
       res.body[0].currentId.should.be.equal(current._id.toString());
       res.body[0].version._id.should.be.equal(version._id.toString());
     });
@@ -286,7 +295,7 @@ describe('VersionedDocs API', () => {
       res.should.be.json;
       res.body.should.be.an('array');
       res.body.length.should.be.eq(3);
-      res.body[0].versionDeletedCount.should.be.equal(1);
+      res.body[0].versionDeletedCount.should.be.equal(2);
     });
   });
 });

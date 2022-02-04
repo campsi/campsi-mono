@@ -172,6 +172,11 @@ const getDocumentVersionsPipeline = (resource, filter) => {
       $project: {
         doc: 0
       }
+    },
+    {
+      $addFields: {
+        currentId: '$version.currentId'
+      }
     }
   ];
 };

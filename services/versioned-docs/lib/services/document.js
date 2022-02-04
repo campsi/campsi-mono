@@ -85,33 +85,92 @@ const getDocumentVersionsPipeline = (resource, filter) => {
     {
       $lookup: {
         from: `${resource.revisionCollection.s.namespace.collection}`,
-        localField: 'version.revisionId',
-        foreignField: '_id',
+        let: {
+          vCurrentId: '$version.currentId',
+          vRevision: '$version.revision'
+        },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  {
+                    $eq: ['$currentId', '$$vCurrentId']
+                  },
+                  {
+                    $eq: ['$revision', '$$vRevision']
+                  }
+                ]
+              }
+            }
+          }
+        ],
         as: 'revision'
       }
     },
     {
       $unwind: {
         path: '$revision',
-        preserveNullAndEmptyArrays: false
+        preserveNullAndEmptyArrays: true
       }
     },
     {
-      $project: {
-        'revision._id': 0,
-        'revision.revision': 0
+      $lookup: {
+        from: `${resource.currentCollection.s.namespace.collection}`,
+        let: {
+          vCurrentId: '$version.currentId',
+          vRevision: '$version.revision'
+        },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  {
+                    $eq: ['$_id', '$$vCurrentId']
+                  },
+                  {
+                    $eq: ['$revision', '$$vRevision']
+                  }
+                ]
+              }
+            }
+          }
+        ],
+        as: 'current'
       }
     },
     {
-      $replaceRoot: {
-        newRoot: {
-          $mergeObjects: ['$revision', '$$ROOT']
+      $unwind: {
+        path: '$current',
+        preserveNullAndEmptyArrays: true
+      }
+    },
+    {
+      $addFields: {
+        doc: {
+          $ifNull: ['$current', '$revision']
         }
       }
     },
     {
       $project: {
-        revision: 0
+        revision: 0,
+        current: 0,
+        'doc._id': 0,
+        'doc.revision': 0
+      }
+    },
+    {
+      $replaceRoot: {
+        newRoot: {
+          $mergeObjects: ['$doc', '$$ROOT']
+        }
+      }
+    },
+    {
+      $project: {
+        doc: 0
       }
     }
   ];
@@ -334,7 +393,7 @@ module.exports.setDocumentVersion = async (
     version: (lastVersionDoc?.version ?? 0) + 1,
     name: data.name,
     tag: data.tag ?? `${(lastVersionDoc?.version ?? 0) + 1}.0.0`,
-    revisionId: revision._id,
+    revision: revision.revision,
     publishedAt: new Date(),
     publishedBy: user?._id ?? null
   };

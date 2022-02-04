@@ -124,13 +124,26 @@ module.exports.getDocRevision = async (req, res, next) => {
 };
 
 module.exports.setDocVersion = async (req, res, next) => {
-  const docRevision = await documentService.getDocumentRevision(
+  // first we'll check if the requested revision is in current collection
+  const currentDoc = await documentService.getDocumentRevision(
+    req.resource,
+    req.filter,
+    req.query,
+    req.params.revision,
+    'current'
+  );
+
+  const revisionDoc = await documentService.getDocumentRevision(
     req.resource,
     req.filter,
     req.query,
     req.params.revision
   );
-  if (!docRevision) return next(new createError.NotFound('Document not found'));
+  if (!currentDoc && !revisionDoc)
+    return next(new createError.NotFound('Document not found'));
+
+  const doc = currentDoc ?? revisionDoc;
+  doc.currentId = req.filter._id;
 
   try {
     const version = await documentService.setDocumentVersion(
@@ -138,10 +151,11 @@ module.exports.setDocVersion = async (req, res, next) => {
       req.filter,
       req.body,
       req.user,
-      docRevision
+      doc
     );
     return helpers.json(res, version);
   } catch (e) {
+    console.error(e);
     next(
       new createError.Conflict(
         `The revision you provided (${req.params.revision}) has already been set as version`

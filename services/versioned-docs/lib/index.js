@@ -81,10 +81,6 @@ module.exports = class VersionedDocsService extends CampsiService {
               { unique: true }
             );
             await resource.versionCollection.createIndex(
-              { currentId: 1, revisionId: 1 },
-              { unique: true }
-            );
-            await resource.versionCollection.createIndex(
               { currentId: 1, tag: 1 },
               { unique: true }
             );

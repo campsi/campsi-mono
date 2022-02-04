@@ -264,19 +264,23 @@ module.exports.getDocumentRevision = async (
   resource,
   filter,
   query,
-  revision
+  revision,
+  targetCollection = 'revision'
 ) => {
   const revisionId = createObjectId(revision);
   if (!revisionId && !Number.isInteger(parseInt(revision))) {
     throw new Error('The revision you provided is invalid');
   }
-  const revFilter = { currentId: filter._id };
+  const revFilter = {};
+  if (targetCollection === 'revision') {
+    revFilter.currentId = filter._id;
+  }
   if (revisionId) {
     revFilter._id = revisionId;
   } else {
     revFilter.revision = parseInt(revision);
   }
-  return await resource.revisionCollection.findOne(revFilter);
+  return await resource[`${targetCollection}Collection`].findOne(revFilter);
 };
 
 module.exports.getDocumentVersions = async (resource, filter, query) => {

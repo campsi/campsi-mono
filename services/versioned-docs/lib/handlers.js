@@ -124,43 +124,15 @@ module.exports.getDocRevision = async (req, res, next) => {
 };
 
 module.exports.setDocVersion = async (req, res, next) => {
-  // first we'll check if the requested revision is in current collection
-  const currentDoc = await documentService.getDocumentRevision(
+  const version = await documentService.setDocumentVersion(
     req.resource,
     req.filter,
     req.query,
     req.params.revision,
-    'current'
+    req.body,
+    req.user
   );
-
-  const revisionDoc = await documentService.getDocumentRevision(
-    req.resource,
-    req.filter,
-    req.query,
-    req.params.revision
-  );
-  if (!currentDoc && !revisionDoc)
-    return next(new createError.NotFound('Document not found'));
-
-  const doc = currentDoc ?? revisionDoc;
-  doc.currentId = req.filter._id;
-
-  try {
-    const version = await documentService.setDocumentVersion(
-      req.resource,
-      req.filter,
-      req.body,
-      req.user,
-      doc
-    );
-    return helpers.json(res, version);
-  } catch (e) {
-    next(
-      new createError.Conflict(
-        `The revision you provided (${req.params.revision}) has already been set as version`
-      )
-    );
-  }
+  return helpers.json(res, version);
 };
 
 module.exports.getDocVersions = async (req, res, next) => {
@@ -184,20 +156,12 @@ module.exports.getDocVersion = async (req, res, next) => {
 };
 
 module.exports.delDoc = async (req, res, next) => {
-  const doc = await documentService.getDocument(
+  const result = await documentService.deleteDocument(
     req.resource,
     req.filter,
     req.query
   );
-  if (!doc) return next(new createError.NotFound('Document not found'));
-  const prefixes = ['version', 'revision', 'current'];
-  const result = await documentService.deleteDocument(req.resource, req.filter);
-  helpers.json(
-    res,
-    result.map((val, i) => {
-      return { [`${prefixes[i]}DeletedCount`]: val.deletedCount };
-    })
-  );
+  helpers.json(res, result);
   return req.service.emit('document/deleted', getEmitPayload(req));
 };
 

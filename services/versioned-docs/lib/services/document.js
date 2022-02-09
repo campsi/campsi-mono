@@ -384,10 +384,32 @@ module.exports.getDocumentVersion = async (
 module.exports.setDocumentVersion = async (
   resource,
   filter,
+  query,
+  revision,
   data,
-  user,
-  revision
+  user
 ) => {
+  // first we'll check if the requested revision is in current collection
+  const currentDoc = await this.getDocumentRevision(
+    resource,
+    filter,
+    query,
+    revision,
+    'current'
+  );
+
+  const revisionDoc = await this.getDocumentRevision(
+    resource,
+    filter,
+    query,
+    revision
+  );
+  if (!currentDoc && !revisionDoc)
+    throw new createError.NotFound('Document not found');
+
+  const doc = currentDoc ?? revisionDoc;
+  doc.currentId = filter._id;
+
   const lastVersionDoc = await resource.versionCollection.findOne(
     { currentId: filter._id },
     { sort: { version: -1 } }
@@ -398,15 +420,21 @@ module.exports.setDocumentVersion = async (
     version: (lastVersionDoc?.version ?? 0) + 1,
     name: data.name,
     tag: data.tag ?? `${(lastVersionDoc?.version ?? 0) + 1}.0.0`,
-    revision: revision.revision,
+    revision: revision,
     publishedAt: new Date(),
     publishedBy: user?._id ?? null
   };
-  const insertVersion = await resource.versionCollection.insertOne(version);
-  return {
-    _id: insertVersion.insertedId,
-    ...version
-  };
+  try {
+    const insertVersion = await resource.versionCollection.insertOne(version);
+    return {
+      _id: insertVersion.insertedId,
+      ...version
+    };
+  } catch (e) {
+    throw new createError.Conflict(
+      `The revision you provided (${revision}) has already been set as version`
+    );
+  }
 };
 
 module.exports.getDocumentUsers = async (resource, filter) => {
@@ -477,10 +505,17 @@ module.exports.removeUserFromDocument = async (
   );
 };
 
-module.exports.deleteDocument = async (resource, filter) => {
-  return await Promise.all([
+module.exports.deleteDocument = async (resource, filter, query) => {
+  const doc = await this.getDocument(resource, filter, query);
+  if (!doc) throw new createError.NotFound('Document not found');
+
+  const result = await Promise.all([
     resource.versionCollection.deleteMany({ currentId: filter._id }),
     resource.revisionCollection.deleteMany({ currentId: filter._id }),
     resource.currentCollection.deleteOne({ _id: filter._id })
   ]);
+  const prefixes = ['version', 'revision', 'current'];
+  return result.map((val, i) => {
+    return { [`${prefixes[i]}DeletedCount`]: val.deletedCount };
+  });
 };

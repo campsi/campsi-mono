@@ -420,7 +420,7 @@ module.exports.setDocumentVersion = async (
     version: (lastVersionDoc?.version ?? 0) + 1,
     name: data.name,
     tag: data.tag ?? `${(lastVersionDoc?.version ?? 0) + 1}.0.0`,
-    revision: revision,
+    revision: parseInt(revision),
     publishedAt: new Date(),
     publishedBy: user?._id ?? null
   };

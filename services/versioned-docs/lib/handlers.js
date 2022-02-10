@@ -132,7 +132,11 @@ module.exports.setDocVersion = async (req, res, next) => {
     req.body,
     req.user
   );
-  return helpers.json(res, version);
+  helpers.json(res, version);
+  req.service.emit(
+    'version-created',
+    getEmitPayload(req, { documentId: req.filter._id, version })
+  );
 };
 
 module.exports.getDocVersions = async (req, res, next) => {

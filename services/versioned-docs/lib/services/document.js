@@ -424,17 +424,11 @@ module.exports.setDocumentVersion = async (
     publishedAt: new Date(),
     publishedBy: user?._id ?? null
   };
-  try {
-    const insertVersion = await resource.versionCollection.insertOne(version);
-    return {
-      _id: insertVersion.insertedId,
-      ...version
-    };
-  } catch (e) {
-    throw new createError.Conflict(
-      `The revision you provided (${revision}) has already been set as version`
-    );
-  }
+  const insertVersion = await resource.versionCollection.insertOne(version);
+  return {
+    _id: insertVersion.insertedId,
+    ...version
+  };
 };
 
 module.exports.getDocumentUsers = async (resource, filter) => {

@@ -215,6 +215,15 @@ module.exports = class StripeBillingService extends CampsiService {
     return await this.stripe.invoices.list(parameters);
   };
 
+  /**
+   * @see https://stripe.com/docs/api/credit_notes/list
+   * @param {Object} parameters can be customer, invoice... ex: { customer: 'cus_abc123' }
+   * @return {Object}
+   */
+  fetchCreditNotes = async parameters => {
+    return await this.stripe.creditNotes.list(parameters);
+  };
+
   checkCouponCodeValidity = async (req, res) => {
     const code = req.params.code;
     if (!code) {

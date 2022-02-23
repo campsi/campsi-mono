@@ -44,9 +44,9 @@ function embedDocs(resource, embed, user, doc, resources) {
           (reference, refCb) => {
             fetchSubdoc(resources[relationship.resource], reference).then(
               subdoc => {
-                doc[embed] = {};
+                doc[name] = {};
                 relationship.fields.forEach(field => {
-                  doc[embed][field] = subdoc?.[field];
+                  doc[name][field] = subdoc?.[field];
                 });
                 refCb();
               }

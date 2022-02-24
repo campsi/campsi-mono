@@ -10,6 +10,7 @@ const bodyToCustomer = (body, sourcePropertyName, user) => {
     email: body.email,
     invoice_prefix: body.invoice_prefix,
     tax_id_data: body.tax_id_data,
+    tax_exempt: body.tax_exempt || 'none',
     address: body.address,
     metadata: Object.assign(
       body.metadata || {},

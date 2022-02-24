@@ -336,9 +336,9 @@ module.exports.getDocumentRevision = async (
     throw new Error('The revision you provided is invalid');
   }
   const revFilter = {};
-  if (targetCollection === 'revision') {
-    revFilter.currentId = filter._id;
-  }
+  revFilter[`${targetCollection === 'revision' ? 'currentId' : '_id'}`] =
+    filter._id;
+
   if (revisionId) {
     revFilter._id = revisionId;
   } else {
@@ -414,6 +414,11 @@ module.exports.setDocumentVersion = async (
     { currentId: filter._id },
     { sort: { version: -1 } }
   );
+
+  if (lastVersionDoc?.revision >= parseInt(revision))
+    throw new createError.BadRequest(
+      `The revision you provided (${revision}) must be greater than the last version revision (${lastVersionDoc.revision})`
+    );
 
   const version = {
     currentId: filter._id,

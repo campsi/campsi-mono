@@ -17,6 +17,9 @@ const bodyToCustomer = (body, sourcePropertyName, user) => {
       user ? { user: user._id.toString() } : {}
     ),
     shipping: body.shipping,
+    preferred_locales: [
+      ...new Set(['fr-FR', ...(body.preferred_locales ?? [])])
+    ],
     expand: ['tax_ids']
   };
 };

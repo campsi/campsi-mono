@@ -7,7 +7,7 @@ const bodyToCustomer = (body, sourcePropertyName, user) => {
     description: String(body.description),
     source: body.source,
     [sourcePropertyName]: body.default_source,
-    email: body.email,
+    email: body.email?.toLowerCase(),
     invoice_prefix: body.invoice_prefix,
     tax_id_data: body.tax_id_data,
     tax_exempt: body.tax_exempt || 'none',
@@ -69,12 +69,48 @@ module.exports = class StripeBillingService extends CampsiService {
       );
     });
 
+    this.router.get('/customers', (req, res) => {
+      let {
+        email,
+        created,
+        ending_before,
+        starting_after,
+        limit = 10,
+        expand
+      } = req.query;
+      email = email?.toLowerCase();
+
+      const expandables = [
+        'default_source',
+        'sources',
+        'subscriptions',
+        'tax',
+        'tax_ids',
+        'test_clock'
+      ];
+      expand = [...new Set([...(expand?.split('|') || []), 'tax_ids'])];
+
+      expand = expand
+        .filter(prop => expandables.includes(prop))
+        .map(prop => `data.${prop}`);
+
+      stripe.customers.list(
+        {
+          email,
+          created,
+          ending_before,
+          starting_after,
+          limit,
+          expand
+        },
+        defaultHandler(res)
+      );
+    });
+
     this.router.get('/customers/:id', (req, res) => {
-      req.query.expand = req.query.expand
-        ? req.query.expand.includes('tax_ids')
-          ? req.query.expand
-          : `${req.query.expand}|tax_ids`
-        : 'tax_ids';
+      req.query.expand = [
+        ...new Set([...(req.query?.expand?.split('|') || []), 'tax_ids'])
+      ].join('|');
       stripe.customers.retrieve(
         req.params.id,
         optionsFromQuery(req.query),

@@ -69,44 +69,6 @@ module.exports = class StripeBillingService extends CampsiService {
       );
     });
 
-    this.router.get('/customers', (req, res) => {
-      let {
-        email,
-        created,
-        ending_before,
-        starting_after,
-        limit = 10,
-        expand
-      } = req.query;
-      email = email?.toLowerCase();
-
-      const expandables = [
-        'default_source',
-        'sources',
-        'subscriptions',
-        'tax',
-        'tax_ids',
-        'test_clock'
-      ];
-      expand = [...new Set([...(expand?.split('|') || []), 'tax_ids'])];
-
-      expand = expand
-        .filter(prop => expandables.includes(prop))
-        .map(prop => `data.${prop}`);
-
-      stripe.customers.list(
-        {
-          email,
-          created,
-          ending_before,
-          starting_after,
-          limit,
-          expand
-        },
-        defaultHandler(res)
-      );
-    });
-
     this.router.get('/customers/:id', (req, res) => {
       req.query.expand = [
         ...new Set([...(req.query?.expand?.split('|') || []), 'tax_ids'])

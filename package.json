@@ -43,6 +43,7 @@
     "cors": "^2.8.5",
     "crypto-js": "^3.1.9-1",
     "edit-url": "^1.0.1",
+    "express-json-validator-middleware": "^2.2.1",
     "express-session": "^1.16.1",
     "http-errors": "^2.0.0",
     "json-schema-ref-parser": "^5.0.3",

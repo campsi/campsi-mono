@@ -72,13 +72,6 @@ module.exports = {
             baseUrl: host + '/auth',
             clientID: '96a51bcde35bc5f08f50',
             clientSecret: 'e492264cae11297e90ba0d20c25f13a95094111e'
-          }),
-          exaprint: require('../../services/auth/lib/providers/exaprint')({
-            baseUrl: host + '/auth',
-            protocol: 'https',
-            host: 'stg-auth.exaprint.fr',
-            clientID: '1da1255195',
-            clientSecret: 'c2ec3249-1d79-4b7f-972a-3f720e9a1bc5'
           })
         }
       }
@@ -94,11 +87,11 @@ module.exports = {
           return users.map(u => {
             return u._id
               ? {
-                  displayName: u.displayName,
-                  email: u.email,
-                  data: u.data,
-                  _id: u._id
-                }
+                displayName: u.displayName,
+                email: u.email,
+                data: u.data,
+                _id: u._id
+              }
               : { _id: u };
           });
         },

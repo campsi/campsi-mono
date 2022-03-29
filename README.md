@@ -33,7 +33,6 @@ Manage and expose **document-oriented** content through a configurable RESTful *
 - [x] Custom authentification providers
     - [x] [Local Database](lib/modules/auth/auth-local.js)
     - [x] [Facebook](lib/modules/auth/facebook.js)
-    - [x] [Twitter](lib/modules/auth/twitter.js)
     - [x] [Github](lib/modules/auth/github.js)
     - [x] [Google](lib/modules/auth/google.js)
 - [ ] Rate limiter

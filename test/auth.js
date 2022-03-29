@@ -32,7 +32,9 @@ const services = {
 describe('Auth API', () => {
   let context = {};
   beforeEach(setupBeforeEach(config, services, context));
-  afterEach(done => context.server.close(done));
+  afterEach(done => {
+    context.server.close(done);
+  });
   /*
    * Test the /GET providers route
    */
@@ -46,7 +48,7 @@ describe('Auth API', () => {
           res.should.have.status(200);
           res.should.be.json;
           res.body.should.be.a('array');
-          res.body.length.should.be.eq(3);
+          res.body.length.should.be.eq(2);
           res.body[0].should.be.an('object');
           res.body[0].should.have.property('name');
           res.body[0].name.should.be.a('string');

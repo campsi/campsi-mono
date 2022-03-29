@@ -26,7 +26,7 @@ Manage and expose **document-oriented** content through a configurable RESTful *
 - [x] Pagination `?page=4&perPage=20`
 - [ ] Stored searches
 
-#### Authentification & authorization
+#### Authentication & authorization
 - [x] Role-Based Access-Control
 - [x] Generate invitation tokens by role
 - [x] PassportJS integration

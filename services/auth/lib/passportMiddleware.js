@@ -7,9 +7,9 @@ const builder = require('./modules/queryBuilder');
  * @param args
  * @param done
  */
-function proxyVerifyCallback(fn, args, done) {
+function proxyVerifyCallback (fn, args, done) {
   const { callback, index } = findCallback(args);
-  args[index] = function(err, user) {
+  args[index] = function (err, user) {
     done(err, user, callback);
   };
   fn.apply(null, args);
@@ -21,10 +21,10 @@ function proxyVerifyCallback(fn, args, done) {
  *
  * @param req
  */
-module.exports = function passportMiddleware(req) {
+module.exports = function passportMiddleware (req) {
   const users = req.db.collection('__users__');
   const provider = req.authProvider;
-  proxyVerifyCallback(provider.callback, arguments, function(
+  proxyVerifyCallback(provider.callback, arguments, function (
     err,
     profile,
     passportCallback
@@ -41,17 +41,25 @@ module.exports = function passportMiddleware(req) {
       .then(result => {
         if (result.value) {
           req.authBearerToken = updateToken.value;
-          return passportCallback(null, result.value);
+          passportCallback(null, result.value);
+          // We dispatch an event here to be able to execute side effects
+          // when a user log in, i.e. send the event to a 3rd party CRM
+          req.service.emit('login', result.value);
+          return;
         }
         let { insert, insertToken } = builder.genInsert(provider, profile);
         req.authBearerToken = insertToken.value;
         return users
           .insertOne(insert)
-          .then(insertResult =>
-            passportCallback(null, { _id: insertResult.insertedId, ...insert })
-          );
+          .then(insertResult => {
+            const payload = { _id: insertResult.insertedId, ...insert };
+            passportCallback(null, payload);
+            // We dispatch an event here to be able to execute side effects
+            // i.e. create a lead in a 3rd party CRM
+            req.service.emit('signup', payload);
+          });
       })
-      .catch(err => {
+      .catch(() => {
         passportCallback();
       });
   });

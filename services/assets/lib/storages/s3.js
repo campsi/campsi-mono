@@ -11,20 +11,6 @@ const { randomUUID: uuid } = require('crypto');
  */
 
 class S3AssetStorage extends AssetStorage {
-  /**
-   * @param {S3AssetStorageOptions} options
-   */
-  constructor(options) {
-    super(options);
-    if (this.options.credentials) {
-      aws.config.update({
-        accessKeyId: this.options.credentials.accessKeyId,
-        secretAccessKey: this.options.credentials.secretAccessKey,
-        region: this.options.credentials.region
-      });
-    }
-  }
-
   get dataPath() {
     return this.options.dataPath;
   }
@@ -47,7 +33,7 @@ class S3AssetStorage extends AssetStorage {
 
   createPassThrough(file) {
     const getPublicAssetURL = this.options.getPublicAssetURL;
-    const s3 = new aws.S3({ params: { Bucket: this.options.bucket } });
+    const s3 = new aws.S3({ ...this.options.credentials });
     const bucket = this.options.bucket;
     // will be used later in a scoped context, do not remove
     const getKey = this.getKey;
@@ -104,7 +90,7 @@ class S3AssetStorage extends AssetStorage {
   }
 
   streamAsset(asset) {
-    const s3 = new aws.S3({ params: { Bucket: this.options.bucket } });
+    const s3 = new aws.S3({ ...this.options.credentials });
     return s3
       .getObject({
         Bucket: asset.s3.Bucket,

@@ -5,25 +5,26 @@ const state = require('./state');
 const bcrypt = require('bcryptjs');
 const debug = require('debug')('campsi:auth:local');
 
-function getMissingParameters(payload, parameters) {
+function getMissingParameters (payload, parameters) {
   return parameters.filter(
     paramName => typeof payload[paramName] === 'undefined'
   );
 }
 
-function dispatchUserSignupEvent(req, user) {
-  req.service.emit('local/signup', {
+function dispatchUserSignupEvent (req, user) {
+  req.service.emit('signup', {
     id: user._id,
     email: user.email,
     username: user.username,
     token: user.identities.local.validationToken,
     data: user.data,
+    authProvider: 'local',
     requestBody: req.body,
     requestHeaders: req.headers
   });
 }
 
-module.exports.middleware = function(localProvider) {
+module.exports.middleware = function (localProvider) {
   return (req, res, next) => {
     req.authProvider = localProvider;
     state.serialize(req);
@@ -31,7 +32,7 @@ module.exports.middleware = function(localProvider) {
   };
 };
 
-module.exports.signin = function(req, res) {
+module.exports.signin = function (req, res) {
   // could be a one-liner, but I find this more explicit
   // the real signin method is the callback below
   return handlers.callback(req, res);
@@ -46,7 +47,7 @@ module.exports.signin = function(req, res) {
  * @param password
  * @param done
  */
-module.exports.callback = function localCallback(
+module.exports.callback = function localCallback (
   req,
   username,
   password,
@@ -75,7 +76,7 @@ module.exports.callback = function localCallback(
       bcrypt.compare(
         password,
         user.identities.local.encryptedPassword,
-        function(err, isMatch) {
+        function (err, isMatch) {
           if (err) {
             debug(
               'bcrypt password compare error',
@@ -95,8 +96,8 @@ module.exports.callback = function localCallback(
     .catch(done);
 };
 
-module.exports.encryptPassword = function(password, saltRounds) {
-  function byteLength(str) {
+module.exports.encryptPassword = function (password, saltRounds) {
+  function byteLength (str) {
     // returns the byte length of an utf8 string
     let s = str.length;
     for (let i = str.length - 1; i >= 0; i--) {
@@ -112,9 +113,9 @@ module.exports.encryptPassword = function(password, saltRounds) {
     if (byteLength(password) > 72) {
       reject(new Error('Password byte length must not exceed 72 bytes'));
     }
-    bcrypt.genSalt(saltRounds || 2, function(err, generatedSalt) {
+    bcrypt.genSalt(saltRounds || 2, function (err, generatedSalt) {
       if (err) return reject(err);
-      bcrypt.hash(password, generatedSalt, function(err, hash) {
+      bcrypt.hash(password, generatedSalt, function (err, hash) {
         if (err) return reject(err);
         resolve(hash);
       });
@@ -122,14 +123,14 @@ module.exports.encryptPassword = function(password, saltRounds) {
   });
 };
 
-module.exports.createRandomToken = function(username, salt) {
+module.exports.createRandomToken = function (username, salt) {
   return CryptoJS.AES.encrypt(
     new Date().toISOString() + username,
     salt
   ).toString();
 };
 
-module.exports.signup = function(req, res) {
+module.exports.signup = function (req, res) {
   const salt = req.authProvider.options.salt;
   const users = req.db.collection('__users__');
   const missingParameters = ['password', 'displayName', 'username'].filter(
@@ -143,7 +144,7 @@ module.exports.signup = function(req, res) {
       new Error(`missing parameters : ${missingParameters.join(', ')}`)
     );
   }
-  const insertUser = function(user) {
+  const insertUser = function (user) {
     return new Promise((resolve, reject) => {
       users
         .insertOne(user)
@@ -155,7 +156,7 @@ module.exports.signup = function(req, res) {
         });
     });
   };
-  const updateExistingNonLocalUser = function(user) {
+  const updateExistingNonLocalUser = function (user) {
     return new Promise((resolve, reject) => {
       users.findOneAndUpdate(
         {
@@ -229,7 +230,7 @@ module.exports.signup = function(req, res) {
  * @param {string} req.query.redirectURI
  * @param {*} res
  */
-module.exports.validate = function(req, res) {
+module.exports.validate = function (req, res) {
   if (!req.query.token) {
     return helpers.error(res, new Error('you must provide a validation token'));
   }
@@ -279,7 +280,7 @@ module.exports.validate = function(req, res) {
  * @param res
  * @return {*}
  */
-module.exports.createResetPasswordToken = function(req, res) {
+module.exports.createResetPasswordToken = function (req, res) {
   const missingParams = getMissingParameters(req.body, ['email']);
   if (missingParams.length > 0) {
     return helpers.error(
@@ -337,7 +338,7 @@ module.exports.createResetPasswordToken = function(req, res) {
  * @param res
  * @return {*}
  */
-module.exports.resetPassword = function(req, res) {
+module.exports.resetPassword = function (req, res) {
   const missingParams = getMissingParameters(req.body, ['password', 'token']);
   if (missingParams.length > 0) {
     return helpers.error(
@@ -347,7 +348,7 @@ module.exports.resetPassword = function(req, res) {
   }
   module.exports
     .encryptPassword(req.body.password)
-    .then(function(encryptedPassword) {
+    .then(function (encryptedPassword) {
       const filter = {
         'identities.local.passwordResetToken.value': req.body.token,
         'identities.local.passwordResetToken.expiration': { $gt: new Date() }

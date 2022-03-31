@@ -54,7 +54,10 @@ function updateMe(req, res) {
       returnDocument: 'after',
       projection: { 'identities.local.encryptedPassword': 0 }
     })
-    .then(result => res.json(result.value))
+    .then(result => {
+      req.service.emit('update', result.value);
+      res.json(result.value);
+    })
     .catch(error => helpers.error(res, error));
 }
 
@@ -77,7 +80,10 @@ function patchMe(req, res) {
     .findOneAndUpdate({ _id: req.user._id }, update, {
       returnDocument: 'after'
     })
-    .then(result => res.json(result.value))
+    .then(result => {
+      req.service.emit('update', result.value);
+      res.json(result.value);
+    })
     .catch(error => helpers.error(res, error));
 }
 

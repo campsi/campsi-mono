@@ -107,6 +107,7 @@ describe('Prefix Test', function () {
           if (err) debug(`received an error from chai: ${err.message}`);
           res.should.have.status(200);
           res.should.be.json;
+          res.body.services.test.class.should.eq('TestService');
           done();
         });
     });

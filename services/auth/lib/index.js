@@ -10,14 +10,14 @@ const session = require('./middleware/session');
 const createObjectId = require('../../../lib/modules/createObjectId');
 
 module.exports = class AuthService extends CampsiService {
-  initialize() {
+  initialize () {
     this.install();
     this.prepareAuthProviders();
     this.patchRouter();
     return super.initialize();
   }
 
-  prepareAuthProviders() {
+  prepareAuthProviders () {
     Object.entries(this.options.providers).map(([name, provider]) => {
       provider.options.passReqToCallback = true;
       provider.options.scope = provider.scope;
@@ -33,7 +33,8 @@ module.exports = class AuthService extends CampsiService {
     });
   }
 
-  patchRouter() {
+  // eslint-disable-next-line max-statements
+  patchRouter () {
     const router = this.router;
     const providers = this.options.providers;
     this.router.use((req, res, next) => {
@@ -72,11 +73,11 @@ module.exports = class AuthService extends CampsiService {
     this.router.get('/:provider/callback', handlers.callback);
   }
 
-  getMiddlewares() {
+  getMiddlewares () {
     return [session, authUser];
   }
 
-  install() {
+  install () {
     this.db
       .collection('__users__')
       .createIndex({ email: 1 }, { unique: true })
@@ -86,7 +87,7 @@ module.exports = class AuthService extends CampsiService {
       });
   }
 
-  async fetchUsers(userIds) {
+  async fetchUsers (userIds) {
     const filter = { _id: { $in: userIds.map(id => createObjectId(id)) } };
     const users = await this.db
       .collection('__users__')

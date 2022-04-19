@@ -88,6 +88,10 @@ module.exports = class StripeBillingService extends CampsiService {
       );
     });
 
+    this.router.patch('/customers/:id', (req, res) => {
+      stripe.customers.update(req.params.id, req.body, defaultHandler(res));
+    });
+
     this.router.delete('/customers/:id', (req, res) => {
       stripe.customers.del(req.params.id, defaultHandler(res));
     });
@@ -106,6 +110,14 @@ module.exports = class StripeBillingService extends CampsiService {
       stripe.customers.createTaxId(
         req.params.customer,
         { type: req.body.type, value: req.body.value },
+        defaultHandler(res)
+      );
+    });
+
+    this.router.post('/customers/:customer/sources', (req, res) => {
+      stripe.customers.createSource(
+        req.params.customer,
+        { source: req.body.source },
         defaultHandler(res)
       );
     });

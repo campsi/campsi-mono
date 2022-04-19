@@ -122,6 +122,14 @@ module.exports = class StripeBillingService extends CampsiService {
       );
     });
 
+    this.router.delete('/customers/:customer/sources/:id', (req, res) => {
+      stripe.customers.deleteSource(
+        req.params.customer,
+        req.params.id,
+        defaultHandler(res)
+      );
+    });
+
     this.router.delete('/customers/:customer/tax_ids/:id', (req, res) => {
       stripe.customers.deleteTaxId(
         req.params.customer,
@@ -140,7 +148,8 @@ module.exports = class StripeBillingService extends CampsiService {
           coupon: req.body.coupon,
           promotion_code: req.body.promotion_code,
           expand: subscriptionExpand,
-          default_tax_rates: req.body.default_tax_rates
+          default_tax_rates: req.body.default_tax_rates,
+          default_source: req.body.default_source
         },
         defaultHandler(res)
       );
@@ -168,10 +177,15 @@ module.exports = class StripeBillingService extends CampsiService {
           coupon: req.body.coupon,
           promotion_code: req.body.promotion_code,
           expand: subscriptionExpand,
-          default_tax_rates: req.body.default_tax_rates
+          default_tax_rates: req.body.default_tax_rates,
+          default_source: req.body.default_source
         },
         defaultHandler(res)
       );
+    });
+
+    this.router.patch('/subscriptions/:id', (req, res) => {
+      stripe.subscriptions.update(req.params.id, req.body, defaultHandler(res));
     });
 
     this.router.get('/sources/:id', (req, res) => {

@@ -89,7 +89,11 @@ module.exports = class StripeBillingService extends CampsiService {
     });
 
     this.router.patch('/customers/:id', (req, res) => {
-      stripe.customers.update(req.params.id, req.body, defaultHandler(res));
+      const payload = req.body;
+      if (payload.expand && typeof payload.expand === 'string') {
+        payload.expand = payload.expand.split('|');
+      }
+      stripe.customers.update(req.params.id, payload, defaultHandler(res));
     });
 
     this.router.delete('/customers/:id', (req, res) => {
@@ -185,7 +189,11 @@ module.exports = class StripeBillingService extends CampsiService {
     });
 
     this.router.patch('/subscriptions/:id', (req, res) => {
-      stripe.subscriptions.update(req.params.id, req.body, defaultHandler(res));
+      const payload = req.body;
+      if (payload.expand && typeof payload.expand === 'string') {
+        payload.expand = payload.expand.split('|');
+      }
+      stripe.subscriptions.update(req.params.id, payload, defaultHandler(res));
     });
 
     this.router.get('/sources/:id', (req, res) => {
@@ -216,7 +224,7 @@ module.exports = class StripeBillingService extends CampsiService {
           confirm: true,
           payment_method: req.body.payment_method,
           customer: req.body.customer,
-          payment_method_types: ['card'],
+          payment_method_types: ['card', 'sepa_debit'],
           metadata: req.body.metadata
         },
         defaultHandler(res)

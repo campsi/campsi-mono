@@ -88,6 +88,14 @@ module.exports = class StripeBillingService extends CampsiService {
       );
     });
 
+    this.router.patch('/customers/:id', (req, res) => {
+      const payload = req.body;
+      if (payload.expand && typeof payload.expand === 'string') {
+        payload.expand = payload.expand.split('|');
+      }
+      stripe.customers.update(req.params.id, payload, defaultHandler(res));
+    });
+
     this.router.delete('/customers/:id', (req, res) => {
       stripe.customers.del(req.params.id, defaultHandler(res));
     });
@@ -110,6 +118,22 @@ module.exports = class StripeBillingService extends CampsiService {
       );
     });
 
+    this.router.post('/customers/:customer/sources', (req, res) => {
+      stripe.customers.createSource(
+        req.params.customer,
+        { source: req.body.source },
+        defaultHandler(res)
+      );
+    });
+
+    this.router.delete('/customers/:customer/sources/:id', (req, res) => {
+      stripe.customers.deleteSource(
+        req.params.customer,
+        req.params.id,
+        defaultHandler(res)
+      );
+    });
+
     this.router.delete('/customers/:customer/tax_ids/:id', (req, res) => {
       stripe.customers.deleteTaxId(
         req.params.customer,
@@ -128,7 +152,8 @@ module.exports = class StripeBillingService extends CampsiService {
           coupon: req.body.coupon,
           promotion_code: req.body.promotion_code,
           expand: subscriptionExpand,
-          default_tax_rates: req.body.default_tax_rates
+          default_tax_rates: req.body.default_tax_rates,
+          default_source: req.body.default_source
         },
         defaultHandler(res)
       );
@@ -156,10 +181,19 @@ module.exports = class StripeBillingService extends CampsiService {
           coupon: req.body.coupon,
           promotion_code: req.body.promotion_code,
           expand: subscriptionExpand,
-          default_tax_rates: req.body.default_tax_rates
+          default_tax_rates: req.body.default_tax_rates,
+          default_source: req.body.default_source
         },
         defaultHandler(res)
       );
+    });
+
+    this.router.patch('/subscriptions/:id', (req, res) => {
+      const payload = req.body;
+      if (payload.expand && typeof payload.expand === 'string') {
+        payload.expand = payload.expand.split('|');
+      }
+      stripe.subscriptions.update(req.params.id, payload, defaultHandler(res));
     });
 
     this.router.get('/sources/:id', (req, res) => {
@@ -190,7 +224,7 @@ module.exports = class StripeBillingService extends CampsiService {
           confirm: true,
           payment_method: req.body.payment_method,
           customer: req.body.customer,
-          payment_method_types: ['card'],
+          payment_method_types: ['card', 'sepa_debit'],
           metadata: req.body.metadata
         },
         defaultHandler(res)

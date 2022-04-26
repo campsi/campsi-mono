@@ -248,7 +248,12 @@ module.exports = class StripeBillingService extends CampsiService {
    * @return {Object}
    */
   fetchInvoices = async parameters => {
-    return await this.stripe.invoices.list(parameters);
+    const invoices = [];
+    parameters = { ...parameters, limit: 100 };
+    for await (const invoice of this.stripe.invoices.list(parameters)) {
+      invoices.push(invoice);
+    }
+    return invoices;
   };
 
   /**
@@ -257,7 +262,12 @@ module.exports = class StripeBillingService extends CampsiService {
    * @return {Object}
    */
   fetchCreditNotes = async parameters => {
-    return await this.stripe.creditNotes.list(parameters);
+    const creditNotes = [];
+    parameters = { ...parameters, limit: 100 };
+    for await (const creditNote of this.stripe.creditNotes.list(parameters)) {
+      creditNotes.push(creditNote);
+    }
+    return creditNotes;
   };
 
   checkCouponCodeValidity = async (req, res) => {

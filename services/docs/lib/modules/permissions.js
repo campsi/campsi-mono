@@ -1,3 +1,5 @@
+
+
 function isAllowedTo(permission, method) {
   return permission && (permission.includes(method) || permission === '*');
 }
@@ -6,26 +8,22 @@ const PUBLIC_ERR_MESSAGE = 'resource is not public for this state and method';
 
 module.exports.can = function can(user, resource, method, state) {
   return new Promise((resolve, reject) => {
-    const isAnonymous = typeof user === 'undefined';
-    const publicPermissions = resource.permissions['public']?.[state];
-    const publicIsAllowed = isAllowedTo(publicPermissions, method);
-
-    // Resource is public, no need to go further
-    if(publicIsAllowed){
-      return resolve({});
+    if (typeof user === 'undefined') {
+      if (
+        !resource.permissions['public'] ||
+        !resource.permissions['public'][state]
+      ) {
+        return reject(new Error(PUBLIC_ERR_MESSAGE));
+      }
+      const publicPermissions = resource.permissions['public'][state];
+      const publicIsAllowed = isAllowedTo(publicPermissions, method);
+      return publicIsAllowed
+        ? resolve({})
+        : reject(new Error(PUBLIC_ERR_MESSAGE));
     }
-    // We handled the anonymous with public, meaning
-    // we don't need additional tests and can reject
-    // right now
-    if(isAnonymous){
-      reject(new Error(PUBLIC_ERR_MESSAGE));
-    }
-
-    // Admin is GOD MODE
     if (user.isAdmin) {
       return resolve({});
     }
-
 
     /*
      2 ways of allowing access to a document:
@@ -33,13 +31,13 @@ module.exports.can = function can(user, resource, method, state) {
         - or if they share at least one common group
      */
     const allowedRoles = Object.keys(resource.permissions)
-      .filter(role => {
+      .filter((role) => {
         return isAllowedTo(resource.permissions[role][state], method);
       })
       .concat(['owner']);
 
     let filter = {
-      [`users.${user._id}.roles`]: { $elemMatch: { $in: allowedRoles } }
+      [`users.${user._id}.roles`]: { $elemMatch: { $in: allowedRoles } },
     };
 
     if (user.groups && user.groups.length) {
@@ -49,7 +47,7 @@ module.exports.can = function can(user, resource, method, state) {
   });
 };
 
-module.exports.getAllowedStatesFromDocForUser = function(
+module.exports.getAllowedStatesFromDocForUser = function (
   user,
   resource,
   method,
@@ -58,7 +56,7 @@ module.exports.getAllowedStatesFromDocForUser = function(
   const getPublicStates = () => {
     const publicPermissions = resource.permissions['public'];
     const publicPermissionsStates = Object.keys(publicPermissions);
-    return publicPermissionsStates.filter(stateName =>
+    return publicPermissionsStates.filter((stateName) =>
       isAllowedTo(publicPermissions[stateName], method)
     );
   };
@@ -73,14 +71,14 @@ module.exports.getAllowedStatesFromDocForUser = function(
     return getPublicStates();
   }
   let allowedStates = [];
-  docUser.roles.forEach(role => {
+  docUser.roles.forEach((role) => {
     const permsForRole = resource.permissions[role];
     if (!permsForRole) {
       return;
     }
     const statesForRole = Object.keys(permsForRole);
     allowedStates = allowedStates.concat(
-      statesForRole.filter(stateName =>
+      statesForRole.filter((stateName) =>
         isAllowedTo(permsForRole[stateName], method)
       )
     );
@@ -88,14 +86,14 @@ module.exports.getAllowedStatesFromDocForUser = function(
   return allowedStates;
 };
 
-module.exports.filterDocumentStates = function(
+module.exports.filterDocumentStates = function (
   document,
   allowedStates,
   requestedStates
 ) {
   return Object.keys(document.states || {})
-    .filter(docState => requestedStates.includes(docState))
-    .filter(docState => allowedStates.includes(docState))
+    .filter((docState) => requestedStates.includes(docState))
+    .filter((docState) => allowedStates.includes(docState))
     .reduce((states, displayState) => {
       states[displayState] = document.states[displayState];
       return states;

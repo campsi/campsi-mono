@@ -2,7 +2,6 @@ const CampsiService = require('../../../lib/service');
 const helpers = require('../../../lib/modules/responseHelpers');
 const handlers = require('./handlers');
 const param = require('./param');
-const multer = require('multer');
 const format = require('string-format');
 const notAvailable = (req, res) => {
   helpers.serviceNotAvailable(res, new Error('Assets listing is not available'));
@@ -10,7 +9,9 @@ const notAvailable = (req, res) => {
 format.extend(String.prototype);
 
 class AssetsService extends CampsiService {
-  initialize() {
+  async initialize() {
+    const { default: multer } = await import('multer');
+
     this.collection = this.db.collection('assets.{0}'.format(this.path));
     this.router.use((req, res, next) => {
       req.service = this;

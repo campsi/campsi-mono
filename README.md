@@ -243,7 +243,7 @@ npm start
 
 ## Requirements
 
-- NodeJS v6.0.0
+- NodeJS v16.0.0
 - MongoDB v2.6.0
 - Optional
   - ImageMagick

@@ -9,8 +9,7 @@ module.exports = {
     description: 'Test - Campsi Service Docs',
     publicURL: `http://localhost:${process.env.PORT || 3000}`,
     mongo: {
-      host: 'localhost',
-      port: 27017,
+      uri: 'mongodb://localhost:27017/test-campsi-service-docs',
       database: 'test-campsi-service-docs'
     }
   },

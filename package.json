@@ -6,7 +6,12 @@
   "scripts": {
     "depcheck": "depcheck --ignores=path,mocha,mocha-lcov-reporter",
     "lint": "./node_modules/eslint/bin/eslint.js --cache lib/** test/** index.js",
-    "test": "mocha \"./test/**/!(index).js\" --exit"
+    "test-campsi": "mocha \"./test/**/!(index).js\" --exit",
+    "test-service-auth": "cd services/auth; mocha \"./test/**/!(index).js\" --exit",
+    "test-service-docs": "cd services/docs; mocha \"./test/**/!(index).js\" --exit",
+    "test-service-trace": "cd services/trace; mocha \"./test/**/!(index).js\" --exit",
+    "test-service-webhooks": "cd services/webhooks; mocha \"./test/**/!(index).js\" --exit",
+    "test": "npm run test-campsi; npm run test-service-auth; npm run test-service-docs; npm run test-service-trace; npm run test-service-webhooks"
   },
   "repository": {
     "type": "git",

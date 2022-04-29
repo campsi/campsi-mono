@@ -248,3 +248,4 @@ npm start
 - Optional
   - ImageMagick
   - Graphics Magick
+

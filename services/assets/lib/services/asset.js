@@ -7,7 +7,7 @@ const { ObjectId } = require('mongodb');
 module.exports.getAssets = function(service, pagination, sort) {
   return new Promise((resolve, reject) => {
     const cursor = service.collection.find({});
-    let result = {};
+    const result = {};
     paginateCursor(cursor, pagination)
       .then(info => {
         result.count = info.count;
@@ -27,7 +27,7 @@ module.exports.getAssets = function(service, pagination, sort) {
       })
       .then(docs => {
         result.assets = docs;
-        resolve(result);
+        return resolve(result);
       })
       .catch(err => {
         debug('Get assets error: %s', err.message);
@@ -76,7 +76,7 @@ module.exports.createAsset = function(service, files, user, headers) {
         storage
           .store(file)
           .then(storageStream => {
-            file.stream
+            return file.stream
               .pipe(storageStream)
               .on('uploadSuccess', onSuccess)
               .on('uploadError', onError);
@@ -88,7 +88,7 @@ module.exports.createAsset = function(service, files, user, headers) {
           return { _id: new ObjectId(), ...file };
         });
         service.collection.insertMany(files).then(result => {
-          resolve(files);
+          return resolve(files);
         });
       }
     );

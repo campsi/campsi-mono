@@ -117,7 +117,7 @@ module.exports.update = function updateDoc(options) {
         let ops = { $set: {} };
         ops.$set[join('states', state.name, 'modifiedAt')] = new Date();
         ops.$set[join('states', state.name, 'modifiedBy')] = options.user
-          ? options.user.id
+          ? options.user.id || options.user._id
           : null;
         ops.$set[join('states', state.name, 'data')] = options.data;
         return resolve(ops);

@@ -19,6 +19,7 @@ class AssetsService extends CampsiService {
     });
     this.router.param('asset', param.attachAsset);
     this.router.param('asset', param.attachStorage);
+    this.router.post('/copy', handlers.copyRemote, handlers.postAssets)
     this.router.post('/', multer().array('file'), handlers.postAssets);
     this.router.get('/', this.options.allowPublicListing ? handlers.getAssets : notAvailable);
     this.router.get('/local/*', handlers.sendLocalFile);

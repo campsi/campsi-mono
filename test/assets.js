@@ -129,6 +129,27 @@ describe('Assets API', () => {
     });
   });
   /*
+   * Test the /POST /copy route
+   * We're able to create a new asset from a remote file URL
+   */
+  describe('/POST /copy', () => {
+    it('it should copy a file from remote URL', done => {
+      chai
+        .request(context.campsi.app)
+        .post('/assets/copy')
+        .send({
+          url:
+            'https://uploads-ssl.webflow.com/5d5f94b1c701ded9b6298526/5d5f994938c00e4777ad545a_Logo-axeptio-galet_500.png'
+        })
+        .end((err, res) => {
+          if (err) debug(`received an error from chai: ${err.message}`);
+          res.should.have.status(200);
+          res.should.be.json;
+          done();
+        });
+    });
+  });
+  /*
    * Test the /POST / route
    */
   describe('/POST /', () => {

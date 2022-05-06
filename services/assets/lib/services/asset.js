@@ -4,7 +4,7 @@ const paginateCursor = require('../../../../lib/modules/paginateCursor');
 const sortCursor = require('../../../../lib/modules/sortCursor');
 const { ObjectId } = require('mongodb');
 
-module.exports.getAssets = function(service, pagination, sort) {
+module.exports.getAssets = function (service, pagination, sort) {
   return new Promise((resolve, reject) => {
     const cursor = service.collection.find({});
     let result = {};
@@ -36,7 +36,7 @@ module.exports.getAssets = function(service, pagination, sort) {
   });
 };
 
-module.exports.createAsset = function(service, files, user, headers) {
+module.exports.createAsset = function (service, files, user, headers) {
   return new Promise((resolve, reject) => {
     if (!files || !files.length) {
       return reject(new Error("Can't find file"));
@@ -47,13 +47,13 @@ module.exports.createAsset = function(service, files, user, headers) {
       (file, cb) => {
         const storage = service.options.getStorage(file, user, headers);
 
-        function onError(err) {
+        function onError (err) {
           debug('Post asset error: %s', err);
           file.error = true;
           cb();
         }
 
-        function onSuccess() {
+        function onSuccess () {
           file.stream.destroy();
           delete file.stream;
           delete file.fieldname;
@@ -95,7 +95,7 @@ module.exports.createAsset = function(service, files, user, headers) {
   });
 };
 
-module.exports.deleteAsset = function(service, storage, asset) {
+module.exports.deleteAsset = function (service, storage, asset) {
   return new Promise((resolve, reject) => {
     storage
       .deleteAsset(asset)

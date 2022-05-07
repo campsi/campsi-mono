@@ -85,9 +85,11 @@ module.exports.createAsset = function (service, files, user, headers) {
       },
       () => {
         files = files.map(file => {
-          return { _id: new ObjectId(), ...file };
+          // we delete the stream in order to prevent infinite loop
+          // while BSON serializing the object
+          return { _id: new ObjectId(), ...file, stream: undefined };
         });
-        service.collection.insertMany(files).then(result => {
+        service.collection.insertMany(files).then(() => {
           resolve(files);
         });
       }

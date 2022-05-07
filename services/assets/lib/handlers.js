@@ -1,17 +1,28 @@
 const debug = require('debug')('campsi:service:assets');
-const path = require('path');
 const helpers = require('../../../lib/modules/responseHelpers');
 const http = require('http');
 const serviceAsset = require('./services/asset');
 const buildLink = require('../../../lib/modules/buildLink');
 const https = require('https');
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
+const crypto = require('crypto');
+
+const tempDir = os.tmpdir();
 
 module.exports.postAssets = function postAssets (req, res) {
   // TODO create our own structure for files, be independent from multer
   serviceAsset
     .createAsset(req.service, req.files, req.user, req.headers)
     .then(data => helpers.json(res, data))
-    .catch(() => helpers.error(res));
+    .catch(() => helpers.error(res))
+    .finally(() => {
+      if (req.unlinkLocalFileAfterUpload) {
+        debug(`remove local temp file ${req.unlinkLocalFileAfterUpload}`);
+        fs.unlinkSync(req.unlinkLocalFileAfterUpload);
+      }
+    });
 };
 
 module.exports.copyRemote = function copyRemote (req, res, next) {
@@ -27,17 +38,49 @@ module.exports.copyRemote = function copyRemote (req, res, next) {
       filename.lastIndexOf('.')
     );
     https.get(req.body.url, res => {
-      req.files = [
-        {
-          stream: res,
-          filename,
-          clientReportedFileExtension,
-          size: parseInt(res.headers['content-length']),
-          clientReportedMimeType: res.headers['content-type'],
-          detectedMimeType: res.headers['content-type']
-        }
-      ];
-      next();
+      const fileProps = {
+        filename,
+        clientReportedFileExtension,
+        clientReportedMimeType: res.headers['content-type'],
+        detectedMimeType: res.headers['content-type']
+      };
+      // Chunked response do not contain the content length.
+      // As a result, we can't just passthrough them to S3,
+      // and we need to write them locally.
+      if (!res.headers['content-length']) {
+        const tempFilePath = path.resolve(
+          tempDir,
+          `copyRemote--${crypto.randomBytes(16).toString('hex')}`
+        );
+        const localWriteStream = fs.createWriteStream(tempFilePath, {
+          flags: 'w'
+        });
+        res.pipe(localWriteStream);
+        localWriteStream.on('finish', () => {
+          localWriteStream.close();
+          const localReadString = fs.createReadStream(tempFilePath);
+          const stats = fs.statSync(tempFilePath);
+          req.files = [
+            {
+              stream: localReadString,
+              size: stats.size,
+              ...fileProps
+            }
+          ];
+          // we store the local file path in order to unlink it afterwards
+          req.unlinkLocalFileAfterUpload = tempFilePath;
+          next();
+        });
+      } else {
+        req.files = [
+          {
+            stream: res,
+            size: parseInt(res.headers['content-length']),
+            ...fileProps
+          }
+        ];
+        next();
+      }
     });
   } catch (e) {
     return helpers.badRequest(res, e);

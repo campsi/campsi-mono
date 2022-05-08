@@ -7,7 +7,7 @@ const { ObjectId } = require('mongodb');
  * @param {string} properties
  * @return {string}
  */
-function join(...properties) {
+function join (...properties) {
   return properties.join('.');
 }
 /**
@@ -16,7 +16,7 @@ function join(...properties) {
  * @param {string} [propertyName]
  * @returns {State}
  */
-function getStateFromOptions(options, propertyName) {
+function getStateFromOptions (options, propertyName) {
   propertyName = propertyName || 'state';
   const stateName = options[propertyName] || options.resource.defaultState;
   let stateObj = options.resource.states[stateName] || { validate: false };
@@ -31,7 +31,7 @@ function getStateFromOptions(options, propertyName) {
  * @param {boolean} doValidate
  * @returns {Promise}
  */
-function validate(resource, doc, doValidate) {
+function validate (resource, doc, doValidate) {
   return new Promise((resolve, reject) => {
     if (doValidate !== true) {
       return resolve(true);
@@ -45,17 +45,46 @@ function validate(resource, doc, doValidate) {
   });
 }
 
-module.exports.find = function find(options) {
-  let state = getStateFromOptions(options);
-  let filter = {};
-
-  if (options.query) {
-    Object.entries(options.query).map(([prop, val]) => {
-      if (prop.startsWith('data.')) {
-        filter[join('states', state.name, prop)] = val;
-      }
-    });
+/**
+ * This function transforms the query string into a MongoDb `$match` filter.
+ * If the query string uses CSS-like notation for attributes, the `$match`
+ * will be a `$regex`, case-insensitive. Available forms are the following:
+ * - `"data.name=omai"`, *exact* => will __NOT__ match Romain
+ * - `"data.name*=omai"`, *contain* operator => will match Romain
+ * - `"data.name^=axe"`, *startsWith* operator => will match Axeptio
+ * - `"data.name$=tion"`, *endWith* operator => will match Agilitation
+ * @param options
+ * @returns {{}}
+ */
+module.exports.find = function find (options) {
+  if (!options.query) {
+    return {};
   }
+  const state = getStateFromOptions(options);
+  const filter = {};
+  Object.entries(options.query).map(([prop, val]) => {
+    if (prop.startsWith('data.')) {
+      const key = join('states', state.name, prop);
+      const regexKey = join(
+        'states',
+        state.name,
+        prop.substring(0, prop.length - 1)
+      );
+      if (prop.endsWith('*')) {
+        // contains
+        filter[regexKey] = { $regex: `.*${val}.*`, $options: 'i' };
+      } else if (prop.endsWith('^')) {
+        // starts with
+        filter[regexKey] = { $regex: `^${val}.*`, $options: 'i' };
+      } else if (prop.endsWith('$')) {
+        // ends with
+        filter[regexKey] = { $regex: `.*${val}$`, $options: 'i' };
+      } else {
+        filter[key] = val;
+      }
+    }
+  });
+
   return filter;
 };
 /**
@@ -66,7 +95,7 @@ module.exports.find = function find(options) {
  * @param {User} [options.user]
  * @returns {Promise}
  */
-module.exports.create = function createDoc(options) {
+module.exports.create = function createDoc (options) {
   const state = getStateFromOptions(options);
 
   return new Promise((resolve, reject) => {
@@ -108,7 +137,7 @@ module.exports.create = function createDoc(options) {
  *
  * @returns {Promise}
  */
-module.exports.update = function updateDoc(options) {
+module.exports.update = function updateDoc (options) {
   const state = getStateFromOptions(options);
   return new Promise((resolve, reject) => {
     validate(options.resource, options.data, state.validate)
@@ -150,7 +179,7 @@ module.exports.patch = async options => {
   return ops;
 };
 
-module.exports.deleteFilter = function deleteDoc(options) {
+module.exports.deleteFilter = function deleteDoc (options) {
   let filter = {};
   filter._id = options.id;
   filter.states = {};
@@ -166,7 +195,7 @@ module.exports.deleteFilter = function deleteDoc(options) {
  * @param {Object} [options.doc]
  * @returns {Promise}
  */
-module.exports.setState = function setDocState(options) {
+module.exports.setState = function setDocState (options) {
   const stateTo = getStateFromOptions(options, 'to');
 
   return new Promise((resolve, reject) => {

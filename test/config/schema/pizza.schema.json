@@ -15,8 +15,10 @@
     },
     "ingredients": {
       "type": "array",
+      "title": "Ingrédients",
       "items": [
         {
+          "title": "Ingredients",
           "type": "string"
         }
       ]

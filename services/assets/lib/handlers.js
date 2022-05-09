@@ -87,42 +87,45 @@ module.exports.copyRemote = function copyRemote (req, res, next) {
   }
 };
 
-module.exports.getAssets = function getAssets (req, res) {
-  let pagination = {};
+module.exports.getAssets = function getAssets(req, res) {
+  const pagination = {};
   pagination.perPage = req.query.perPage;
   pagination.page = req.query.page;
+  pagination.infinite = req.query.pagination && `${req.query.pagination}`.toLowerCase() === 'false';
 
   serviceAsset
     .getAssets(req.service, pagination, req.query.sort)
     .then(data => {
-      let links = [];
-      Object.entries(data.nav).map(([rel, page]) => {
+      const links = [];
+      Object.entries(data.nav).forEach(([rel, page]) => {
         if (!!page && page !== data.page) {
-          links.push(
-            `<${buildLink(req, page, ['perPage', 'sort'])}>; rel="${rel}"`
-          );
+          links.push(`<${buildLink(req, page, ['perPage', 'sort'])}>; rel="${rel}"`);
         }
       });
-      let headers = {
-        'X-Total-Count': data.count,
-        'X-Page': data.page,
-        'X-Per-Page': data.perPage,
-        'X-Last-Page': data.nav.last
-      };
-      if (links.length) {
-        headers.Link = links.join(', ');
+
+      const headers = {};
+      if (!pagination.infinite) {
+        headers['X-Total-Count'] = data.count;
+        headers['X-Page'] = data.page;
+        headers['X-Per-Page'] = data.perPage;
+        headers['X-Last-Page'] = data.nav.last;
+        const headersKeys = ['X-Total-Count', 'X-Page', 'X-Per-Page', 'X-Last-Page'];
+        if (links.length) {
+          headers.Link = links.join(', ');
+          headersKeys.push('Link');
+        }
+        headers['Access-Control-Expose-Headers'] = headersKeys.join(', ');
       }
-      helpers.json(res, data.assets, headers);
+
+      return helpers.json(res, data.assets, headers);
     })
     .catch(() => {
       helpers.error(res);
     });
 };
 
-module.exports.sendLocalFile = function sendLocalFile (req, res) {
-  res.sendFile(
-    path.join(req.service.options.storages.local.dataPath, req.params[0])
-  );
+module.exports.sendLocalFile = function sendLocalFile(req, res) {
+  res.sendFile(path.join(req.service.options.storages.local.dataPath, req.params[0]));
 };
 
 module.exports.streamAsset = function streamAsset (req, res) {
@@ -136,14 +139,12 @@ module.exports.streamAsset = function streamAsset (req, res) {
       {
         headers: { Connection: 'keep-alive' }
       },
-      function (newRes) {
-        let headers = newRes.headers;
-        headers['Content-Disposition'] = 'attachment; filename="{0}"'.format(
-          req.asset.originalName
-        );
+      function(newRes) {
+        const headers = newRes.headers;
+        headers['Content-Disposition'] = 'attachment; filename="{0}"'.format(req.asset.originalName);
         headers['Content-Type'] = req.asset.clientReportedMimeType;
         headers['Content-Length'] = req.asset.size;
-        headers['Connection'] = 'keep-alive';
+        headers.Connection = 'keep-alive';
         res.writeHead(newRes.statusCode, headers);
         newRes.pipe(res);
       }

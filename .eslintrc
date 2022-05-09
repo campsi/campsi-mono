@@ -4,21 +4,28 @@
     "mocha": true,
     "es6": true
   },
+  "parserOptions": {
+    "ecmaVersion": 2021
+  },
   "plugins": [
     "indexof"
   ],
   "extends": [
     "eslint:recommended",
-    "standard"
+    "standard",
+    "plugin:import/recommended",
+    "plugin:node/recommended",
+    "plugin:promise/recommended"
   ],
   "rules": {
     // Exception
     "semi": ["error", "always"],
     // Format xtras
-    "max-len": ["error", 120],
+    "max-len": ["error", 130],
     "max-lines": ["error", 400],
     "max-statements": ["error", 20],
     "linebreak-style": ["error", "unix"],
+    "space-before-function-paren": ["off"],
     // Other xtras
     "strict": ["error", "never"],
     "indexof/no-indexof": ["error"]

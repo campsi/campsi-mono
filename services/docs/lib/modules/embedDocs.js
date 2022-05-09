@@ -1,66 +1,99 @@
 const async = require('async');
 const ObjectId = require('mongodb').ObjectId;
-const findRefs = require('campsi-find-references');
+const findReferences = require('../../../../lib/modules/findReferences')
 const createObjectId = require('campsi/lib/modules/createObjectId');
 
-function fetchSubdoc(resource, reference) {
-  const _id = reference.get();
+/**
+ *
+ * @param resource
+ * @param reference
+ * @returns {Promise<unknown>}
+ */
+function fetchDocument(resource, reference) {
   return new Promise((resolve, reject) => {
     resource.collection.findOne(
-      { _id: new ObjectId(_id) },
-      { _id: 1, states: 1 },
-      (err, subDoc) => {
+      {_id: new ObjectId(reference)},
+      {_id: 1, states: 1},
+      (err, document) => {
         if (err) return reject(err);
-        return resolve(subDoc?.states[resource.defaultState].data);
-      }
+        return resolve(document?.states[resource.defaultState].data);
+      },
     );
   });
 }
+
+/**
+ *
+ * @param resource
+ * @param reference
+ * @param fields
+ * @returns {Promise<{}>}
+ */
+function getSubDocument(resource, reference, fields) {
+  return fetchDocument(resource, reference).then(
+    document => {
+      const subDocument = {};
+      fields.forEach(field => {
+        subDocument[field] = document?.[field];
+      });
+      return subDocument;
+    },
+  );
+}
+
 /**
  *
  * @param {Resource} resource
- * @param {Schema} schema
  * @param {Array} embed
  * @param {User} user
  * @param {Object} doc
- * @param {Object} [hash]
- * @param {Resource|]} resources
+ * @param {Resource|[]} resources
  * @returns {Promise}
  */
 function embedDocs(resource, embed, user, doc, resources) {
   return new Promise((resolve, reject) => {
-    let error;
     async.eachOf(
       resource.rels || {},
-      (relationship, name, cb) => {
-        const embedRel = relationship.embed || (embed && embed.includes(name));
-        if (!embedRel) {
-          return async.setImmediate(cb);
+      (relationship, name, relationCb) => {
+        const embedRelation = relationship.embed || (embed && embed.includes(name));
+        if (!embedRelation) {
+          return async.setImmediate(relationCb);
         }
 
-        const references = findRefs(doc, relationship.path.split('.'));
-        async.each(
-          references.filter(ref => !!createObjectId(ref.get())),
-          (reference, refCb) => {
-            fetchSubdoc(resources[relationship.resource], reference).then(
-              subdoc => {
-                doc[name] = {};
-                relationship.fields.forEach(field => {
-                  doc[name][field] = subdoc?.[field];
-                });
-                refCb();
-              }
-            );
-          },
-          cb
-        );
-      },
-      () => (error ? reject(error) : resolve(doc))
+        const references = findReferences(doc, relationship.path);
+        if (Array.isArray(references)) {
+          doc[name] = [];
+          async.eachOf(
+             references,
+             (reference, index, referenceCb) => {
+               getSubDocument(resources[relationship.resource], reference, relationship.fields || []).then(
+                 subDocument => {
+                   doc[name][index] = subDocument;
+                   referenceCb();
+                 },
+               )
+             },
+            (error) => {
+               relationCb(error);
+             }
+           );
+        } else if (!!createObjectId(references)) {
+          getSubDocument(resources[relationship.resource], references, relationship.fields).then(
+            subDocument => {
+              doc[name] = subDocument;
+              relationCb();
+            },
+          )
+        } else {
+          async.setImmediate(relationCb);
+        }
+      }, () => (resolve(doc)),
     );
   });
 }
+
 module.exports.one = embedDocs;
-module.exports.many = function(resource, embed, user, docs, resources) {
+module.exports.many = function (resource, embed, user, docs, resources) {
   return new Promise(resolve => {
     async.forEach(
       docs,
@@ -70,7 +103,7 @@ module.exports.many = function(resource, embed, user, docs, resources) {
           return doc;
         });
       },
-      resolve
+      resolve,
     );
   });
 };

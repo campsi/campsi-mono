@@ -5,9 +5,8 @@ module.exports = {
   campsi: {
     publicURL: host,
     mongo: {
-      'host': 'localhost',
-      'port': 27017,
-      'database': 'relationships'
+      uri: 'mongodb://localhost:27017/test-campsi-service-webhooks',
+      database: 'test-campsi-service-webhooks'
     }
   },
   services: {

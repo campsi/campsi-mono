@@ -5,9 +5,8 @@ module.exports = {
     description: 'API de test avec les pizzas Arezzo !',
     publicURL: 'http://localhost:3000',
     mongo: {
-      'host': 'localhost',
-      'port': 27017,
-      'database': 'relationships'
+      uri: 'mongodb://localhost:27017/test-campsi-service-trace',
+      database: 'test-campsi-service-trace'
     }
   },
   services: {

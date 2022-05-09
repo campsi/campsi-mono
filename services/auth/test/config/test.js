@@ -6,8 +6,7 @@ module.exports = {
     title: 'Test Arezzo',
     publicURL: host,
     mongo: {
-      host: 'localhost',
-      port: 27017,
+      uri: 'mongodb://localhost:27017/test-campsi-service-auth',
       database: 'test-campsi-service-auth'
     }
   },

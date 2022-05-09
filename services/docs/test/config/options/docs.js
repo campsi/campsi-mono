@@ -207,7 +207,7 @@ module.exports = {
         parent_category: {
           path: 'rels.oneToOneRelationship',
           resource: 'categories',
-          embed: true,
+          embed: false,
           fields: [
             'label'
           ]
@@ -215,7 +215,10 @@ module.exports = {
         other_categories: {
           path: 'rels.oneToManyRelationship.*',
           resource: 'categories',
-          embed: false
+          embed: false,
+          fields: [
+            'label'
+          ]
         }
       },
       schema: {'$ref': '../schema/article.schema.json'}

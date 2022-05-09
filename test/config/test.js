@@ -1,5 +1,5 @@
 const path = require('path');
-const host = 'http://localhost:3002';
+const host = 'http://localhost:3000';
 const LocalAssetStorage = require('../../services/assets/lib/storages/local');
 const S3AssetStorage = require('../../services/assets/lib/storages/s3');
 
@@ -20,10 +20,10 @@ const storageProviders = {
 };
 module.exports = {
   // Application configuration
-  port: 3002,
+  port: 3000,
   campsi: {
     title: 'Test',
-    publicURL: 'http://localhost:3002',
+    publicURL: 'http://localhost:3000',
     mongo: {
       uri: 'mongodb://localhost:27017/test-campsi',
       database: 'test-campsi'
@@ -36,7 +36,7 @@ module.exports = {
   },
   campsiPrefix: {
     title: 'Test',
-    publicURL: 'http://localhost:3002/v1',
+    publicURL: 'http://localhost:3000/v1',
     mongo: {
       uri: 'mongodb://localhost:27017/test-campsi',
       database: 'test-campsi'
@@ -80,12 +80,6 @@ module.exports = {
           })
         }
       }
-    },
-    docs: {
-      title: 'Contents',
-      description: 'Tested Service',
-      options: require('./options/docs.js'),
-      optionsBasePath: path.dirname(path.join(__dirname, './options/docs.js'))
     },
     versioneddocs: {
       title: 'Versioned docs',

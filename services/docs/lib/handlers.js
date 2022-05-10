@@ -151,12 +151,9 @@ module.exports.delDoc = function(req, res) {
 };
 
 module.exports.getResources = function(req, res) {
-  resourceService
-    .getResources(req.options)
-    .then(result => {
-      return helpers.json(res, result);
-    })
-    .catch(err => helpers.notFound(res, err));
+  resourceService.getResources(req.options).then(result => {
+    return helpers.json(res, result);
+  });
 };
 Object.defineProperty(module.exports.getResources, 'apidoc', {
   value: {

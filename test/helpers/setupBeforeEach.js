@@ -1,4 +1,4 @@
-const CampsiServer = require('../../');
+const CampsiServer = require('campsi');
 const { MongoClient } = require('mongodb');
 const mongoUriBuilder = require('mongo-uri-builder');
 const debug = require('debug')('campsi:test');

@@ -8,7 +8,7 @@ const chai = require('chai');
 const chaiHttp = require('chai-http');
 const CampsiServer = require('campsi');
 const config = require('config');
-const setupBeforeEach = require('./setupBeforeEach');
+const setupBeforeEach = require('../helpers/setupBeforeEach');
 let campsi;
 
 chai.use(chaiHttp);

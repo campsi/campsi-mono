@@ -10,7 +10,7 @@ const debug = require('debug')('campsi:test:webhooks');
 
 const services = {
   Trace: require('campsi-service-trace'),
-  Webhooks: require('../lib/index')
+  Webhooks: require('../../services/webhooks/lib/index')
 };
 
 let campsi = new CampsiServer(config.campsi);

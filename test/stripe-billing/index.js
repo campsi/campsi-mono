@@ -6,7 +6,7 @@ const config = require('config');
 const debug = require('debug')('campsi:test');
 
 const services = {
-  StripeBilling: require('../lib/index')
+  StripeBilling: require('../../services/stripe-billing/lib/index')
 };
 
 let campsi = new CampsiServer(config.campsi);

@@ -1,18 +1,18 @@
-process.env.NODE_CONFIG_DIR = './config';
+process.env.NODE_CONFIG_DIR = '../config';
 process.env.NODE_ENV = 'test';
 
 const chai = require('chai');
 const chaiHttp = require('chai-http');
 const debug = require('debug')('campsi:test');
 const config = require('config');
-const setupBeforeEach = require('./helpers/setupBeforeEach');
-const createObjectId = require('../lib/modules/createObjectId');
+const setupBeforeEach = require('../helpers/setupBeforeEach');
+const createObjectId = require('../../lib/modules/createObjectId');
 
 chai.use(chaiHttp);
 chai.should();
 
 const services = {
-  VersionedDocs: require('../services/versioned-docs/lib')
+  VersionedDocs: require('../../services/versioned-docs/lib')
 };
 
 let current = {

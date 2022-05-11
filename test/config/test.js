@@ -92,11 +92,11 @@ module.exports = {
           return users.map(u => {
             return u._id
               ? {
-                displayName: u.displayName,
-                email: u.email,
-                data: u.data,
-                _id: u._id
-              }
+                  displayName: u.displayName,
+                  email: u.email,
+                  data: u.data,
+                  _id: u._id
+                }
               : { _id: u };
           });
         },

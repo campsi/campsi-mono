@@ -7,11 +7,19 @@
     "depcheck": "depcheck --ignores=path,mocha,mocha-lcov-reporter",
     "lint": "./node_modules/eslint/bin/eslint.js --cache lib/** test/** index.js",
     "test-campsi": "mocha \"./test/**/!(index).js\" --exit",
-    "test-service-auth": "cd services/auth; mocha \"./test/**/!(index).js\" --exit",
-    "test-service-docs": "cd services/docs; mocha \"./test/**/!(index).js\" --exit",
+    "test-service-assets": "cd test/assets; mocha \"./!(index).js\" --exit",
+    "test-service-auth": "cd test/auth; mocha \"./!(index).js\" --exit",
+    "test-service-docs": "cd test/docs; mocha \"./!(index).js\" --exit",
+    "test-errors": "cd test/errors; mocha \"./!(index).js\" --exit",
+    "test-modules": "cd test/test-modules; mocha \"./!(index).js\" --exit",
+    "test-prefix": "cd test/prefix;  mocha \"./!(index).js\" --exit",
+    "test-services": "cd test/services; mocha \"./!(index).js\" --exit",
     "test-service-trace": "cd services/trace; mocha \"./test/**/!(index).js\" --exit",
-    "test-service-webhooks": "cd services/webhooks; mocha \"./test/**/!(index).js\" --exit",
-    "test": "npm run test-campsi; npm run test-service-auth; npm run test-service-docs; npm run test-service-trace; npm run test-service-webhooks"
+    "test-service-webhooks": "cd test/webhooks; mocha \"./!(index).js\" --exit",
+    "test-trace": "cd test/trace;  mocha \"./!(index).js\" --exit",
+    "test-versioned-docs" :"cd test; mocha \"versioned-docs.js\" --exit",
+    "test": "npm run test-campsi; npm run test-service-auth; npm run test-service-docs; npm run test-service-trace; npm run test-service-webhooks",
+    "test-all": "nmp run test-service-assets; npm run test-service-auth; npm run test-service-docs; npm run test-errors; npm run test-modules; npm run test-prefix; npm run test-services"
   },
   "repository": {
     "type": "git",

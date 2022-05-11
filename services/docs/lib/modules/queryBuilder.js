@@ -7,7 +7,7 @@ const { ObjectId } = require('mongodb');
  * @param {string} properties
  * @return {string}
  */
-function join (...properties) {
+function join(...properties) {
   return properties.join('.');
 }
 /**
@@ -16,12 +16,12 @@ function join (...properties) {
  * @param {string} [propertyName]
  * @returns {State}
  */
-function getStateFromOptions (options, propertyName) {
+function getStateFromOptions(options, propertyName) {
   propertyName = propertyName || 'state';
   const stateName = options[propertyName] || options.resource.defaultState;
-  let stateObj = options.resource.states[stateName] || { validate: false };
-  stateObj.name = stateName;
-  return stateObj;
+  const state = options.resource.states[stateName] || { validate: false };
+  state.name = stateName;
+  return state;
 }
 
 /**
@@ -31,7 +31,7 @@ function getStateFromOptions (options, propertyName) {
  * @param {boolean} doValidate
  * @returns {Promise}
  */
-function validate (resource, doc, doValidate) {
+function validate(resource, doc, doValidate) {
   return new Promise((resolve, reject) => {
     if (doValidate !== true) {
       return resolve(true);
@@ -46,7 +46,127 @@ function validate (resource, doc, doValidate) {
 }
 
 /**
+ * LHS brackets operator on strings
+ * All those example filters match 'campsi'
+ * - data.field[starts-with]=cam
+ * - data.field[ends-with]=psi
+ * - data.field[contains]=amps
+ * A priority is applied if multiple filter are present in query (starts > ends > contains)
+ * @param filters dictionary of filters to fill
+ * @param key filter key
+ * @param value value to parse
+ */
+function stringOperators(filters, key, value) {
+  // Our test ensure that value is an object we can use with hasOwnProperty, so we disable this rule
+  /* eslint-disable no-prototype-builtins */
+  if (value.hasOwnProperty('starts-with')) {
+    filters[key] = { $regex: `^${value['starts-with']}.*`, $options: 'i' };
+  } else if (value.hasOwnProperty('ends-with')) {
+    filters[key] = { $regex: `.*${value['ends-with']}$`, $options: 'i' };
+  } else if (value.hasOwnProperty('contains')) {
+    filters[key] = { $regex: `.*${value.contains}.*`, $options: 'i' };
+  }
+  /* eslint-enable no-prototype-builtins */
+}
+
+/**
+ * LHS brackets operator on number
+ * eq: equal
+ * gt: greater than
+ * lt: less than
+ * gte: greater than or equal
+ * lte: less than or equal
+ * All numbers operator are applied (no priority)
+ * @param filters dictionary of filters to fill
+ * @param key filter key
+ * @param value value to parse
+ */
+function numberOperators(filters, key, value) {
+  // Our test ensure that value is an object we can use with hasOwnProperty, so we disable this rule
+  /* eslint-disable no-prototype-builtins */
+  const filter = {};
+  if (value.hasOwnProperty('eq')) {
+    filter.$eq = Number(value.eq);
+  }
+  if (value.hasOwnProperty('gt')) {
+    filter.$gt = Number(value.gt);
+  }
+  if (value.hasOwnProperty('lt')) {
+    filter.$lt = Number(value.lt);
+  }
+  if (value.hasOwnProperty('gte')) {
+    filter.$gte = Number(value.gte);
+  }
+  if (value.hasOwnProperty('lte')) {
+    filter.$lte = Number(value.lte);
+  }
+  if (Object.keys(filter).length) {
+    filters[key] = filter;
+  }
+  /* eslint-enable no-prototype-builtins */
+}
+
+/**
+ * LHS brackets operator on date
+ * before / after
+ * All dates operator are applied (no priority)
+ * @param filters dictionary of filters to fill
+ * @param key filter key
+ * @param value value to parse
+ */
+function dateOperators(filters, key, value) {
+  // Our test ensure that value is an object we can use with hasOwnProperty, so we disable this rule
+  /* eslint-disable no-prototype-builtins */
+  const filter = {};
+  if (value.hasOwnProperty('before')) {
+    filter.$lt = new Date(value.before);
+  }
+  if (value.hasOwnProperty('after')) {
+    filter.$gt = new Date(value.after);
+  }
+  if (Object.keys(filter).length) {
+    filters[key] = filter;
+  }
+  /* eslint-enable no-prototype-builtins */
+}
+
+/**
+ * LHS brackets operator on boolean
+ * bool: equal true or false
+ * @param filters dictionary of filters to fill
+ * @param key filter key
+ * @param value value to parse
+ */
+function boolOperators(filters, key, value) {
+  // Our test ensure that value is an object we can use with hasOwnProperty, so we disable this rule
+  /* eslint-disable no-prototype-builtins */
+  if (value.hasOwnProperty('bool')) {
+    filters[key] = value.bool.toLowerCase() === 'true';
+  }
+  /* eslint-enable no-prototype-builtins */
+}
+
+/**
+ * Miscellaneous LHS brackets operators
+ * exists: test if property exists or not
+ * @param filters dictionary of filters to fill
+ * @param key filter key
+ * @param value value to parse
+ */
+function specialOperators(filters, key, value) {
+  // Our test ensure that value is an object we can use with hasOwnProperty, so we disable this rule
+  /* eslint-disable no-prototype-builtins */
+  if (value.hasOwnProperty('exists')) {
+    // 'exists' operator
+    filters[key] = { $exists: value.exists.toLowerCase() === 'true' };
+  }
+  /* eslint-enable no-prototype-builtins */
+}
+
+/**
  * This function transforms the query string into a MongoDb `$match` filter.
+ * It uses simple match, array match and LHS Brackets operator defined in previous functions
+ * CSS syntax defined below is deprecated
  * If the query string uses CSS-like notation for attributes, the `$match`
  * will be a `$regex`, case-insensitive. Available forms are the following:
  * - `"data.name=omai"`, *exact* => will __NOT__ match Romain
@@ -56,36 +176,50 @@ function validate (resource, doc, doValidate) {
  * @param options
  * @returns {{}}
  */
-module.exports.find = function find (options) {
+module.exports.find = function find(options) {
   if (!options.query) {
     return {};
   }
   const state = getStateFromOptions(options);
-  const filter = {};
-  Object.entries(options.query).map(([prop, val]) => {
-    if (prop.startsWith('data.')) {
-      const key = join('states', state.name, prop);
-      const regexKey = join(
-        'states',
-        state.name,
-        prop.substring(0, prop.length - 1)
-      );
-      if (prop.endsWith('*')) {
-        // contains
-        filter[regexKey] = { $regex: `.*${val}.*`, $options: 'i' };
-      } else if (prop.endsWith('^')) {
-        // starts with
-        filter[regexKey] = { $regex: `^${val}.*`, $options: 'i' };
-      } else if (prop.endsWith('$')) {
-        // ends with
-        filter[regexKey] = { $regex: `.*${val}$`, $options: 'i' };
-      } else {
-        filter[key] = val;
-      }
-    }
-  });
 
-  return filter;
+  return Object.entries(options.query)
+    .filter(([name]) => name.startsWith('data.') && name.length > 5)
+    .reduce((filters, [name, value]) => {
+      const key = join('states', state.name, name);
+      if (value === null) {
+        // Just in case, do nothing
+      } else if (Array.isArray(value)) {
+        // 'In' string operator
+        filters[key] = { $in: value.map(String) };
+      } else if (typeof value === 'object') {
+        // Add filters by LHS Brackets operator
+        stringOperators(filters, key, value);
+        numberOperators(filters, key, value);
+        dateOperators(filters, key, value);
+        boolOperators(filters, key, value);
+        specialOperators(filters, key, value);
+      } else {
+        switch (name.slice(-1)) {
+          case '*':
+            // CSS contains
+            filters[key.slice(0, -1)] = { $regex: `.*${value}.*`, $options: 'i' };
+            break;
+          case '^':
+            // CSS starts with
+            filters[key.slice(0, -1)] = { $regex: `^${value}.*`, $options: 'i' };
+            break;
+          case '$':
+            // CSS ends with
+            filters[key.slice(0, -1)] = { $regex: `.*${value}$`, $options: 'i' };
+            break;
+          default:
+            // String Simple Match
+            filters[key] = value;
+            break;
+        }
+      }
+      return filters;
+    }, {});
 };
 /**
  *
@@ -95,14 +229,14 @@ module.exports.find = function find (options) {
  * @param {User} [options.user]
  * @returns {Promise}
  */
-module.exports.create = function createDoc (options) {
+module.exports.create = function createDoc(options) {
   const state = getStateFromOptions(options);
 
   return new Promise((resolve, reject) => {
-    validate(options.resource, options.data, state.validate)
+    return validate(options.resource, options.data, state.validate)
       .catch(reject)
       .then(() => {
-        let doc = {
+        const doc = {
           users: {},
           states: {},
           groups: []
@@ -123,7 +257,7 @@ module.exports.create = function createDoc (options) {
           createdBy: options.user ? options.user._id : null,
           data: options.data
         };
-        resolve(doc);
+        return resolve(doc);
       });
   });
 };
@@ -137,17 +271,15 @@ module.exports.create = function createDoc (options) {
  *
  * @returns {Promise}
  */
-module.exports.update = function updateDoc (options) {
+module.exports.update = function updateDoc(options) {
   const state = getStateFromOptions(options);
   return new Promise((resolve, reject) => {
-    validate(options.resource, options.data, state.validate)
+    return validate(options.resource, options.data, state.validate)
       .catch(reject)
       .then(() => {
-        let ops = { $set: {} };
+        const ops = { $set: {} };
         ops.$set[join('states', state.name, 'modifiedAt')] = new Date();
-        ops.$set[join('states', state.name, 'modifiedBy')] = options.user
-          ? options.user._id
-          : null;
+        ops.$set[join('states', state.name, 'modifiedBy')] = options.user ? options.user._id : null;
         ops.$set[join('states', state.name, 'data')] = options.data;
         return resolve(ops);
       });
@@ -159,14 +291,12 @@ module.exports.patch = async options => {
   try {
     await validate(options.resource, options.data, state.validate);
   } catch (e) {
-    throw new Error(`Validation Error: `);
+    throw new Error('Validation Error: ');
   }
 
-  let ops = { $set: {}, $unset: {} };
+  const ops = { $set: {}, $unset: {} };
   ops.$set[join('states', state.name, 'modifiedAt')] = new Date();
-  ops.$set[join('states', state.name, 'modifiedBy')] = options.user
-    ? options.user._id
-    : null;
+  ops.$set[join('states', state.name, 'modifiedBy')] = options.user ? options.user._id : null;
 
   for (const [key, value] of Object.entries(options.data)) {
     const operator = value === null || value === undefined ? '$unset' : '$set';
@@ -179,8 +309,8 @@ module.exports.patch = async options => {
   return ops;
 };
 
-module.exports.deleteFilter = function deleteDoc (options) {
-  let filter = {};
+module.exports.deleteFilter = function deleteDoc(options) {
+  const filter = {};
   filter._id = options.id;
   filter.states = {};
   return filter;
@@ -195,14 +325,14 @@ module.exports.deleteFilter = function deleteDoc (options) {
  * @param {Object} [options.doc]
  * @returns {Promise}
  */
-module.exports.setState = function setDocState (options) {
+module.exports.setState = function setDocState(options) {
   const stateTo = getStateFromOptions(options, 'to');
 
   return new Promise((resolve, reject) => {
-    validate(options.resource, options.doc, stateTo.validate)
+    return validate(options.resource, options.doc, stateTo.validate)
       .catch(reject)
       .then(() => {
-        let ops = { $rename: {}, $set: {} };
+        const ops = { $rename: {}, $set: {} };
         ops.$rename[join('states', options.from)] = join('states', options.to);
         ops.$set.modifiedAt = new Date();
         ops.$set.modifiedBy = options.user ? options.user.id : null;

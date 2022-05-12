@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-expressions */
-process.env.NODE_CONFIG_DIR = './test/config';
+process.env.NODE_CONFIG_DIR = './config';
 process.env.NODE_ENV = 'test';
 
 // Require the dev-dependencies
@@ -11,7 +11,7 @@ const chaiHttp = require('chai-http');
 const format = require('string-format');
 const CampsiServer = require('campsi');
 const config = require('config');
-const builder = require('../lib/modules/queryBuilder');
+const builder = require('../../services/docs/lib/modules/queryBuilder');
 const async = require('async');
 const fakeId = require('fake-object-id');
 const { response } = require('express');
@@ -23,7 +23,7 @@ format.extend(String.prototype);
 chai.use(chaiHttp);
 
 const services = {
-  Docs: require('../lib')
+  Docs: require('../../services/docs/lib')
 };
 
 const owner = {

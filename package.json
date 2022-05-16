@@ -13,7 +13,7 @@
     "test-errors": "mocha -R dot \"./test/errors/*.js\" --exit",
     "test-modules": "mocha -R dot \"./test/test-modules/*.js\" --exit",
     "test-prefix": "mocha -R dot \"./test/prefix/*.js\" --exit",
-    "test-services": "cd test/services; mocha -R dot \"./!(index).js\" --exit",
+    "test-services": "mocha -R dot \"./test/services/*.js\" --exit",
     "test-webhooks": "cd test/webhooks; mocha -R dot \"./!(index).js\" --exit",
     "test-trace": "cd test/trace;  mocha -R dot \"./!(index).js\" --exit",
     "test-versioned-docs" :"cd test/versioned-docs; mocha -R dot \"versioned-docs.js\" --exit",

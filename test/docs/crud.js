@@ -57,6 +57,7 @@ describe('CRUD', () => {
       db.dropDatabase(() => {
         client.close();
         campsi = new CampsiServer(config.campsi);
+
         campsi.mount('docs', new services.Docs(config.services.docs));
 
         campsi.on('campsi/ready', () => {

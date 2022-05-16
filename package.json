@@ -18,7 +18,7 @@
     "test-trace": "mocha -R dot \"./test/trace/*.js\" --exit",
     "test-versioned-docs" :"mocha -R dot \"./test/versioned-docs/*.js\" --exit",
     "test-stripe-billing" : "mocha -R dot \"./test/stripe-billing/*.js\" --exit",
-    "test-all": "npm run test-assets; npm run test-auth; npm run test-docs; npm run test-errors; npm run test-modules; npm run test-prefix; npm run test-services; npm run test-trace; npm run test-webhooks; npm run test-versioned-docs"
+    "test": " mocha './test/**/*.js' --exit"
   },
   "repository": {
     "type": "git",

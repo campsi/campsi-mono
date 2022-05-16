@@ -333,6 +333,7 @@ describe('Auth API', () => {
   });
 
   describe('invitation', () => {
+    
     it('should create a new user', done => {
       const campsi = context.campsi;
       createUser(chai, campsi, glenda, true).then(token => {

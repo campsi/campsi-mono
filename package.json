@@ -15,7 +15,7 @@
     "test-prefix": "mocha -R dot \"./test/prefix/*.js\" --exit",
     "test-services": "mocha -R dot \"./test/services/*.js\" --exit",
     "test-webhooks": "mocha -R dot \"./test/webhooks/*.js\" --exit",
-    "test-trace": "cd test/trace;  mocha -R dot \"./!(index).js\" --exit",
+    "test-trace": "mocha -R dot \"./test/trace/*.js\" --exit",
     "test-versioned-docs" :"cd test/versioned-docs; mocha -R dot \"versioned-docs.js\" --exit",
     "test-stripe-billing" : "cd test/stripe-billing;  mocha -R dot \"./!(index).js\" --exit",
     "test-all": "npm run test-assets; npm run test-auth; npm run test-docs; npm run test-errors; npm run test-modules; npm run test-prefix; npm run test-services; npm run test-trace; npm run test-webhooks; npm run test-versioned-docs"

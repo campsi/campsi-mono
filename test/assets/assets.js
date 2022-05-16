@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-expressions */
-process.env.NODE_CONFIG_DIR = '../config';
+process.env.NODE_CONFIG_DIR = './test/config';
 process.env.NODE_ENV = 'test';
 
 // Require the dev-dependencies
@@ -159,7 +159,7 @@ describe('Assets API', () => {
         .post('/assets')
         .attach(
           'file',
-          fs.readFileSync('../rsrc/logo_agilitation.png'),
+          fs.readFileSync('./test/rsrc/logo_agilitation.png'),
           'logo_agilitation.png'
         )
         .end((err, res) => {
@@ -175,7 +175,7 @@ describe('Assets API', () => {
    */
   describe('/GET /assets/<asset>', () => {
     it('it should return local asset', done => {
-      createAsset('../rsrc/logo_agilitation.png').then(asset => {
+      createAsset('./test/rsrc/logo_agilitation.png').then(asset => {
         chai
           .request(context.campsi.app)
           .get('/assets/{0}'.format(asset.id))
@@ -195,7 +195,7 @@ describe('Assets API', () => {
    */
   describe('/GET /:asset/metadata', () => {
     it('it should return the asset metadata', done => {
-      createAsset('../rsrc/logo_agilitation.png').then(asset => {
+      createAsset('./test/rsrc/logo_agilitation.png').then(asset => {
         chai
           .request(context.campsi.app)
           .get('/assets/{0}/metadata'.format(asset.id))
@@ -214,7 +214,7 @@ describe('Assets API', () => {
    */
   describe('/DELETE /:asset', () => {
     it('it should return the asset metadata', done => {
-      createAsset('../rsrc/logo_agilitation.png').then(asset => {
+      createAsset('./test/rsrc/logo_agilitation.png').then(asset => {
         chai
           .request(context.campsi.app)
           .delete('/assets/' + asset.id)

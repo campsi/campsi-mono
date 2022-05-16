@@ -1,6 +1,6 @@
 const async = require('async');
 const ObjectId = require('mongodb').ObjectId;
-const findReferences = require('../../../../lib/modules/findReferences')
+const findReferences = require('../../../../lib/modules/findReferences');
 const createObjectId = require('campsi/lib/modules/createObjectId');
 
 /**
@@ -11,14 +11,10 @@ const createObjectId = require('campsi/lib/modules/createObjectId');
  */
 function fetchDocument(resource, reference) {
   return new Promise((resolve, reject) => {
-    resource.collection.findOne(
-      {_id: new ObjectId(reference)},
-      {_id: 1, states: 1},
-      (err, document) => {
-        if (err) return reject(err);
-        return resolve(document?.states[resource.defaultState].data);
-      },
-    );
+    resource.collection.findOne({ _id: new ObjectId(reference) }, { _id: 1, states: 1 }, (err, document) => {
+      if (err) return reject(err);
+      return resolve(document?.states[resource.defaultState].data);
+    });
   });
 }
 
@@ -30,15 +26,13 @@ function fetchDocument(resource, reference) {
  * @returns {Promise<{}>}
  */
 function getSubDocument(resource, reference, fields) {
-  return fetchDocument(resource, reference).then(
-    document => {
-      const subDocument = {};
-      fields.forEach(field => {
-        subDocument[field] = document?.[field];
-      });
-      return subDocument;
-    },
-  );
+  return fetchDocument(resource, reference).then(document => {
+    const subDocument = {};
+    fields.forEach(field => {
+      subDocument[field] = document?.[field];
+    });
+    return subDocument;
+  });
 }
 
 /**
@@ -64,36 +58,33 @@ function embedDocs(resource, embed, user, doc, resources) {
         if (Array.isArray(references)) {
           doc[name] = [];
           async.eachOf(
-             references,
-             (reference, index, referenceCb) => {
-               getSubDocument(resources[relationship.resource], reference, relationship.fields || []).then(
-                 subDocument => {
-                   doc[name][index] = subDocument;
-                   referenceCb();
-                 },
-               )
-             },
-            (error) => {
-               relationCb(error);
-             }
-           );
-        } else if (!!createObjectId(references)) {
-          getSubDocument(resources[relationship.resource], references, relationship.fields).then(
-            subDocument => {
-              doc[name] = subDocument;
-              relationCb();
+            references,
+            (reference, index, referenceCb) => {
+              getSubDocument(resources[relationship.resource], reference, relationship.fields || []).then(subDocument => {
+                doc[name][index] = subDocument;
+                referenceCb();
+              });
             },
-          )
+            error => {
+              relationCb(error);
+            }
+          );
+        } else if (createObjectId(references)) {
+          getSubDocument(resources[relationship.resource], references, relationship.fields).then(subDocument => {
+            doc[name] = subDocument;
+            relationCb();
+          });
         } else {
           async.setImmediate(relationCb);
         }
-      }, () => (resolve(doc)),
+      },
+      () => resolve(doc)
     );
   });
 }
 
 module.exports.one = embedDocs;
-module.exports.many = function (resource, embed, user, docs, resources) {
+module.exports.many = function(resource, embed, user, docs, resources) {
   return new Promise(resolve => {
     async.forEach(
       docs,
@@ -103,7 +94,7 @@ module.exports.many = function (resource, embed, user, docs, resources) {
           return doc;
         });
       },
-      resolve,
+      resolve
     );
   });
 };

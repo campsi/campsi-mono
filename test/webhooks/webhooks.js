@@ -1,4 +1,4 @@
-process.env.NODE_CONFIG_DIR = './config';
+process.env.NODE_CONFIG_DIR = './test/webhooks/config';
 process.env.NODE_ENV = 'test';
 
 const { MongoClient } = require('mongodb');

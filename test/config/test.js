@@ -130,6 +130,13 @@ module.exports = {
       description: 'Tested Service',
       options: require(docsOptions),
       optionsBasePath: path.dirname(path.join(__dirname, docsOptions))
+    },
+    webhooks: {
+      title: 'WebHooks',
+      options: {
+        channel: 'webhooks',
+        requireAuth: true
+      }
     }
   }
 };

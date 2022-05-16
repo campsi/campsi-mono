@@ -9,7 +9,7 @@
     "test-campsi": "cd test; mocha './{,!(config)/**/}*.js' --exit",
     "test-assets": "mocha -R dot \"./test/assets/!(index).js\" --exit",
     "test-auth": "mocha -R dot \"./test/auth/!(index).js\" --exit",
-    "test-docs": "cd test/docs; mocha -R dot \"./!(index).js\" --exit",
+    "test-docs": "mocha -R dot \"./test/docs/!(index).js\" --exit",
     "test-errors": "cd test/errors; mocha -R dot \"./!(index).js\" --exit",
     "test-modules": "cd test/test-modules; mocha -R dot \"./!(index).js\" --exit",
     "test-prefix": "cd test/prefix;  mocha -R dot \"./!(index).js\" --exit",

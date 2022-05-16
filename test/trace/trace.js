@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-expressions */
-process.env.NODE_CONFIG_DIR = './config';
+process.env.NODE_CONFIG_DIR = './test/trace/config';
 process.env.NODE_ENV = 'test';
 
 // Require the dev-dependencies
@@ -81,7 +81,7 @@ describe('Trace', () => {
     it('it should return success', (done) => {
       chai.request(campsi.app)
         .post('/trace/file')
-        .attach('file', fs.readFileSync('./rsrc/test.txt'), 'test.txt')
+        .attach('file', fs.readFileSync('./test/trace/rsrc/test.txt'), 'test.txt')
         .end((err, res) => {
           if (err) debug(`received an error from chai: ${err.message}`);
           res.should.have.status(200);

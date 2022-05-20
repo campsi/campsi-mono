@@ -1,4 +1,3 @@
-const helpers = require('../../../lib/modules/responseHelpers');
 const createObjectId = require('../../../lib/modules/createObjectId');
 const { can } = require('./modules/permissions');
 const {

@@ -156,6 +156,23 @@ module.exports.signup = function (req, res) {
         });
     });
   };
+
+  const doesLocalUserExist = function (user) {
+    return new Promise((resolve, reject) => {
+      users.findOne(
+        {
+          email: user.email,
+          'identities.local': { $exists: true }
+        },
+        (err, result) => {
+          return err
+            ? reject(new Error('could not perform findOneAndUpdate'))
+            : resolve(result);
+        }
+      );
+    });
+  };
+
   const updateExistingNonLocalUser = function (user) {
     return new Promise((resolve, reject) => {
       users.findOneAndUpdate(
@@ -204,6 +221,14 @@ module.exports.signup = function (req, res) {
           }
         }
       };
+
+      // make sure local user doesn't exist already
+      doesLocalUserExist(user)
+      .then( result => {
+        if (result !== null) {
+          return helpers.badRequest(res, new Error('A non local user already exists with that email'));
+        }
+      });
 
       updateExistingNonLocalUser(user)
         .then(updatedUser => updatedUser || insertUser(user))

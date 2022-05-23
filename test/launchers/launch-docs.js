@@ -1,4 +1,4 @@
-process.env.NODE_CONFIG_DIR = './config';
+process.env.NODE_CONFIG_DIR = '../docs/config';
 process.env.NODE_ENV = 'test';
 
 const CampsiServer = require('campsi');
@@ -6,7 +6,7 @@ const config = require('config');
 const debug = require('debug')('campsi:test');
 
 const services = {
-  Docs: require('../../services/docs/lib/index')
+  Docs: require('../../services/docs/lib')
 };
 
 let campsi = new CampsiServer(config.campsi);

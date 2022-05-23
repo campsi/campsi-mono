@@ -6,19 +6,15 @@
   "scripts": {
     "depcheck": "depcheck --ignores=path,mocha,mocha-lcov-reporter",
     "lint": "./node_modules/eslint/bin/eslint.js --cache lib/** test/** index.js",
-    "test-campsi": "cd test; mocha './{,!(config)/**/}*.js' --exit",
-    "test-assets": "cd test/assets; mocha -R dot \"./!(index).js\" --exit",
-    "test-auth": "cd test/auth; mocha -R dot \"./!(index).js\" --exit",
-    "test-docs": "cd test/docs; mocha -R dot \"./!(index).js\" --exit",
-    "test-errors": "cd test/errors; mocha -R dot \"./!(index).js\" --exit",
-    "test-modules": "cd test/test-modules; mocha -R dot \"./!(index).js\" --exit",
-    "test-prefix": "cd test/prefix;  mocha -R dot \"./!(index).js\" --exit",
-    "test-services": "cd test/services; mocha -R dot \"./!(index).js\" --exit",
-    "test-webhooks": "cd test/webhooks; mocha -R dot \"./!(index).js\" --exit",
-    "test-trace": "cd test/trace;  mocha -R dot \"./!(index).js\" --exit",
-    "test-versioned-docs" :"cd test/versioned-docs; mocha -R dot \"versioned-docs.js\" --exit",
-    "test-stripe-billing" : "cd test/stripe-billing;  mocha -R dot \"./!(index).js\" --exit",
-    "test-all": "npm run test-assets; npm run test-auth; npm run test-docs; npm run test-errors; npm run test-modules; npm run test-prefix; npm run test-services; npm run test-trace; npm run test-webhooks; npm run test-versioned-docs"
+    "test-campsi": "mocha -R dot \"./test/campsi/*.js\" --exit",
+    "test-assets": "mocha -R dot \"./test/assets/*.js\" --exit",
+    "test-auth": "mocha -R dot \"./test/auth/*.js\" --exit",
+    "test-docs": "mocha -R dot \"./test/docs/*.js\" --exit",
+    "test-webhooks": "mocha -R dot \"./test/webhooks/*.js\" --exit",
+    "test-trace": "mocha -R dot \"./test/trace/*.js\" --exit",
+    "test-versioned-docs" :"mocha -R dot \"./test/versioned-docs/*.js\" --exit",
+    "test-stripe-billing" : "mocha -R dot \"./test/stripe-billing/*.js\" --exit",
+    "test": " mocha './test/**/*.js' --exit"
   },
   "repository": {
     "type": "git",

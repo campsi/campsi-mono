@@ -1,4 +1,4 @@
-process.env.NODE_CONFIG_DIR = './config';
+process.env.NODE_CONFIG_DIR = './test/config';
 process.env.NODE_ENV = 'test';
 
 const { MongoClient } = require('mongodb');
@@ -19,7 +19,7 @@ const services = {
   Webhooks: require('../../services/webhooks/lib')
 };
 
-describe('Assets API', () => {
+describe('Webhooks', () => {
   let context = {};
   beforeEach(setupBeforeEach(config, services, context));
   afterEach(done => context.server.close(done));

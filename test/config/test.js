@@ -3,6 +3,8 @@ const host = 'http://localhost:3000';
 const LocalAssetStorage = require('../../services/assets/lib/storages/local');
 const S3AssetStorage = require('../../services/assets/lib/storages/s3');
 
+const docsOptions = '../docs/config/options/docs.js';
+
 const storageProviders = {
   local: new LocalAssetStorage({
     name: 'local',
@@ -122,6 +124,19 @@ module.exports = {
         }
       },
       optionsBasePath: path.dirname(path.join(__dirname, '../'))
+    },
+    docs: {
+      title: 'Contents',
+      description: 'Tested Service',
+      options: require(docsOptions),
+      optionsBasePath: path.dirname(path.join(__dirname, docsOptions))
+    },
+    webhooks: {
+      title: 'WebHooks',
+      options: {
+        channel: 'webhooks',
+        requireAuth: true
+      }
     }
   }
 };

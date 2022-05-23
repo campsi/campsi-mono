@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-expressions */
-process.env.NODE_CONFIG_DIR = '../config';
+process.env.NODE_CONFIG_DIR = './test/config';
 process.env.NODE_ENV = 'test';
 
 // Require the dev-dependencies
@@ -333,6 +333,7 @@ describe('Auth API', () => {
   });
 
   describe('invitation', () => {
+    
     it('should create a new user', done => {
       const campsi = context.campsi;
       createUser(chai, campsi, glenda, true).then(token => {

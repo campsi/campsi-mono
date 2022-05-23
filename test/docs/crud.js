@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-expressions */
-process.env.NODE_CONFIG_DIR = './config';
+process.env.NODE_CONFIG_DIR = './test/docs/config';
 process.env.NODE_ENV = 'test';
 
 // Require the dev-dependencies
@@ -57,6 +57,7 @@ describe('CRUD', () => {
       db.dropDatabase(() => {
         client.close();
         campsi = new CampsiServer(config.campsi);
+
         campsi.mount('docs', new services.Docs(config.services.docs));
 
         campsi.on('campsi/ready', () => {

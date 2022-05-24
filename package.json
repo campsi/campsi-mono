@@ -6,7 +6,7 @@
   "scripts": {
     "depcheck": "depcheck --ignores=path,mocha,mocha-lcov-reporter",
     "lint": "./node_modules/eslint/bin/eslint.js --cache lib/** test/** index.js",
-    "test-campsi": "mocha dot \"./test/campsi/*.js\" --exit",
+    "test-campsi": "mocha \"./test/campsi/*.js\" --exit",
     "test-assets": "mocha \"./test/assets/*.js\" --exit",
     "test-auth": "mocha \"./test/auth/*.js\" --exit",
     "test-docs": "mocha  \"./test/docs/*.js\" --exit",

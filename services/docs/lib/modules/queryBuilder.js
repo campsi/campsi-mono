@@ -299,7 +299,7 @@ module.exports.patch = async options => {
   ops.$set[join('states', state.name, 'modifiedBy')] = options.user ? options.user._id : null;
 
   for (const [key, value] of Object.entries(options.data)) {
-    const operator = value === null || value === undefined || value === '' ? '$unset' : '$set';
+    const operator = value === null || value === undefined ? '$unset' : '$set';
     ops[operator][join('states', state.name, 'data', key)] = value;
   }
 

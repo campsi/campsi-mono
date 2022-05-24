@@ -85,9 +85,7 @@ describe('queryBuilder patch function', () => {
     assert.deepEqual(patchResult, {
       $set: {
         'states.published.modifiedBy': 'abc123',
-        'states.published.data.DPO.fullname': 'roro'
-      },
-      $unset: {
+        'states.published.data.DPO.fullname': 'roro',
         'states.published.data.DPO.address': ''
       }
     });

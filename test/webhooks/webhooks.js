@@ -15,7 +15,6 @@ chai.use(chaiHttp);
 chai.should();
 
 const services = {
-  Trace: require('campsi-service-trace'),
   Webhooks: require('../../services/webhooks/lib')
 };
 
@@ -34,6 +33,14 @@ describe('Webhooks', () => {
         });
     });
     it('it should create a webhook', done => {
+      const campsi = context.campsi;
+
+      campsi.on('trace/request', (payload) => {
+        payload.should.be.a('object');
+        payload.method.should.be.eq('GET');
+        done();
+      });
+
       chai.request(context.campsi.app)
         .post('/webhooks')
         .set('content-type', 'application/json')
@@ -46,14 +53,6 @@ describe('Webhooks', () => {
           debug('request ',err, res);
           done();
         });
-    });
-    it('it should call a trace event when emiting a hooked event.', (done) => {
-      campsi.on('trace/request', (payload) => {
-        payload.should.be.a('object');
-        payload.method.should.be.eq('GET');
-        done();
-      });
-      campsi.emit('webhooks/test/topic');
     });
   });
 });

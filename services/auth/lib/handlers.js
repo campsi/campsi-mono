@@ -367,7 +367,7 @@ function acceptInvitation(req, res) {
       $unset: { [`identities.invitation-${req.params.invitationToken}`]: true }
     },
     {
-      returnDocument: 'after'
+      returnDocument: 'before'
     },
     (err, updateResult) => {
       if (err) return helpers.error(res, err);

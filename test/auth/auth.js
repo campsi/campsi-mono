@@ -25,7 +25,7 @@ const glenda = {
 
 const services = {
   Auth: require('../../services/auth/lib'),
-  Trace: require('campsi-service-trace'),
+  Trace: require('../../services/trace/lib'),
   Assets: require('../../services/assets/lib')
 };
 

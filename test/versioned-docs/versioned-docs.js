@@ -186,7 +186,7 @@ describe('VersionedDocs API', () => {
       const res = await chai
         .request(context.campsi.app)
         .post(
-          `/versioneddocs/contracts/${current._id}/revisions/${revision._id}:set-as-version`
+          `/versioneddocs/contracts/${current._id}/revisions/${revision.revision}:set-as-version`
         );
       res.should.have.status(200);
       res.should.be.json;

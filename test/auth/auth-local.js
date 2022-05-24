@@ -130,7 +130,7 @@ describe('Auth Local API', () => {
               });
           },
           cb => {
-            campsi.on('auth/local/signup', user => {
+            campsi.on('auth/signup', user => {
               user.should.have.property('token');
               user.should.have.property('email');
               user.should.have.property('data');

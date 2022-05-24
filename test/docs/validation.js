@@ -37,7 +37,7 @@ describe('Validation', () => {
   });
 
   describe('Create a well-formed document', () => {
-    it('it should return something', done => {
+    it('it should return the created object', done => {
       const campsi = context.campsi;
       createUser(chai, campsi, owner).then(token => {
         chai
@@ -60,7 +60,7 @@ describe('Validation', () => {
   });
 
   describe('Create a malformed document', () => {
-    it('it should return something', done => {
+    it('it should return hints on the validation with a 400 error', done => {
       const campsi = context.campsi;
       createUser(chai, campsi, owner).then(token => {
         chai
@@ -70,12 +70,13 @@ describe('Validation', () => {
           .send({ title: 'renne' })
           .end((err, res) => {
             if (err) debug(`received an error from chai: ${err.message}`);
-            console.dir(res.body);
             res.should.have.status(400);
             res.should.be.json;
             res.body.should.be.an('object');
             res.body.should.have.a.property('message').that.is.a('string');
             res.body.message.should.eq('Validation Error');
+            res.body.should.have.a.property('errors').that.is.an('array');
+            res.body.errors.should.have.a.lengthOf(1);
             done();
           });
       });

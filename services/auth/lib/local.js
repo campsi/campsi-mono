@@ -226,7 +226,7 @@ module.exports.signup = function (req, res) {
       doesLocalUserExist(user)
       .then( result => {
         if (result !== null) {
-          return helpers.badRequest(res, new Error('A non local user already exists with that email'));
+          return helpers.badRequest(res, new Error('A local user already exists with that email'));
         }
       });
 

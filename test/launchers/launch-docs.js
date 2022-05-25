@@ -9,12 +9,12 @@ const services = {
   Docs: require('../../services/docs/lib')
 };
 
-let campsi = new CampsiServer(config.campsi);
+const campsi = new CampsiServer(config.campsi);
 
 campsi.mount('docs', new services.Docs(config.services.docs));
 campsi.app.use((req, res, next) => {
   if (req.query && req.query.userId) {
-    req.user = {_id: req.query.userId};
+    req.user = { _id: req.query.userId };
   }
   next();
 });
@@ -24,7 +24,6 @@ campsi.on('campsi/ready', () => {
   campsi.listen(process.env.PORT || config.port);
 });
 
-campsi.start()
-  .catch((error) => {
-    debug(error);
-  });
+campsi.start().catch(error => {
+  debug(error);
+});

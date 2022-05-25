@@ -1,8 +1,9 @@
 const debug = require('debug')('campsi:test');
 
-module.exports = function createUser (chai, campsi, user) {
+module.exports = function createUser(chai, campsi, user) {
   return new Promise(resolve => {
-    chai.request(campsi.app)
+    chai
+      .request(campsi.app)
       .post('/auth/local/signup')
       .set('content-type', 'application/json')
       .send(user)

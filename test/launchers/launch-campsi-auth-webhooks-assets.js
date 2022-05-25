@@ -14,7 +14,7 @@ const services = {
 };
 
 class Test extends CampsiService {
-  initialize () {
+  initialize() {
     this.router.get('/', (req, res) => {
       return res.json('OK !');
     });
@@ -22,7 +22,7 @@ class Test extends CampsiService {
   }
 }
 
-let campsi = new CampsiServer(config.campsi);
+const campsi = new CampsiServer(config.campsi);
 
 campsi.mount('test', new Test(config.services.test));
 campsi.mount('assets', new services.Assets(config.services.assets));
@@ -39,15 +39,14 @@ campsi.on('auth/local/passwordResetTokenCreated', user => {
 
 process.on('uncaughtException', (reason, p) => {
   debug('Uncaught Rejection at:', p, 'reason:', reason);
-  process.exit(1);
+  throw new Error(`Uncaught Rejection at: ${p}, reason: ${reason}`);
 });
 
 process.on('unhandledRejection', (reason, p) => {
   debug('Unhandled Rejection at:', p, 'reason:', reason);
-  process.exit(1);
+  throw new Error(`Uncaught Rejection at: ${p}, reason: ${reason}`);
 });
 
-campsi.start()
-  .catch((error) => {
-    debug(error);
-  });
+campsi.start().catch(error => {
+  debug(error);
+});

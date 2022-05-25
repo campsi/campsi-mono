@@ -1,4 +1,4 @@
-process.env.NODE_CONFIG_DIR = '../trace/config';
+process.env.NODE_CONFIG_DIR = '../config';
 process.env.NODE_ENV = 'test';
 
 const CampsiServer = require('campsi');
@@ -9,7 +9,7 @@ const services = {
   Trace: require('../../services/trace/lib')
 };
 
-let campsi = new CampsiServer(config.campsi);
+const campsi = new CampsiServer(config.campsi);
 
 campsi.mount('trace', new services.Trace(config.services.trace));
 
@@ -18,16 +18,15 @@ campsi.on('campsi/ready', () => {
   campsi.listen(config.port);
 });
 
-process.on('uncaughtException', function () {
+process.on('uncaughtException', function() {
   debug('uncaughtException');
 });
 
 process.on('unhandledRejection', (reason, p) => {
   debug('Unhandled Rejection at:', p, 'reason:', reason);
-  process.exit(1);
+  throw new Error(`Uncaught Rejection at: ${p}, reason: ${reason}`);
 });
 
-campsi.start()
-  .catch((error) => {
-    debug(error);
-  });
+campsi.start().catch(error => {
+  debug(error);
+});

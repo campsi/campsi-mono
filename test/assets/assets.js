@@ -24,7 +24,7 @@ const services = {
 };
 
 describe('Assets API', () => {
-  let context = {};
+  const context = {};
   beforeEach(setupBeforeEach(config, services, context));
   afterEach(done => {
     context.server.close(done);
@@ -32,15 +32,14 @@ describe('Assets API', () => {
 
   function createAsset(source) {
     return new Promise(function(resolve, reject) {
-      const localStorage = context.campsi.services.get('assets').config.options
-        .storages.local;
+      const localStorage = context.campsi.services.get('assets').config.options.storages.local;
       const originalName = path.basename(source);
       const storageName = uniqueSlug('');
       const stats = fs.statSync(source);
 
-      let file = {
+      const file = {
         fieldName: 'file',
-        originalName: originalName,
+        originalName,
         clientReportedMimeType: mime.lookup(source),
         clientReportedFileExtension: path.extname(source),
         path: '',
@@ -91,7 +90,7 @@ describe('Assets API', () => {
             .then(cb)
             .catch(err => {
               if (err) {
-                process.exit(1);
+                throw new Error("Can't create asset");
               }
               cb();
             });
@@ -108,24 +107,22 @@ describe('Assets API', () => {
    */
   describe('/GET/', () => {
     it.skip('it should return a list of assets', done => {
-      createAssets(Array(5).fill('../rsrc/logo_agilitation.png')).then(
-        () => {
-          chai
-            .request(context.campsi.app)
-            .get('/assets/')
-            // .query({ page: 3, perPage: 2 })
-            .end((err, res) => {
-              if (err) debug(`received an error from chai: ${err.message}`);
-              res.should.have.status(200);
-              res.should.have.header('x-total-count', '5');
-              res.should.have.header('link');
-              res.should.be.json;
-              res.body.should.be.an('array');
-              res.body.length.should.be.eq(1);
-              done();
-            });
-        }
-      );
+      createAssets(Array(5).fill('../rsrc/logo_agilitation.png')).then(() => {
+        chai
+          .request(context.campsi.app)
+          .get('/assets/')
+          // .query({ page: 3, perPage: 2 })
+          .end((err, res) => {
+            if (err) debug(`received an error from chai: ${err.message}`);
+            res.should.have.status(200);
+            res.should.have.header('x-total-count', '5');
+            res.should.have.header('link');
+            res.should.be.json;
+            res.body.should.be.an('array');
+            res.body.length.should.be.eq(1);
+            done();
+          });
+      });
     });
   });
   /*
@@ -138,8 +135,7 @@ describe('Assets API', () => {
         .request(context.campsi.app)
         .post('/assets/copy')
         .send({
-          url:
-            'https://uploads-ssl.webflow.com/5d5f94b1c701ded9b6298526/5d5f994938c00e4777ad545a_Logo-axeptio-galet_500.png'
+          url: 'https://uploads-ssl.webflow.com/5d5f94b1c701ded9b6298526/5d5f994938c00e4777ad545a_Logo-axeptio-galet_500.png'
         })
         .end((err, res) => {
           if (err) debug(`received an error from chai: ${err.message}`);
@@ -157,11 +153,7 @@ describe('Assets API', () => {
       chai
         .request(context.campsi.app)
         .post('/assets')
-        .attach(
-          'file',
-          fs.readFileSync('./test/rsrc/logo_agilitation.png'),
-          'logo_agilitation.png'
-        )
+        .attach('file', fs.readFileSync('./test/rsrc/logo_agilitation.png'), 'logo_agilitation.png')
         .end((err, res) => {
           if (err) debug(`received an error from chai: ${err.message}`);
           res.should.have.status(200);

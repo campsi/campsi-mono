@@ -8,26 +8,28 @@
     "ecmaVersion": 2021
   },
   "plugins": [
-    "indexof"
+    "indexof",
+    "prettier"
   ],
   "extends": [
     "eslint:recommended",
     "standard",
     "plugin:import/recommended",
-    "plugin:node/recommended",
-    "plugin:promise/recommended"
+    "plugin:node/recommended"
   ],
   "rules": {
     // Exception
-    "semi": ["error", "always"],
+    "semi": ["warn", "always"],
+
     // Format xtras
-    "max-len": ["error", 130],
-    "max-lines": ["error", 400],
-    "max-statements": ["error", 20],
+    "max-len": ["warn", 130],
     "linebreak-style": ["error", "unix"],
     "space-before-function-paren": ["off"],
+
     // Other xtras
-    "strict": ["error", "never"],
-    "indexof/no-indexof": ["error"]
+    "strict": ["warn", "never"],
+    "indexof/no-indexof": ["warn"],
+
+    "prettier/prettier": 1 // Means Warn
   }
 }

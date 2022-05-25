@@ -248,6 +248,7 @@ module.exports = class StripeBillingService extends CampsiService {
       throw new Error('You must provide proper quantity');
     }
     params.action = params.action ?? 'set';
+    params.quantity = parseInt(params.quantity);
     return await this.stripe.subscriptionItems.createUsageRecord(subscriptionItemId, params);
   };
 };

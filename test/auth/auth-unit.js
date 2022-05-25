@@ -1,7 +1,7 @@
 const chai = require('chai');
 const { atob, btoa } = require('../../services/auth/lib/modules/base64');
 
-let assert = chai.assert;
+const assert = chai.assert;
 
 describe('Unit Test', () => {
   describe('Module base 64', () => {

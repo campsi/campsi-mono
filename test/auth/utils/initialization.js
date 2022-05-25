@@ -1,4 +1,4 @@
-const {MongoClient} = require('mongodb');
+const { MongoClient } = require('mongodb');
 const mongoUriBuilder = require('mongo-uri-builder');
 const CampsiServer = require('campsi');
 const debug = require('debug')('campsi-test');
@@ -9,8 +9,8 @@ format.extend(String.prototype);
 chai.use(chaiHttp);
 chai.should();
 
-module.exports = function initialize (config, services) {
-  let campsi = new CampsiServer(config.campsi);
+module.exports = function initialize(config, services) {
+  const campsi = new CampsiServer(config.campsi);
   Object.keys(services).forEach(service => {
     campsi.mount(service, new services[service](config.services[service]));
   });
@@ -20,21 +20,21 @@ module.exports = function initialize (config, services) {
   campsi.start();
   return {
     campsi,
-    beforeEachCallback: (done) => {
+    beforeEachCallback: done => {
       // Empty the database
       const mongoUri = mongoUriBuilder(config.campsi.mongo);
       MongoClient.connect(mongoUri, (err, client) => {
         if (err) {
           debug('Error during the mongo connection', err);
         }
-        let db = client.db(config.campsi.mongo.database);
+        const db = client.db(config.campsi.mongo.database);
         db.dropDatabase(() => {
           client.close();
           done();
         });
       });
     },
-    afterCallback: (done) => {
+    afterCallback: done => {
       campsi.server.close();
       done();
     }

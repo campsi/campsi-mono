@@ -28,29 +28,35 @@ const services = {
   Assets: require('../../services/assets/lib')
 };
 
-const signin = (chai, campsi, username, password) => chai.request(campsi.app)
-  .post('/auth/local/signin')
-  .send({username: username, password: password});
+const signin = (chai, campsi, username, password) =>
+  chai
+    .request(campsi.app)
+    .post('/auth/local/signin')
+    .send({ username, password });
 
-const createResetPasswordToken = (chai, campsi, email) => chai.request(campsi.app)
-  .post('/auth/local/reset-password-token')
-  .send({email: email});
+const createResetPasswordToken = (chai, campsi, email) =>
+  chai
+    .request(campsi.app)
+    .post('/auth/local/reset-password-token')
+    .send({ email });
 
-const resetUserPassword = (chai, campsi, username, passwordResetToken, newPassword) => chai.request(campsi.app)
-  .post('/auth/local/reset-password')
-  .send({
-    username: username,
-    token: passwordResetToken,
-    password: newPassword
-  });
+const resetUserPassword = (chai, campsi, username, passwordResetToken, newPassword) =>
+  chai
+    .request(campsi.app)
+    .post('/auth/local/reset-password')
+    .send({
+      username,
+      token: passwordResetToken,
+      password: newPassword
+    });
 
 describe('Auth Local Password Reset', () => {
-  let context = {};
+  const context = {};
   beforeEach(setupBeforeEach(config, services, context));
   afterEach(done => context.server.close(done));
   /*
-     * Test the /GET local/validate route
-     */
+   * Test the /GET local/validate route
+   */
   describe('/GET local/reset password [default]', () => {
     it('it should validate the user', done => {
       const campsi = context.campsi;
@@ -71,13 +77,12 @@ describe('Auth Local Password Reset', () => {
       });
 
       createUser(chai, campsi, glenda).then(() => {
-        createResetPasswordToken(chai, campsi, glenda.email)
-          .end((err, res) => {
-            if (err) debug(`received an error from chai: ${err.message}`);
-            res.should.have.status(200);
-            res.should.be.json;
-            res.body.should.be.a('object');
-          });
+        createResetPasswordToken(chai, campsi, glenda.email).end((err, res) => {
+          if (err) debug(`received an error from chai: ${err.message}`);
+          res.should.have.status(200);
+          res.should.be.json;
+          res.body.should.be.a('object');
+        });
       });
     });
   });

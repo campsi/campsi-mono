@@ -42,7 +42,7 @@ function createUser(campsi, user) {
 }
 
 describe('Auth Local API', () => {
-  let context = {};
+  const context = {};
   beforeEach(setupBeforeEach(config, services, context));
   afterEach(done => context.server.close(done));
   /*
@@ -199,9 +199,7 @@ describe('Auth Local API', () => {
                   const toURL = encodeURIComponent;
                   let validateUrl = '/auth/local/validate';
                   validateUrl += '?token=' + toURL(signupPayload.token);
-                  validateUrl +=
-                    '&redirectURI=' +
-                    toURL('/trace/local-signup-validate-redirect');
+                  validateUrl += '&redirectURI=' + toURL('/trace/local-signup-validate-redirect');
                   chai
                     .request(campsi.app)
                     .get(validateUrl)
@@ -217,8 +215,7 @@ describe('Auth Local API', () => {
                       password: 'signup!'
                     })
                     .end((err, res) => {
-                      if (err)
-                        debug(`received an error from chai: ${err.message}`);
+                      if (err) debug(`received an error from chai: ${err.message}`);
                       res.should.have.status(200);
                       signinToken = res.body.token;
                       serieCb();

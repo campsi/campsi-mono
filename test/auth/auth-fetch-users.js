@@ -41,7 +41,7 @@ function createUser(campsi, user) {
 }
 
 describe('User Fetching', () => {
-  let context = {};
+  const context = {};
   beforeEach(setupBeforeEach(config, services, context));
   afterEach(done => context.server.close(done));
   describe('AuthService.fetchUsers', () => {

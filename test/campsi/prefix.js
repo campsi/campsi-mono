@@ -17,17 +17,17 @@ let campsi;
 let server;
 
 class TestService extends CampsiService {
-  initialize () {
-    this.router.get('/', function (req, res) {
+  initialize() {
+    this.router.get('/', function(req, res) {
       res.json('true');
     });
     return super.initialize();
   }
 }
 
-describe('Prefix Test', function () {
-  describe('Testing without prefix', function () {
-    beforeEach((done) => {
+describe('Prefix Test', function() {
+  describe('Testing without prefix', function() {
+    beforeEach(done => {
       campsi = new CampsiServer(config.campsi);
       campsi.mount('test', new TestService(config.services.test));
 
@@ -36,19 +36,19 @@ describe('Prefix Test', function () {
         done();
       });
 
-      campsi.start()
-        .catch((err) => {
-          debug('Error: %s', err);
-        });
+      campsi.start().catch(err => {
+        debug('Error: %s', err);
+      });
     });
 
-    afterEach((done) => {
+    afterEach(done => {
       server.close();
       done();
     });
 
-    it('Describe must works', function (done) {
-      chai.request(campsi.app)
+    it('Describe must works', function(done) {
+      chai
+        .request(campsi.app)
         .get('/')
         .end((err, res) => {
           if (err) debug(`received an error from chai: ${err.message}`);
@@ -58,8 +58,9 @@ describe('Prefix Test', function () {
         });
     });
 
-    it('Service must works', function (done) {
-      chai.request(campsi.app)
+    it('Service must works', function(done) {
+      chai
+        .request(campsi.app)
         .get('/test')
         .end((err, res) => {
           if (err) debug(`received an error from chai: ${err.message}`);
@@ -70,8 +71,8 @@ describe('Prefix Test', function () {
     });
   });
 
-  describe('Testing with a prefix', function () {
-    beforeEach((done) => {
+  describe('Testing with a prefix', function() {
+    beforeEach(done => {
       campsi = new CampsiServer(config.campsiPrefix);
       campsi.mount('test', new TestService(config.services.test));
 
@@ -80,19 +81,19 @@ describe('Prefix Test', function () {
         done();
       });
 
-      campsi.start()
-        .catch((err) => {
-          debug('Error: %s', err);
-        });
+      campsi.start().catch(err => {
+        debug('Error: %s', err);
+      });
     });
 
-    afterEach((done) => {
+    afterEach(done => {
       server.close();
       done();
     });
 
-    it('Root query must failed', function (done) {
-      chai.request(campsi.app)
+    it('Root query must failed', function(done) {
+      chai
+        .request(campsi.app)
         .get('/')
         .end((err, res) => {
           if (err) debug(`received an error from chai: ${err.message}`);
@@ -100,8 +101,9 @@ describe('Prefix Test', function () {
           done();
         });
     });
-    it('Describe must works', function (done) {
-      chai.request(campsi.app)
+    it('Describe must works', function(done) {
+      chai
+        .request(campsi.app)
         .get('/v1')
         .end((err, res) => {
           if (err) debug(`received an error from chai: ${err.message}`);
@@ -111,8 +113,9 @@ describe('Prefix Test', function () {
           done();
         });
     });
-    it('Service must works', function (done) {
-      chai.request(campsi.app)
+    it('Service must works', function(done) {
+      chai
+        .request(campsi.app)
         .get('/v1/test')
         .end((err, res) => {
           if (err) debug(`received an error from chai: ${err.message}`);

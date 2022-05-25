@@ -12,15 +12,15 @@ const config = require('config');
 chai.use(chaiHttp);
 format.extend(String.prototype);
 chai.should();
-let assert = chai.assert;
+const assert = chai.assert;
 
 class TestService extends CampsiService {}
 class TestClass {}
 
-describe('Services Test', function () {
-  describe('mount  one module', function () {
-    it('it should work', function (done) {
-      let campsi = new CampsiServer(config.campsi);
+describe('Services Test', function() {
+  describe('mount  one module', function() {
+    it('it should work', function(done) {
+      const campsi = new CampsiServer(config.campsi);
       let passed = true;
       try {
         campsi.mount('test', new TestService(config.services.test));
@@ -33,9 +33,9 @@ describe('Services Test', function () {
     });
   });
 
-  describe('mount on an invalid path', function () {
-    it('it should not work if path is invalid', function (done) {
-      let campsi = new CampsiServer(config.campsi);
+  describe('mount on an invalid path', function() {
+    it('it should not work if path is invalid', function(done) {
+      const campsi = new CampsiServer(config.campsi);
       let passed = false;
       try {
         campsi.mount('t3st', new TestService(config.services.test));
@@ -48,9 +48,9 @@ describe('Services Test', function () {
     });
   });
 
-  describe('mount an invalid service', function () {
-    it('it should not work if service is invalid', function (done) {
-      let campsi = new CampsiServer(config.campsi);
+  describe('mount an invalid service', function() {
+    it('it should not work if service is invalid', function(done) {
+      const campsi = new CampsiServer(config.campsi);
       let passed = false;
       try {
         campsi.mount('test', new TestClass(config.services.test));
@@ -63,9 +63,9 @@ describe('Services Test', function () {
     });
   });
 
-  describe('mount two modules', function () {
-    it('it should work if path is different', function (done) {
-      let campsi = new CampsiServer(config.campsi);
+  describe('mount two modules', function() {
+    it('it should work if path is different', function(done) {
+      const campsi = new CampsiServer(config.campsi);
       let passed = true;
       try {
         campsi.mount('test', new TestService(config.services.test));
@@ -78,8 +78,8 @@ describe('Services Test', function () {
       }
     });
 
-    it('it should not work if path are equals', function (done) {
-      let campsi = new CampsiServer(config.campsi);
+    it('it should not work if path are equals', function(done) {
+      const campsi = new CampsiServer(config.campsi);
       let passed = false;
       try {
         campsi.mount('test', new TestService(config.services.test));

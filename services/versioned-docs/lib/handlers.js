@@ -69,14 +69,14 @@ module.exports.postDoc = async (req, res, next) => {
   const doc = await documentService.createDocument(req.resource, req.body, req.user, req.groups);
   res.set('ETag', doc.revision);
   helpers.json(res, doc);
-  return req.service.emit('document/created', getEmitPayload(req, { doc }));
+  return req.service.emit('versionedDocument/created', getEmitPayload(req, { doc }));
 };
 
 module.exports.updateDoc = async (req, res, next) => {
   const result = await documentService.updateDocument(req.resource, req.filter, req.body, req.user, getETagFromIfMatch(req));
   res.set('ETag', result.revision);
   helpers.json(res, result);
-  return req.service.emit('document/updated', getEmitPayload(req, { data: req.body }));
+  return req.service.emit('versionedDocument/updated', getEmitPayload(req, { data: req.body }));
 };
 
 module.exports.getDoc = async (req, res, next) => {
@@ -124,7 +124,7 @@ module.exports.getDocVersion = async (req, res, next) => {
 module.exports.delDoc = async (req, res, next) => {
   const result = await documentService.deleteDocument(req.resource, req.filter, req.query);
   helpers.json(res, result);
-  return req.service.emit('document/deleted', getEmitPayload(req));
+  return req.service.emit('versionedDocument/deleted', getEmitPayload(req));
 };
 
 module.exports.getResources = function(req, res, next) {
@@ -145,7 +145,7 @@ module.exports.postDocUser = async (req, res, next) => {
 
   helpers.json(res, users);
 
-  return req.service.emit('document/users/added', getEmitPayload(req, { addedUserId: req.body.userId }));
+  return req.service.emit('versionedDocument/users/added', getEmitPayload(req, { addedUserId: req.body.userId }));
 };
 
 module.exports.delDocUser = async (req, res, next) => {
@@ -154,5 +154,5 @@ module.exports.delDocUser = async (req, res, next) => {
 
   const users = await userService.fetchUsers(usersId, req.options, req.service.server);
   helpers.json(res, users);
-  return req.service.emit('document/users/removed', getEmitPayload(req, { removedUserId: req.params.user }));
+  return req.service.emit('versionedDocument/users/removed', getEmitPayload(req, { removedUserId: req.params.user }));
 };

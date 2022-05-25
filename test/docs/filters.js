@@ -14,7 +14,6 @@ const config = require('config');
 const builder = require('../../services/docs/lib/modules/queryBuilder');
 const async = require('async');
 const fakeId = require('fake-object-id');
-const { response } = require('express');
 
 chai.should();
 let campsi;

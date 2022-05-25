@@ -1,15 +1,11 @@
 process.env.NODE_CONFIG_DIR = './test/config';
 process.env.NODE_ENV = 'test';
 
-const { MongoClient } = require('mongodb');
-const mongoUriBuilder = require('mongo-uri-builder');
 const debug = require('debug')('campsi:test');
 const chai = require('chai');
 const chaiHttp = require('chai-http');
-const CampsiServer = require('campsi');
 const config = require('config');
 const setupBeforeEach = require('../helpers/setupBeforeEach');
-let campsi;
 
 chai.use(chaiHttp);
 chai.should();
@@ -19,13 +15,14 @@ const services = {
 };
 
 describe('Webhooks', () => {
-  let context = {};
+  const context = {};
   beforeEach(setupBeforeEach(config, services, context));
   afterEach(done => context.server.close(done));
 
   describe('Basic webhook', () => {
     it('it should list webhooks', done => {
-      chai.request(context.campsi.app)
+      chai
+        .request(context.campsi.app)
         .get('/webhooks')
         .end((err, res) => {
           debug(err, res);
@@ -35,13 +32,14 @@ describe('Webhooks', () => {
     it('it should create a webhook', done => {
       const campsi = context.campsi;
 
-      campsi.on('trace/request', (payload) => {
+      campsi.on('trace/request', payload => {
         payload.should.be.a('object');
         payload.method.should.be.eq('GET');
         done();
       });
 
-      chai.request(context.campsi.app)
+      chai
+        .request(context.campsi.app)
         .post('/webhooks')
         .set('content-type', 'application/json')
         .send({
@@ -50,7 +48,7 @@ describe('Webhooks', () => {
           method: 'post'
         })
         .end((err, res) => {
-          debug('request ',err, res);
+          debug('request ', err, res);
           done();
         });
     });

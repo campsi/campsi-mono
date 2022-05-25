@@ -23,29 +23,30 @@ const services = {
 
 // Our parent block
 describe('Trace', () => {
-  beforeEach((done) => { // Before each test we empty the database
+  beforeEach(done => {
+    // Before each test we empty the database
     campsi = new CampsiServer(config.campsi);
     campsi.mount('trace', new services.Trace(config.services.trace));
     campsi.on('campsi/ready', () => {
       server = campsi.listen(config.port);
       done();
     });
-    campsi.start()
-      .catch((err) => {
-        debug('Error: %s', err);
-      });
+    campsi.start().catch(err => {
+      debug('Error: %s', err);
+    });
   });
 
-  afterEach((done) => {
+  afterEach(done => {
     server.close();
     done();
   });
   /*
-     * Test the /GET trace route
-     */
+   * Test the /GET trace route
+   */
   describe('/GET trace', () => {
-    it('it should return success', (done) => {
-      chai.request(campsi.app)
+    it('it should return success', done => {
+      chai
+        .request(campsi.app)
         .get('/trace')
         .end((err, res) => {
           if (err) debug(`received an error from chai: ${err.message}`);
@@ -57,14 +58,15 @@ describe('Trace', () => {
     });
   });
   /*
-     * Test the /GET trace route
-     */
+   * Test the /GET trace route
+   */
   describe('/POST docs', () => {
-    it('it should return success', (done) => {
-      chai.request(campsi.app)
+    it('it should return success', done => {
+      chai
+        .request(campsi.app)
         .post('/trace/foo/bar')
         .set('content-type', 'application/json')
-        .send({testing: true, sender: 'mocha', deep: {description: 'more deeper object.'}})
+        .send({ testing: true, sender: 'mocha', deep: { description: 'more deeper object.' } })
         .end((err, res) => {
           if (err) debug(`received an error from chai: ${err.message}`);
           res.should.have.status(200);
@@ -75,11 +77,12 @@ describe('Trace', () => {
     });
   });
   /*
-     * Test the /GET trace route
-     */
+   * Test the /GET trace route
+   */
   describe('/POST docs', () => {
-    it('it should return success', (done) => {
-      chai.request(campsi.app)
+    it('it should return success', done => {
+      chai
+        .request(campsi.app)
         .post('/trace/file')
         .attach('file', fs.readFileSync('./test/rsrc/test.txt'), 'test.txt')
         .end((err, res) => {

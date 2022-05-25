@@ -1,9 +1,9 @@
+/* eslint-disable no-unused-expressions */
 process.env.NODE_CONFIG_DIR = './test/config';
 process.env.NODE_ENV = 'test';
 
 const chai = require('chai');
 const chaiHttp = require('chai-http');
-const debug = require('debug')('campsi:test');
 const config = require('config');
 const setupBeforeEach = require('../helpers/setupBeforeEach');
 const createObjectId = require('../../lib/modules/createObjectId');
@@ -29,7 +29,7 @@ let revision = {
 let version = {};
 
 describe('VersionedDocs API', () => {
-  let context = {};
+  const context = {};
   before(setupBeforeEach(config, services, context));
   after(() => context.server.close());
 
@@ -60,16 +60,12 @@ describe('VersionedDocs API', () => {
       res.should.be.json;
       res.body.should.be.a('object');
       res.body.should.have.property('message');
-      res.body.message.should.be
-        .a('string')
-        .and.eq(" should have required property 'content'");
+      res.body.message.should.be.a('string').and.eq(" should have required property 'content'");
     });
   });
   describe('/GET all documents', () => {
     it('it should return an array of documents', async () => {
-      const res = await chai
-        .request(context.campsi.app)
-        .get('/versioneddocs/contracts/');
+      const res = await chai.request(context.campsi.app).get('/versioneddocs/contracts/');
       res.should.have.status(200);
       res.should.be.json;
       res.body.should.be.an('array');
@@ -79,9 +75,7 @@ describe('VersionedDocs API', () => {
   });
   describe('/GET a specific document', () => {
     it('it should return a document', async () => {
-      const res = await chai
-        .request(context.campsi.app)
-        .get(`/versioneddocs/contracts/${current._id}`);
+      const res = await chai.request(context.campsi.app).get(`/versioneddocs/contracts/${current._id}`);
       res.should.have.status(200);
       res.should.be.json;
       res.body.should.be.an('object');
@@ -126,17 +120,13 @@ describe('VersionedDocs API', () => {
       res.should.be.json;
       res.body.should.be.an('object');
       res.body.should.have.property('message');
-      res.body.message.should.be.eq(
-        'Precondition Failed: ETag revision mismatch'
-      );
+      res.body.message.should.be.eq('Precondition Failed: ETag revision mismatch');
     });
   });
 
   describe('/GET all document revisions', () => {
     it('it should return an array of document revisions', async () => {
-      const res = await chai
-        .request(context.campsi.app)
-        .get(`/versioneddocs/contracts/${current._id}/revisions/`);
+      const res = await chai.request(context.campsi.app).get(`/versioneddocs/contracts/${current._id}/revisions/`);
       res.should.have.status(200);
       res.should.be.json;
       res.body.should.be.an('array');
@@ -148,11 +138,7 @@ describe('VersionedDocs API', () => {
 
   describe('/GET a specific document revision', () => {
     it('it should return a document revision (by id)', async () => {
-      const res = await chai
-        .request(context.campsi.app)
-        .get(
-          `/versioneddocs/contracts/${current._id}/revisions/${revision._id}`
-        );
+      const res = await chai.request(context.campsi.app).get(`/versioneddocs/contracts/${current._id}/revisions/${revision._id}`);
       res.should.have.status(200);
       res.should.be.json;
       res.body.should.be.an('object');
@@ -160,9 +146,7 @@ describe('VersionedDocs API', () => {
       res.body.currentId.should.be.equal(current._id.toString());
     });
     it('it should return a document revision (by revision number)', async () => {
-      const res = await chai
-        .request(context.campsi.app)
-        .get(`/versioneddocs/contracts/${current._id}/revisions/1`);
+      const res = await chai.request(context.campsi.app).get(`/versioneddocs/contracts/${current._id}/revisions/1`);
       res.should.have.status(200);
       res.should.be.json;
       res.body.should.be.an('object');
@@ -170,9 +154,7 @@ describe('VersionedDocs API', () => {
       res.body.currentId.should.be.equal(current._id.toString());
     });
     it('it should return an error for wrong revision query param', async () => {
-      const res = await chai
-        .request(context.campsi.app)
-        .get(`/versioneddocs/contracts/${current._id}/revisions/whatever`);
+      const res = await chai.request(context.campsi.app).get(`/versioneddocs/contracts/${current._id}/revisions/whatever`);
       res.should.have.status(500);
       res.should.be.json;
       res.body.should.be.an('object');
@@ -185,9 +167,7 @@ describe('VersionedDocs API', () => {
     it('it should create a version', async () => {
       const res = await chai
         .request(context.campsi.app)
-        .post(
-          `/versioneddocs/contracts/${current._id}/revisions/${revision.revision}:set-as-version`
-        );
+        .post(`/versioneddocs/contracts/${current._id}/revisions/${revision.revision}:set-as-version`);
       res.should.have.status(200);
       res.should.be.json;
       res.body.should.be.an('object');
@@ -199,9 +179,7 @@ describe('VersionedDocs API', () => {
     it('it should create a version based on current.revision', async () => {
       const res = await chai
         .request(context.campsi.app)
-        .post(
-          `/versioneddocs/contracts/${current._id}/revisions/${current.revision}:set-as-version`
-        );
+        .post(`/versioneddocs/contracts/${current._id}/revisions/${current.revision}:set-as-version`);
       res.should.have.status(200);
       res.should.be.json;
       res.body.should.be.an('object');
@@ -213,9 +191,7 @@ describe('VersionedDocs API', () => {
 
   describe('/GET all document versions', () => {
     it('it should return an array of document versions', async () => {
-      const res = await chai
-        .request(context.campsi.app)
-        .get(`/versioneddocs/contracts/${current._id}/versions/`);
+      const res = await chai.request(context.campsi.app).get(`/versioneddocs/contracts/${current._id}/versions/`);
       res.should.have.status(200);
       res.should.be.json;
       res.body.should.be.an('array');
@@ -227,9 +203,7 @@ describe('VersionedDocs API', () => {
 
   describe('/GET a specific version', () => {
     it('it should return a document version (by id)', async () => {
-      const res = await chai
-        .request(context.campsi.app)
-        .get(`/versioneddocs/contracts/${current._id}/versions/${version._id}`);
+      const res = await chai.request(context.campsi.app).get(`/versioneddocs/contracts/${current._id}/versions/${version._id}`);
       res.should.have.status(200);
       res.should.be.json;
       res.body.should.be.an('object');
@@ -237,9 +211,7 @@ describe('VersionedDocs API', () => {
       res.body.currentId.should.be.equal(current._id.toString());
     });
     it('it should return a document version (by version number)', async () => {
-      const res = await chai
-        .request(context.campsi.app)
-        .get(`/versioneddocs/contracts/${current._id}/versions/1`);
+      const res = await chai.request(context.campsi.app).get(`/versioneddocs/contracts/${current._id}/versions/1`);
       res.should.have.status(200);
       res.should.be.json;
       res.body.should.be.an('object');
@@ -247,9 +219,7 @@ describe('VersionedDocs API', () => {
       res.body.currentId.should.be.equal(current._id.toString());
     });
     it('it should return a document version (by version number created through current revision)', async () => {
-      const res = await chai
-        .request(context.campsi.app)
-        .get(`/versioneddocs/contracts/${current._id}/versions/2`);
+      const res = await chai.request(context.campsi.app).get(`/versioneddocs/contracts/${current._id}/versions/2`);
       res.should.have.status(200);
       res.should.be.json;
       res.body.should.be.an('object');
@@ -259,9 +229,7 @@ describe('VersionedDocs API', () => {
     it('it should return a document version (by tag)', async () => {
       const res = await chai
         .request(context.campsi.app)
-        .get(
-          `/versioneddocs/contracts/${current._id}/versions/?tag=${version.tag}`
-        );
+        .get(`/versioneddocs/contracts/${current._id}/versions/?tag=${version.tag}`);
       res.should.have.status(200);
       res.should.be.json;
       res.body.should.be.an('object');
@@ -269,9 +237,7 @@ describe('VersionedDocs API', () => {
       res.body.currentId.should.be.equal(current._id.toString());
     });
     it('it should return an error for wrong version query param', async () => {
-      const res = await chai
-        .request(context.campsi.app)
-        .get(`/versioneddocs/contracts/${current._id}/versions/whatever`);
+      const res = await chai.request(context.campsi.app).get(`/versioneddocs/contracts/${current._id}/versions/whatever`);
       res.should.have.status(500);
       res.should.be.json;
       res.body.should.be.an('object');
@@ -282,9 +248,7 @@ describe('VersionedDocs API', () => {
 
   describe('/DELETE a document and all its versions/revisions', () => {
     it('it should return an array of mongoDB DeleteResult', async () => {
-      const res = await chai
-        .request(context.campsi.app)
-        .delete(`/versioneddocs/contracts/${current._id}`);
+      const res = await chai.request(context.campsi.app).delete(`/versioneddocs/contracts/${current._id}`);
       res.should.have.status(200);
       res.should.be.json;
       res.body.should.be.an('array');

@@ -1,3 +1,6 @@
+/* eslint-disable node/no-unsupported-features/es-syntax */
+/* eslint-disable node/no-unsupported-features/node-builtins */
+/* eslint-disable node/no-unpublished-require */
 const debug = require('debug')('campsi:service:assets');
 const helpers = require('../../../lib/modules/responseHelpers');
 const http = require('http');
@@ -11,7 +14,7 @@ const crypto = require('crypto');
 
 const tempDir = os.tmpdir();
 
-module.exports.postAssets = function postAssets (req, res) {
+module.exports.postAssets = function postAssets(req, res) {
   // TODO create our own structure for files, be independent from multer
   serviceAsset
     .createAsset(req.service, req.files, req.user, req.headers)
@@ -25,7 +28,7 @@ module.exports.postAssets = function postAssets (req, res) {
     });
 };
 
-module.exports.copyRemote = function copyRemote (req, res, next) {
+module.exports.copyRemote = function copyRemote(req, res, next) {
   if (!req.body.url) {
     return helpers.badRequest(res, {
       message: 'Request payload must contain a `url` field'
@@ -34,9 +37,7 @@ module.exports.copyRemote = function copyRemote (req, res, next) {
   try {
     const url = new URL(req.body.url);
     const filename = url.pathname.substring(url.pathname.lastIndexOf('/') + 1);
-    const clientReportedFileExtension = filename.substring(
-      filename.lastIndexOf('.')
-    );
+    const clientReportedFileExtension = filename.substring(filename.lastIndexOf('.'));
     https.get(req.body.url, res => {
       const fileProps = {
         filename,
@@ -48,10 +49,7 @@ module.exports.copyRemote = function copyRemote (req, res, next) {
       // As a result, we can't just passthrough them to S3,
       // and we need to write them locally.
       if (!res.headers['content-length']) {
-        const tempFilePath = path.resolve(
-          tempDir,
-          `copyRemote--${crypto.randomBytes(16).toString('hex')}`
-        );
+        const tempFilePath = path.resolve(tempDir, `copyRemote--${crypto.randomBytes(16).toString('hex')}`);
         const localWriteStream = fs.createWriteStream(tempFilePath, {
           flags: 'w'
         });
@@ -128,7 +126,7 @@ module.exports.sendLocalFile = function sendLocalFile(req, res) {
   res.sendFile(path.join(req.service.options.storages.local.dataPath, req.params[0]));
 };
 
-module.exports.streamAsset = function streamAsset (req, res) {
+module.exports.streamAsset = function streamAsset(req, res) {
   if (req.storage.streamAsset) {
     return req.storage.streamAsset(req.asset).pipe(res);
   }
@@ -149,7 +147,7 @@ module.exports.streamAsset = function streamAsset (req, res) {
         newRes.pipe(res);
       }
     )
-    .on('error', function (err) {
+    .on('error', function(err) {
       debug('Streaming error: %s', err);
       res.statusCode = 500;
       res.json({
@@ -161,7 +159,7 @@ module.exports.streamAsset = function streamAsset (req, res) {
   req.pipe(newReq);
 };
 
-module.exports.getAssetMetadata = function getAssetMetadata (req, res) {
+module.exports.getAssetMetadata = function getAssetMetadata(req, res) {
   res.json(req.asset);
 };
 
@@ -169,7 +167,7 @@ module.exports.getAssetMetadata = function getAssetMetadata (req, res) {
  * @param {ExpressRequest} req
  * @param res
  */
-module.exports.deleteAsset = function deleteAsset (req, res) {
+module.exports.deleteAsset = function deleteAsset(req, res) {
   serviceAsset
     .deleteAsset(req.service, req.storage, req.asset)
     .then(result => helpers.json(res, result))

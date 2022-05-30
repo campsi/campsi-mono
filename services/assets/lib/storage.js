@@ -1,15 +1,11 @@
 class AssetStorage {
-  constructor (options) {
+  constructor(options) {
     this.options = options;
   }
 
-  store () {
+  store() {}
 
-  }
-
-  deleteAsset () {
-
-  }
+  deleteAsset() {}
 }
 
 module.exports = AssetStorage;

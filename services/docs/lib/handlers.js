@@ -118,9 +118,17 @@ module.exports.putDoc = function(req, res) {
 
 module.exports.patchDoc = async (req, res) => {
   try {
+    const originalDoc = await documentService.getDocument(
+      req.resource,
+      req.filter,
+      req.query,
+      req.user,
+      req.state,
+      req.options.resources
+    );
     const result = await documentService.patchDocument(req.resource, req.filter, req.body, req.state, req.user);
     helpers.json(res, result);
-    req.service.emit('document/patched', getEmitPayload(req, { data: req.body }));
+    req.service.emit('document/patched', getEmitPayload(req, { data: req.body, originalDocData: originalDoc.data }));
   } catch (err) {
     switch (err.message) {
       case 'Validation Error': {

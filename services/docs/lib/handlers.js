@@ -5,6 +5,7 @@ const userService = require('./services/user');
 const buildLink = require('../../../lib/modules/buildLink');
 const debug = require('debug')('campsi:docs');
 const { ObjectId } = require('mongodb');
+const ValidationError = require('../../../lib/errors/ValidationError');
 
 const getEmitPayload = (req, additionalProps) => {
   return Object.assign(
@@ -17,6 +18,17 @@ const getEmitPayload = (req, additionalProps) => {
     additionalProps || {}
   );
 };
+
+function dispatchError(res, error) {
+  switch (true) {
+    case error instanceof ValidationError:
+      return helpers.validationError(res, error);
+    case error.message === 'Not Found':
+      return helpers.notFound(res, error);
+    default:
+      return helpers.error(res, error);
+  }
+}
 
 module.exports.getDocuments = function(req, res) {
   const pagination = {};
@@ -74,8 +86,7 @@ module.exports.postDoc = function(req, res) {
     })
     .then(body => req.service.emit('document/created', getEmitPayload(req, { documentId: body.id, data: body.data })))
     .catch(error => {
-      debug(error);
-      return helpers.validationError(res)(error);
+      return dispatchError(res, error);
     });
 };
 
@@ -85,15 +96,8 @@ module.exports.putDocState = function(req, res) {
     .setDocumentState(req.resource, req.filter, req.body.from, req.body.to, req.user)
     .then(result => helpers.json(res, result))
     .then(() => req.service.emit('document/state/changed', getEmitPayload(req, { to: req.body.to, from: req.body.from })))
-    .catch(err => {
-      switch (err.message) {
-        case 'Validation Error':
-          return helpers.validationError(res);
-        case 'Not Found':
-          return helpers.notFound(res);
-        default:
-          return helpers.error(res, err);
-      }
+    .catch(error => {
+      return dispatchError(res, error);
     });
 };
 
@@ -103,16 +107,8 @@ module.exports.putDoc = function(req, res) {
     .setDocument(req.resource, req.filter, req.body, req.state, req.user)
     .then(result => helpers.json(res, result))
     .then(() => req.service.emit('document/updated', getEmitPayload(req, { data: req.body })))
-    .catch(err => {
-      switch (err.message) {
-        case 'Validation Error': {
-          return helpers.validationError(res)(err);
-        }
-        case 'Not Found':
-          return helpers.notFound(res);
-        default:
-          return helpers.error(res, err);
-      }
+    .catch(error => {
+      return dispatchError(res, error);
     });
 };
 
@@ -121,16 +117,8 @@ module.exports.patchDoc = async (req, res) => {
     const result = await documentService.patchDocument(req.resource, req.filter, req.body, req.state, req.user);
     helpers.json(res, result);
     req.service.emit('document/updated', getEmitPayload(req, { data: req.body }));
-  } catch (err) {
-    switch (err.message) {
-      case 'Validation Error': {
-        return helpers.validationError(res)(err);
-      }
-      case 'Not Found':
-        return helpers.notFound(res);
-      default:
-        return helpers.error(res, err);
-    }
+  } catch (error) {
+    return dispatchError(res, error);
   }
 };
 

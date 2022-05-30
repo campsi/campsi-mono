@@ -36,7 +36,7 @@ async function createData() {
     const category = campsi.services.get('docs').options.resources.categories;
     const entries = [
       { label: 'first label', price: 10, start: new Date('2022-05-09') },
-      { label: 'second label', price: 20, start: new Date('2022-05-10'), visible: false },
+      { label: 'second label', price: 20, start: new Date('2022-05-10'), visible: false, unique: true },
       { label: 'third label', price: 30, start: new Date('2022-05-11'), visible: true }
     ];
 
@@ -350,12 +350,11 @@ describe('Filter Documents', () => {
       return new Promise(resolve => {
         chai
           .request(campsi.app)
-          .get('/docs/categories?data.visible[exists]=TrUe')
+          .get('/docs/categories?data.unique[exists]=TrUe')
           .end((err, res) => {
             if (err) debug(`received an error from chai: ${err.message}`);
-            testResponse(res, 2);
+            testResponse(res, 1);
             testDocument(res.body[0], 1);
-            testDocument(res.body[1], 2);
             resolve();
           });
       });

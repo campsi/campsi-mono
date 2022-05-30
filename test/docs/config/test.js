@@ -14,6 +14,22 @@ module.exports = {
     }
   },
   services: {
+    auth: {
+      title: 'Authentification',
+      options: {
+        collectionName: '__users__',
+        session: {
+          secret: 'sqkerhgtkusyd'
+        },
+        providers: {
+          local: require('../../../services/auth/lib/providers/local')({
+            baseUrl: '//auth',
+            salt: 'CNDygyeFC6536964425994',
+            resetPasswordTokenExpiration: 10
+          })
+        }
+      }
+    },
     docs: {
       title: 'Contents',
       description: 'Tested Service',

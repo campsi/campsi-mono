@@ -1,6 +1,6 @@
 const debug = require('debug')('campsi');
 
-function btoa (str) {
+function btoa(str) {
   const buff = Buffer.from(str);
   let encoded;
   try {
@@ -11,7 +11,7 @@ function btoa (str) {
   return encoded;
 }
 
-function atob (str) {
+function atob(str) {
   if (!str) {
     return '';
   }
@@ -25,4 +25,4 @@ function atob (str) {
   return decoded;
 }
 
-module.exports = {atob, btoa};
+module.exports = { atob, btoa };

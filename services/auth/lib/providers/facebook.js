@@ -11,7 +11,7 @@ const DEFAULT_EXPIRATION = 15;
  * @param {Number} [options.expiration]
  * @returns AuthProviderConfig
  */
-module.exports = function (options) {
+module.exports = function(options) {
   return {
     Strategy: require('@passport-next/passport-facebook').Strategy,
     expiration: options.expiration || DEFAULT_EXPIRATION,
@@ -29,7 +29,7 @@ module.exports = function (options) {
       profileFields: ['id', 'displayName', 'locale', 'timezone', 'email'],
       graphApiVersion: 'v3.2'
     },
-    callback: function (req, accessToken, refreshToken, profile, done) {
+    callback: function(req, accessToken, refreshToken, profile, done) {
       done(null, {
         displayName: profile._json.name,
         email: profile._json.email,

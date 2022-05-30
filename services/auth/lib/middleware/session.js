@@ -6,7 +6,7 @@ const SessionStore = require('connect-mongodb-session')(session);
  * @param {AuthService} service
  * @returns {Function}
  */
-module.exports = function authUser (server, service) {
+module.exports = function authUser(server, service) {
   return session({
     secret: service.config.options.session.secret,
     resave: false,

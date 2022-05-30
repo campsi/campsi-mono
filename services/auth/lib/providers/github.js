@@ -8,7 +8,7 @@
  * @param {Number} options.order
  * @returns AuthProviderConfig
  */
-module.exports = function (options) {
+module.exports = function(options) {
   return {
     Strategy: require('passport-github2').Strategy,
     order: options.order,
@@ -23,7 +23,7 @@ module.exports = function (options) {
       callbackURL: options.baseUrl + '/github/callback'
     },
     scope: ['user', 'gist', 'public_repo'],
-    callback: function (req, accessToken, refreshToken, profile, done) {
+    callback: function(req, accessToken, refreshToken, profile, done) {
       // noinspection JSUnresolvedVariable
       done(null, {
         displayName: profile._json.name,

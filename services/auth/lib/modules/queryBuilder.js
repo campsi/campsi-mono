@@ -1,8 +1,8 @@
 const { randomUUID: uuid } = require('crypto');
 
 function filterUserByEmailOrProviderId(provider, profile) {
-  let query = { $or: [] };
-  let identityIdFilter = {};
+  const query = { $or: [] };
+  const identityIdFilter = {};
   identityIdFilter['identities.' + provider.name + '.id'] = profile.identity.id;
   query.$or.push(identityIdFilter);
 
@@ -14,7 +14,7 @@ function filterUserByEmailOrProviderId(provider, profile) {
 }
 
 function genBearerToken(expiration) {
-  let exp = new Date();
+  const exp = new Date();
   exp.setTime(exp.getTime() + (expiration || 10) * 86400000);
   return {
     value: uuid(),
@@ -23,7 +23,7 @@ function genBearerToken(expiration) {
 }
 
 function genUpdate(provider, profile) {
-  let update = { $set: {} };
+  const update = { $set: {} };
   const token = genBearerToken(provider.expiration);
   update.$set.token = token.value;
   update.$set[`tokens.${token.value}`] = {
@@ -43,7 +43,7 @@ function genUpdate(provider, profile) {
  */
 function genInsert(provider, profile) {
   const token = genBearerToken(provider.expiration);
-  let insert = {
+  const insert = {
     email: profile.email.toLowerCase(),
     displayName: profile.displayName,
     picture: profile.picture,
@@ -64,8 +64,8 @@ function genInsert(provider, profile) {
 }
 
 module.exports = {
-  filterUserByEmailOrProviderId: filterUserByEmailOrProviderId,
-  genBearerToken: genBearerToken,
-  genUpdate: genUpdate,
-  genInsert: genInsert
+  filterUserByEmailOrProviderId,
+  genBearerToken,
+  genUpdate,
+  genInsert
 };

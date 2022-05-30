@@ -6,35 +6,21 @@ const createObjectId = require('../../../../lib/modules/createObjectId');
 const permissions = require('../modules/permissions');
 
 // Helper functions
-const getDocUsersList = doc =>
-  Object.keys(doc ? doc.users : []).map(k => doc.users[k]);
+const getDocUsersList = doc => Object.keys(doc ? doc.users : []).map(k => doc.users[k]);
 const getRequestedStatesFromQuery = (resource, query) => {
   return query.states ? query.states.split(',') : Object.keys(resource.states);
 };
 
-module.exports.getDocuments = function(
-  resource,
-  filter,
-  user,
-  query,
-  state,
-  sort,
-  pagination,
-  resources
-) {
+module.exports.getDocuments = function(resource, filter, user, query, state, sort, pagination, resources) {
   const queryBuilderOptions = {
-    resource: resource,
-    user: user,
-    query: query,
-    state: state
+    resource,
+    user,
+    query,
+    state
   };
   const filterState = {};
   filterState[`states.${state}`] = { $exists: true };
-  const dbQuery = Object.assign(
-    filterState,
-    filter,
-    builder.find(queryBuilderOptions)
-  );
+  const dbQuery = Object.assign(filterState, filter, builder.find(queryBuilderOptions));
 
   const dbFields = {
     _id: 1,
@@ -80,10 +66,7 @@ module.exports.getDocuments = function(
       {
         $addFields: {
           [`states.${state}.data`]: {
-            $mergeObjects: [
-              `$parent.states.${state}.data`,
-              `$$ROOT.states.${state}.data`
-            ]
+            $mergeObjects: [`$parent.states.${state}.data`, `$$ROOT.states.${state}.data`]
           }
         }
       }
@@ -124,7 +107,7 @@ module.exports.getDocuments = function(
     ? resource.collection.find(dbQuery, { projection: dbFields })
     : resource.collection.aggregate(pipeline);
   const requestedStates = getRequestedStatesFromQuery(resource, query);
-  let result = {};
+  const result = {};
   return new Promise((resolve, reject) => {
     paginateCursor(cursor, pagination)
       .then(info => {
@@ -142,32 +125,20 @@ module.exports.getDocuments = function(
           result.nav.next = info.page + 1;
         }
         if (sort) {
-          sortCursor(
-            cursor,
-            sort,
-            sort.indexOf('data') === 0 ? 'states.{}.data.'.format(state) : ''
-          );
+          // eslint-disable-next-line indexof/no-indexof
+          sortCursor(cursor, sort, sort.indexOf('data') === 0 ? 'states.{}.data.'.format(state) : '');
         }
         return cursor.toArray();
       })
       .then(docs => {
         result.docs = docs.map(doc => {
           const currentState = doc.states[state] || {};
-          const allowedStates = permissions.getAllowedStatesFromDocForUser(
-            user,
-            resource,
-            'GET',
-            doc
-          );
-          const states = permissions.filterDocumentStates(
-            doc,
-            allowedStates,
-            requestedStates
-          );
+          const allowedStates = permissions.getAllowedStatesFromDocForUser(user, resource, 'GET', doc);
+          const states = permissions.filterDocumentStates(doc, allowedStates, requestedStates);
           const returnData = {
             id: doc._id,
-            state: state,
-            states: states,
+            state,
+            states,
             createdAt: currentState.createdAt,
             createdBy: currentState.createdBy,
             data: currentState.data || {}
@@ -180,13 +151,7 @@ module.exports.getDocuments = function(
           }
           return returnData;
         });
-        return embedDocs.many(
-          resource,
-          query.embed,
-          user,
-          result.docs,
-          resources
-        );
+        return embedDocs.many(resource, query.embed, user, result.docs, resources);
       })
       .then(() => {
         return resolve(result);
@@ -197,14 +162,7 @@ module.exports.getDocuments = function(
   });
 };
 
-module.exports.createDocument = function(
-  resource,
-  data,
-  state,
-  user,
-  parentId,
-  groups
-) {
+module.exports.createDocument = function(resource, data, state, user, parentId, groups) {
   return new Promise((resolve, reject) => {
     builder
       .create({
@@ -233,7 +191,7 @@ module.exports.createDocument = function(
         resource.collection.insertOne(doc, (err, result) => {
           if (err) return reject(err);
           resolve({
-            state: state,
+            state,
             id: result.insertedId,
             ...doc.states[state]
           });
@@ -249,10 +207,10 @@ module.exports.setDocument = function(resource, filter, data, state, user) {
   return new Promise((resolve, reject) => {
     builder
       .update({
-        resource: resource,
-        data: data,
-        state: state,
-        user: user
+        resource,
+        data,
+        state,
+        user
       })
       .then(update => {
         resource.collection.updateOne(filter, update, (err, result) => {
@@ -263,8 +221,8 @@ module.exports.setDocument = function(resource, filter, data, state, user) {
           }
           resolve({
             id: filter._id,
-            state: state,
-            data: data
+            state,
+            data
           });
         });
       })
@@ -284,19 +242,12 @@ module.exports.patchDocument = async (resource, filter, data, state, user) => {
 
   return {
     id: filter._id,
-    state: state,
+    state,
     data: updateDoc.value.states[state].data
   };
 };
 
-module.exports.getDocument = function(
-  resource,
-  filter,
-  query,
-  user,
-  state,
-  resources
-) {
+module.exports.getDocument = function(resource, filter, query, user, state, resources) {
   const requestedStates = getRequestedStatesFromQuery(resource, query);
   const projection = { _id: 1, states: 1, users: 1, groups: 1 };
   const match = { ...filter };
@@ -320,11 +271,9 @@ module.exports.getDocument = function(
           resource,
           user
         });
-        embedDocs
-          .one(resource, query.embed, user, returnValue.data, resources)
-          .then(doc => {
-            resolve(returnValue);
-          });
+        embedDocs.one(resource, query.embed, user, returnValue.data, resources).then(doc => {
+          resolve(returnValue);
+        });
       });
     });
   } else {
@@ -355,10 +304,7 @@ module.exports.getDocument = function(
       {
         $addFields: {
           [`states.${state}.data`]: {
-            $mergeObjects: [
-              `$parent.states.${state}.data`,
-              `$$ROOT.states.${state}.data`
-            ]
+            $mergeObjects: [`$parent.states.${state}.data`, `$$ROOT.states.${state}.data`]
           }
         }
       },
@@ -386,9 +332,7 @@ module.exports.getDocument = function(
             resource,
             user
           });
-          embedDocs
-            .one(resource, query.embed, user, returnValue.data, resources)
-            .then(doc => resolve(returnValue));
+          embedDocs.one(resource, query.embed, user, returnValue.data, resources).then(doc => resolve(returnValue));
         })
         .catch(err => {
           reject(err);
@@ -399,16 +343,12 @@ module.exports.getDocument = function(
 
 module.exports.getDocumentUsers = function(resource, filter) {
   return new Promise((resolve, reject) => {
-    resource.collection.findOne(
-      filter,
-      { projection: { users: 1 } },
-      (err, doc) => {
-        if (err) {
-          return reject(err);
-        }
-        return resolve(getDocUsersList(doc));
+    resource.collection.findOne(filter, { projection: { users: 1 } }, (err, doc) => {
+      if (err) {
+        return reject(err);
       }
-    );
+      return resolve(getDocUsersList(doc));
+    });
   });
 };
 
@@ -427,18 +367,13 @@ module.exports.addUserToDocument = function(resource, filter, userDetails) {
         $set: { [`users.${userDetails.userId}`]: newUser }
       };
       const options = { returnDocument: 'after', projection: { users: 1 } };
-      resource.collection.findOneAndUpdate(
-        filter,
-        ops,
-        options,
-        (err, result) => {
-          if (err) return reject(err);
-          if (!result.value) {
-            return reject(new Error('Not Found'));
-          }
-          resolve(getDocUsersList(result.value));
+      resource.collection.findOneAndUpdate(filter, ops, options, (err, result) => {
+        if (err) return reject(err);
+        if (!result.value) {
+          return reject(new Error('Not Found'));
         }
-      );
+        resolve(getDocUsersList(result.value));
+      });
     });
   });
 };
@@ -447,18 +382,13 @@ module.exports.removeUserFromDocument = function(resource, filter, userId, db) {
   const removeUserFromDoc = new Promise((resolve, reject) => {
     const ops = { $unset: { [`users.${userId}`]: 1 } };
     const options = { returnDocument: 'after', projection: { users: 1 } };
-    resource.collection.findOneAndUpdate(
-      filter,
-      ops,
-      options,
-      (err, result) => {
-        if (err) return reject(err);
-        if (!result.value) {
-          return reject(new Error('Not Found'));
-        }
-        resolve(getDocUsersList(result.value));
+    resource.collection.findOneAndUpdate(filter, ops, options, (err, result) => {
+      if (err) return reject(err);
+      if (!result.value) {
+        return reject(new Error('Not Found'));
       }
-    );
+      resolve(getDocUsersList(result.value));
+    });
   });
   const groups = [`${resource.label}_${filter._id}`];
   const removeGroupFromUser = new Promise((resolve, reject) => {
@@ -470,18 +400,10 @@ module.exports.removeUserFromDocument = function(resource, filter, userId, db) {
     });
   });
 
-  return Promise.all([removeUserFromDoc, removeGroupFromUser]).then(
-    values => values[0]
-  );
+  return Promise.all([removeUserFromDoc, removeGroupFromUser]).then(values => values[0]);
 };
 
-module.exports.setDocumentState = function(
-  resource,
-  filter,
-  fromState,
-  toState,
-  user
-) {
+module.exports.setDocumentState = function(resource, filter, fromState, toState, user) {
   return new Promise((resolve, reject) => {
     const doSetState = function(document) {
       builder
@@ -489,8 +411,8 @@ module.exports.setDocumentState = function(
           doc: document,
           from: fromState,
           to: toState,
-          resource: resource,
-          user: user
+          resource,
+          user
         })
         .then(ops => {
           resource.collection.updateOne(filter, ops, (err, result) => {
@@ -527,22 +449,9 @@ module.exports.setDocumentState = function(
 
     resource.collection.findOne(filter, (err, document) => {
       if (err) return reject(err);
-      const allowedPutStates = permissions.getAllowedStatesFromDocForUser(
-        user,
-        resource,
-        'PUT',
-        document
-      );
-      const allowedGetStates = permissions.getAllowedStatesFromDocForUser(
-        user,
-        resource,
-        'GET',
-        document
-      );
-      if (
-        allowedPutStates.includes(toState) &&
-        allowedGetStates.includes(fromState)
-      ) {
+      const allowedPutStates = permissions.getAllowedStatesFromDocForUser(user, resource, 'PUT', document);
+      const allowedGetStates = permissions.getAllowedStatesFromDocForUser(user, resource, 'GET', document);
+      if (allowedPutStates.includes(toState) && allowedGetStates.includes(fromState)) {
         doSetState(document.states[fromState].data);
       } else {
         reject(new Error('Unauthorized'));
@@ -568,25 +477,17 @@ module.exports.deleteDocument = function(resource, filter) {
             if (!child.states[stateName]) {
               child.states[stateName] = docToDelete.states[stateName];
             } else {
-              child.states[stateName].data = Object.assign(
-                docToDelete.states[stateName].data,
-                child.states[stateName].data
-              );
+              child.states[stateName].data = Object.assign(docToDelete.states[stateName].data, child.states[stateName].data);
             }
             delete child.parentId;
-            if (!!docToDelete.parentId) {
+            if (docToDelete.parentId) {
               child.parentId = docToDelete.parentId;
             }
             return child;
           });
         });
 
-        await Promise.all(
-          children.map(
-            async child =>
-              await resource.collection.replaceOne({ _id: child._id }, child)
-          )
-        );
+        await Promise.all(children.map(async child => await resource.collection.replaceOne({ _id: child._id }, child)));
         await resource.collection.deleteOne(filter);
         return {};
       })
@@ -609,26 +510,17 @@ const getDocumentChildren = async (documentId, resource) => {
 const prepareGetDocument = settings => {
   const { doc, state, permissions, requestedStates, resource, user } = settings;
   const currentState = doc.states[state] || {};
-  const allowedStates = permissions.getAllowedStatesFromDocForUser(
-    user,
-    resource,
-    'GET',
-    doc
-  );
+  const allowedStates = permissions.getAllowedStatesFromDocForUser(user, resource, 'GET', doc);
 
   return {
     id: doc._id,
-    state: state,
+    state,
     createdAt: currentState.createdAt,
     createdBy: currentState.createdBy,
     modifiedAt: currentState.modifiedAt,
     modifiedBy: currentState.modifiedBy,
     data: currentState.data || {},
     groups: doc.groups || [],
-    states: permissions.filterDocumentStates(
-      doc,
-      allowedStates,
-      requestedStates
-    )
+    states: permissions.filterDocumentStates(doc, allowedStates, requestedStates)
   };
 };

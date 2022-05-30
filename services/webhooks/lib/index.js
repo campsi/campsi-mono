@@ -1,3 +1,4 @@
+/* eslint-disable space-before-function-paren */
 const CampsiService = require('../../../lib/service');
 const { ObjectId } = require('mongodb');
 const debug = require('debug')('campsi:service-webhooks');
@@ -11,9 +12,7 @@ class WebhooksService extends CampsiService {
       this.collection = this.db.collection(`webhooks.${this.path}`);
       this.router.use((req, res, next) => {
         if (!req.user) {
-          res
-            .status(403)
-            .json({ message: 'webhooks require a valid auth token' });
+          res.status(403).json({ message: 'webhooks require a valid auth token' });
         }
         req.service = this;
         next();
@@ -21,20 +20,12 @@ class WebhooksService extends CampsiService {
       this.router.get('/', this.getWebhooks.bind(this));
       this.router.post('/', this.createWebhook.bind(this));
       this.router.delete('/:id', this.deleteWebhook.bind(this));
-      this.server.on(
-        `${this.options.channel || 'webhooks'}/#`,
-        this.handleEvent.bind(this)
-      );
-      debug(
-        `service initialized, listening to channel "${this.options.channel}"`
-      );
-      this.collection.createIndex(
-        { uri: 1, event: 1 },
-        { unique: true },
-        resolve
-      );
+      this.server.on(`${this.options.channel || 'webhooks'}/#`, this.handleEvent.bind(this));
+      debug(`service initialized, listening to channel "${this.options.channel}"`);
+      this.collection.createIndex({ uri: 1, event: 1 }, { unique: true }, resolve);
     });
   }
+
   handleEvent(payload, params, event) {
     this.collection
       .find({
@@ -57,25 +48,15 @@ class WebhooksService extends CampsiService {
             request(webhook.uri, options, (err, res, body) => {
               if (err || String(res.statusCode)[0] !== '2') {
                 this.collection
-                  .findOneAndUpdate(
-                    { _id: webhook._id },
-                    { $inc: { failCount: 1 } },
-                    { returnDocument: 'after' }
-                  )
+                  .findOneAndUpdate({ _id: webhook._id }, { $inc: { failCount: 1 } }, { returnDocument: 'after' })
                   .then(result => {
-                    debug(
-                      `failed ${result.value._id}, ${result.value.failCount} failure so far`
-                    );
+                    debug(`failed ${result.value._id}, ${result.value.failCount} failure so far`);
                   })
                   .catch(updateError => {
                     debug('error updating webhook', updateError);
                   });
               } else {
-                debug(
-                  `Received HTTP response:\n> status: ${
-                    res.statusCode
-                  }\n> body: ${JSON.stringify(body)}`
-                );
+                debug(`Received HTTP response:\n> status: ${res.statusCode}\n> body: ${JSON.stringify(body)}`);
               }
               cb();
             });
@@ -89,11 +70,10 @@ class WebhooksService extends CampsiService {
         debug(error);
       });
   }
+
   getWebhooks(req, res) {
     this.collection
-      .find(
-        this.options.requireAuth ? { createdBy: ObjectId(req.user._id) } : {}
-      )
+      .find(this.options.requireAuth ? { createdBy: ObjectId(req.user._id) } : {})
       .toArray()
       .then(webhooks => {
         res.json({ webhooks });
@@ -102,6 +82,7 @@ class WebhooksService extends CampsiService {
         res.status(500).json({ error });
       });
   }
+
   createWebhook(req, res) {
     const doc = {
       createdAt: new Date(),
@@ -123,6 +104,7 @@ class WebhooksService extends CampsiService {
         res.status(500).json({ error });
       });
   }
+
   deleteWebhook(req, res) {
     const filter = {
       _id: ObjectId(req.params.id)
@@ -140,6 +122,7 @@ class WebhooksService extends CampsiService {
       });
   }
 }
+
 WebhooksService.defaults = {
   requireAuth: true,
   channel: 'webhooks'

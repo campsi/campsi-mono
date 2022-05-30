@@ -1,3 +1,4 @@
+/* eslint-disable array-callback-return */
 const CampsiService = require('../../../lib/service');
 const param = require('./param');
 const handlers = require('./handlers');
@@ -6,7 +7,6 @@ const $RefParser = require('json-schema-ref-parser');
 const debug = require('debug')('campsi:versioned-docs');
 const csdAssign = require('../../../lib/keywords/csdAssign');
 const csdVisibility = require('../../../lib/keywords/csdVisibility');
-const createError = require('http-errors');
 
 module.exports = class VersionedDocsService extends CampsiService {
   initialize() {
@@ -25,81 +25,46 @@ module.exports = class VersionedDocsService extends CampsiService {
     this.router.postAsync('/:resource/:id/users', handlers.postDocUser);
     this.router.deleteAsync('/:resource/:id/users/:user', handlers.delDocUser);
     this.router.getAsync('/:resource/:id/revisions/', handlers.getDocRevisions);
-    this.router.getAsync(
-      '/:resource/:id/revisions/:revision',
-      handlers.getDocRevision
-    );
-    this.router.postAsync(
-      '/:resource/:id/revisions/:revision[:]set-as-version',
-      handlers.setDocVersion
-    );
+    this.router.getAsync('/:resource/:id/revisions/:revision', handlers.getDocRevision);
+    this.router.postAsync('/:resource/:id/revisions/:revision[:]set-as-version', handlers.setDocVersion);
     this.router.getAsync('/:resource/:id/versions/', handlers.getDocVersions);
-    this.router.getAsync(
-      '/:resource/:id/versions/:version',
-      handlers.getDocVersion
-    );
+    this.router.getAsync('/:resource/:id/versions/:version', handlers.getDocVersion);
     this.router.getAsync('/:resource/:id', handlers.getDoc);
     this.router.postAsync('/:resource', handlers.postDoc);
     this.router.patchAsync('/:resource/:id', handlers.updateDoc);
     this.router.deleteAsync('/:resource/:id', handlers.delDoc);
 
-    let ajvWriter = new Ajv({ useAssign: true });
+    const ajvWriter = new Ajv({ useAssign: true });
     csdAssign(ajvWriter);
-    let ajvReader = new Ajv({ useVisibility: true });
+    const ajvReader = new Ajv({ useVisibility: true });
     csdVisibility(ajvReader);
     try {
       return Promise.all(
-        Object.entries(service.options.resources).map(
-          async ([resName, resource]) => {
-            resource = {
-              ...resource,
-              ...service.options.classes[resource.class]
-            };
-            ['current', 'revision', 'version'].map(col => {
-              resource[`${col}Collection`] = server.db.collection(
-                `${service.options.dbPrefix}.${resName}-${col}`
-              );
-            });
-            const relIndexes = Object.entries(resource.rels || {}).map(
-              ([name, rel]) => {
-                return { key: { [`${rel.path}`]: 1 } };
-              }
-            );
-            await resource.currentCollection.createIndexes([
-              { key: { 'users.$**': 1 } },
-              { key: { revision: 1 } },
-              ...relIndexes
-            ]);
+        Object.entries(service.options.resources).map(async ([resName, resource]) => {
+          resource = {
+            ...resource,
+            ...service.options.classes[resource.class]
+          };
+          ['current', 'revision', 'version'].map(col => {
+            resource[`${col}Collection`] = server.db.collection(`${service.options.dbPrefix}.${resName}-${col}`);
+          });
+          const relIndexes = Object.entries(resource.rels || {}).map(([, rel]) => {
+            return { key: { [`${rel.path}`]: 1 } };
+          });
+          await resource.currentCollection.createIndexes([{ key: { 'users.$**': 1 } }, { key: { revision: 1 } }, ...relIndexes]);
 
-            await resource.revisionCollection.createIndex(
-              { currentId: 1, revision: 1 },
-              { unique: true }
-            );
+          await resource.revisionCollection.createIndex({ currentId: 1, revision: 1 }, { unique: true });
 
-            await resource.versionCollection.createIndex(
-              { currentId: 1, version: 1 },
-              { unique: true }
-            );
-            await resource.versionCollection.createIndex(
-              { currentId: 1, revision: 1 },
-              { unique: true }
-            );
-            await resource.versionCollection.createIndex(
-              { currentId: 1, tag: 1 },
-              { unique: true }
-            );
+          await resource.versionCollection.createIndex({ currentId: 1, version: 1 }, { unique: true });
+          await resource.versionCollection.createIndex({ currentId: 1, revision: 1 }, { unique: true });
+          await resource.versionCollection.createIndex({ currentId: 1, tag: 1 }, { unique: true });
 
-            const schema = await $RefParser.dereference(
-              service.config.optionsBasePath + '/',
-              resource.schema,
-              {}
-            );
-            resource.schema = schema;
-            resource.validate = ajvWriter.compile(schema);
-            resource.filter = ajvReader.compile(schema);
-            return (service.options.resources[`${resName}`] = resource);
-          }
-        )
+          const schema = await $RefParser.dereference(service.config.optionsBasePath + '/', resource.schema, {});
+          resource.schema = schema;
+          resource.validate = ajvWriter.compile(schema);
+          resource.filter = ajvReader.compile(schema);
+          return (service.options.resources[`${resName}`] = resource);
+        })
       );
     } catch (e) {
       debug(e);
@@ -107,7 +72,7 @@ module.exports = class VersionedDocsService extends CampsiService {
   }
 
   describe() {
-    let desc = super.describe();
+    const desc = super.describe();
     desc.resources = {};
     desc.classes = this.options.classes;
     Object.entries(this.options.resources).map(([path, resource]) => {

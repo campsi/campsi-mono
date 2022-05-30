@@ -114,9 +114,17 @@ module.exports.putDoc = function(req, res) {
 
 module.exports.patchDoc = async (req, res) => {
   try {
+    const originalDoc = await documentService.getDocument(
+      req.resource,
+      req.filter,
+      req.query,
+      req.user,
+      req.state,
+      req.options.resources
+    );
     const result = await documentService.patchDocument(req.resource, req.filter, req.body, req.state, req.user);
     helpers.json(res, result);
-    req.service.emit('document/updated', getEmitPayload(req, { data: req.body }));
+    req.service.emit('document/patched', getEmitPayload(req, { data: req.body, originalDocData: originalDoc.data }));
   } catch (error) {
     return dispatchError(res, error);
   }
@@ -133,7 +141,7 @@ module.exports.getDoc = function(req, res) {
 module.exports.delDoc = function(req, res) {
   documentService
     .deleteDocument(req.resource, req.filter)
-    .then((result) => {
+    .then(result => {
       result.deletedCount === 0 ? helpers.notFound(res, result) : helpers.json(res, result);
     })
     .then(() => req.service.emit('document/deleted', getEmitPayload(req)))

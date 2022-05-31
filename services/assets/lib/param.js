@@ -1,3 +1,4 @@
+/* eslint-disable node/no-unpublished-require */
 const helpers = require('../../../lib/modules/responseHelpers');
 const createObjectId = require('../../../lib/modules/createObjectId');
 const debug = require('debug')('campsi:services:assets');
@@ -19,9 +20,7 @@ module.exports.attachAsset = function(req, res, next, id) {
 };
 
 module.exports.attachStorage = function(req, res, next) {
-  req.storage = req.asset.storage
-    ? req.service.options.storages[req.asset.storage]
-    : req.service.options.getStorage();
+  req.storage = req.asset.storage ? req.service.options.storages[req.asset.storage] : req.service.options.getStorage();
   if (!req.storage) {
     return helpers.error(res, {
       message: 'undefined storage',

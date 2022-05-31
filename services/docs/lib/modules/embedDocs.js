@@ -1,3 +1,4 @@
+/* eslint-disable node/no-unpublished-require */
 const async = require('async');
 const ObjectId = require('mongodb').ObjectId;
 const findReferences = require('../../../../lib/modules/findReferences');

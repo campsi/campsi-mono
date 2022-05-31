@@ -1,3 +1,4 @@
+/* eslint-disable array-callback-return */
 const { diff } = require('just-diff');
 const { ObjectId } = require('mongodb');
 const builder = require('../modules/queryBuilder');
@@ -7,23 +8,13 @@ const createObjectId = require('../../../../lib/modules/createObjectId');
 const createError = require('http-errors');
 
 // Helper functions
-const getDocUsersList = doc =>
-  Object.keys(doc ? doc.users : []).map(k => doc.users[k]);
+const getDocUsersList = doc => Object.keys(doc ? doc.users : []).map(k => doc.users[k]);
 
 const getDocumentDataOnly = doc => {
-  const {
-    _id,
-    revision,
-    users,
-    groups,
-    createdAt,
-    createdBy,
-    updatedAt,
-    updatedBy,
-    ...data
-  } = doc;
+  const { _id, revision, users, groups, createdAt, createdBy, updatedAt, updatedBy, ...data } = doc;
 
-  // ObjectId are stored as ObjectId in DB, but related properties are received as string in payload. We need them all as string for further diff
+  // ObjectId are stored as ObjectId in DB, but related properties are received as string in payload.
+  // We need them all as string for further diff
   Object.entries(data).map(([key, value]) => {
     if (value instanceof ObjectId) {
       data[key] = value.toString();
@@ -181,23 +172,16 @@ const getDocumentVersionsPipeline = (resource, filter) => {
   ];
 };
 
-module.exports.getDocuments = async (
-  resource,
-  filter,
-  user,
-  query,
-  sort,
-  pagination
-) => {
+module.exports.getDocuments = async (resource, filter, user, query, sort, pagination) => {
   const queryBuilderOptions = {
-    resource: resource,
-    user: user,
-    query: query
+    resource,
+    user,
+    query
   };
 
   const dbQuery = { ...filter, ...builder.find(queryBuilderOptions) };
 
-  let aggregate = query?.with?.includes('creator') || false;
+  const aggregate = query?.with?.includes('creator') || false;
 
   const pipeline = [{ $match: dbQuery }];
 
@@ -205,16 +189,11 @@ module.exports.getDocuments = async (
     pipeline.push(...getDocumentCreatorPipeline());
   }
 
-  const cursor = !aggregate
-    ? resource.currentCollection.find(dbQuery)
-    : resource.currentCollection.aggregate(pipeline);
+  const cursor = !aggregate ? resource.currentCollection.find(dbQuery) : resource.currentCollection.aggregate(pipeline);
 
   let result = {};
 
-  const { count, page, lastPage, perPage } = await paginateCursor(
-    cursor,
-    pagination
-  );
+  const { count, page, lastPage, perPage } = await paginateCursor(cursor, pagination);
   result = {
     ...result,
     count,
@@ -250,21 +229,18 @@ module.exports.createDocument = async (resource, data, user, groups) => {
 };
 
 module.exports.updateDocument = async (resource, filter, data, user, etag) => {
-  if (!data.revision)
-    throw new createError.BadRequest('You must provide a revision');
+  if (!data.revision) throw new createError.BadRequest('You must provide a revision');
 
   const originalDoc = await resource.currentCollection.findOne(filter);
   if (!originalDoc) throw new createError.NotFound('Document not found');
 
-  if (parseInt(etag) !== originalDoc.revision)
-    throw new createError.PreconditionFailed(
-      'Precondition Failed: ETag revision mismatch'
-    );
+  if (parseInt(etag) !== originalDoc.revision) {
+    throw new createError.PreconditionFailed('Precondition Failed: ETag revision mismatch');
+  }
 
-  if (data.revision !== originalDoc.revision)
-    throw new createError.BadRequest(
-      `The revision you provided is incorrect. Current revision: ${originalDoc.revision}`
-    );
+  if (data.revision !== originalDoc.revision) {
+    throw new createError.BadRequest(`The revision you provided is incorrect. Current revision: ${originalDoc.revision}`);
+  }
 
   const originalDocData = getDocumentDataOnly(originalDoc);
   const updatedData = getDocumentDataOnly(data);
@@ -283,23 +259,18 @@ module.exports.updateDocument = async (resource, filter, data, user, etag) => {
   });
 
   const previousRevisionDoc = { currentId: originalDoc._id, ...original };
-  const previousRevisionInsert = await resource.revisionCollection.insertOne(
-    previousRevisionDoc
-  );
+  const previousRevisionInsert = await resource.revisionCollection.insertOne(previousRevisionDoc);
   // at this point, if no error is thrown, that means that we can go on & replace the old current doc with the new one
   let failed;
   try {
-    const replacedDocument = await resource.currentCollection.replaceOne(
-      filter,
-      updatedDocument
-    );
-    failed =
-      replacedDocument.modifiedCount === 0 ? 'no document was replaced' : false;
+    const replacedDocument = await resource.currentCollection.replaceOne(filter, updatedDocument);
+    failed = replacedDocument.modifiedCount === 0 ? 'no document was replaced' : false;
   } catch (e) {
     failed = e.message;
   }
   if (failed) {
-    // somehow the replacement has failed: we need to delete the previously inserted doc in revision collection, to revert back to the initial state
+    // somehow the replacement has failed
+    // we need to delete the previously inserted doc in revision collection, to revert back to the initial state
     await resource.revisionCollection.deleteOne({
       _id: previousRevisionInsert.insertedId
     });
@@ -309,7 +280,7 @@ module.exports.updateDocument = async (resource, filter, data, user, etag) => {
 };
 
 module.exports.getDocument = async (resource, filter, query) => {
-  let aggregate = query?.with?.includes('creator') || false;
+  const aggregate = query?.with?.includes('creator') || false;
   if (!aggregate) {
     return await resource.currentCollection.findOne(filter);
   }
@@ -319,25 +290,16 @@ module.exports.getDocument = async (resource, filter, query) => {
 };
 
 module.exports.getDocumentRevisions = async (resource, filter, query) => {
-  return await resource.revisionCollection
-    .find({ currentId: filter._id })
-    .toArray();
+  return await resource.revisionCollection.find({ currentId: filter._id }).toArray();
 };
 
-module.exports.getDocumentRevision = async (
-  resource,
-  filter,
-  query,
-  revision,
-  targetCollection = 'revision'
-) => {
+module.exports.getDocumentRevision = async (resource, filter, query, revision, targetCollection = 'revision') => {
   const revisionId = createObjectId(revision);
   if (!revisionId && !Number.isInteger(parseInt(revision))) {
     throw new Error('The revision you provided is invalid');
   }
   const revFilter = {};
-  revFilter[`${targetCollection === 'revision' ? 'currentId' : '_id'}`] =
-    filter._id;
+  revFilter[`${targetCollection === 'revision' ? 'currentId' : '_id'}`] = filter._id;
 
   if (revisionId) {
     revFilter._id = revisionId;
@@ -352,18 +314,11 @@ module.exports.getDocumentVersions = async (resource, filter, query) => {
   if (query.tag) {
     verFilter.tag = query.tag;
   }
-  const versions = await resource.versionCollection
-    .aggregate(getDocumentVersionsPipeline(resource, verFilter))
-    .toArray();
-  return !!query.tag ? versions[0] : versions;
+  const versions = await resource.versionCollection.aggregate(getDocumentVersionsPipeline(resource, verFilter)).toArray();
+  return query.tag ? versions[0] : versions;
 };
 
-module.exports.getDocumentVersion = async (
-  resource,
-  filter,
-  query,
-  version
-) => {
+module.exports.getDocumentVersion = async (resource, filter, query, version) => {
   const versionId = createObjectId(version);
   const versionNumber = parseInt(version);
   if (!versionId && !Number.isInteger(versionNumber)) {
@@ -375,50 +330,27 @@ module.exports.getDocumentVersion = async (
   } else {
     verFilter.version = parseInt(version);
   }
-  const doc = await resource.versionCollection
-    .aggregate(getDocumentVersionsPipeline(resource, verFilter))
-    .toArray();
+  const doc = await resource.versionCollection.aggregate(getDocumentVersionsPipeline(resource, verFilter)).toArray();
   return doc[0];
 };
 
-module.exports.setDocumentVersion = async (
-  resource,
-  filter,
-  query,
-  revision,
-  data,
-  user
-) => {
+module.exports.setDocumentVersion = async (resource, filter, query, revision, data, user) => {
   // first we'll check if the requested revision is in current collection
-  const currentDoc = await this.getDocumentRevision(
-    resource,
-    filter,
-    query,
-    revision,
-    'current'
-  );
+  const currentDoc = await this.getDocumentRevision(resource, filter, query, revision, 'current');
 
-  const revisionDoc = await this.getDocumentRevision(
-    resource,
-    filter,
-    query,
-    revision
-  );
-  if (!currentDoc && !revisionDoc)
-    throw new createError.NotFound('Document not found');
+  const revisionDoc = await this.getDocumentRevision(resource, filter, query, revision);
+  if (!currentDoc && !revisionDoc) throw new createError.NotFound('Document not found');
 
   const doc = currentDoc ?? revisionDoc;
   doc.currentId = filter._id;
 
-  const lastVersionDoc = await resource.versionCollection.findOne(
-    { currentId: filter._id },
-    { sort: { version: -1 } }
-  );
+  const lastVersionDoc = await resource.versionCollection.findOne({ currentId: filter._id }, { sort: { version: -1 } });
 
-  if (lastVersionDoc?.revision >= parseInt(revision))
+  if (lastVersionDoc?.revision >= parseInt(revision)) {
     throw new createError.BadRequest(
       `The revision you provided (${revision}) must be greater than the last version revision (${lastVersionDoc.revision})`
     );
+  }
 
   const version = {
     currentId: filter._id,
@@ -457,35 +389,21 @@ module.exports.addUserToDocument = async (resource, filter, userDetails) => {
     $set: { [`users.${userDetails.userId}`]: newUser }
   };
   const options = { returnDocument: 'after', projection: { users: 1 } };
-  const doc = await resource.currentCollection.findOneAndUpdate(
-    filter,
-    ops,
-    options
-  );
+  const doc = await resource.currentCollection.findOneAndUpdate(filter, ops, options);
   return getDocUsersList(doc.value);
 };
 
-module.exports.removeUserFromDocument = async (
-  resource,
-  filter,
-  userId,
-  db
-) => {
+module.exports.removeUserFromDocument = async (resource, filter, userId, db) => {
   const removeUserFromDoc = new Promise((resolve, reject) => {
     const ops = { $unset: { [`users.${userId}`]: 1 } };
     const options = { returnDocument: 'after', projection: { users: 1 } };
-    resource.currentCollection.findOneAndUpdate(
-      filter,
-      ops,
-      options,
-      (err, result) => {
-        if (err) return reject(err);
-        if (!result.value) {
-          return reject(new createError.NotFound('Document not found'));
-        }
-        resolve(getDocUsersList(result.value));
+    resource.currentCollection.findOneAndUpdate(filter, ops, options, (err, result) => {
+      if (err) return reject(err);
+      if (!result.value) {
+        return reject(new createError.NotFound('Document not found'));
       }
-    );
+      resolve(getDocUsersList(result.value));
+    });
   });
 
   const removeGroupFromUser = new Promise((resolve, reject) => {
@@ -499,9 +417,7 @@ module.exports.removeUserFromDocument = async (
     });
   });
 
-  return await Promise.all([removeUserFromDoc, removeGroupFromUser]).then(
-    values => values[0]
-  );
+  return await Promise.all([removeUserFromDoc, removeGroupFromUser]).then(values => values[0]);
 };
 
 module.exports.deleteDocument = async (resource, filter, query) => {

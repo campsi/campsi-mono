@@ -7,15 +7,13 @@ module.exports = (config, services, context) => done => {
   const mongoUri = mongoUriBuilder(config.campsi.mongo);
   MongoClient.connect(mongoUri, (err, client) => {
     if (err) throw err;
-    let db = client.db(config.campsi.mongo.database);
+    const db = client.db(config.campsi.mongo.database);
     db.dropDatabase(() => {
       client.close();
       context.campsi = new CampsiServer(config.campsi);
       Object.entries(services).map(([name, service]) => {
-        context.campsi.mount(
-          name.toLowerCase(),
-          new service(config.services[name.toLowerCase()])
-        );
+        // eslint-disable-next-line new-cap
+        return context.campsi.mount(name.toLowerCase(), new service(config.services[name.toLowerCase()]));
       });
 
       context.campsi.on('campsi/ready', () => {

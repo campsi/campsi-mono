@@ -1,3 +1,4 @@
+/* eslint-disable node/no-unsupported-features/es-syntax */
 const aws = require('aws-sdk');
 const AssetStorage = require('../storage');
 const { PassThrough } = require('stream');
@@ -11,27 +12,25 @@ const debug = require('debug')('campsi:assets:s3');
  */
 
 class S3AssetStorage extends AssetStorage {
-  get dataPath () {
+  get dataPath() {
     return this.options.dataPath;
   }
 
-  store (file) {
+  store(file) {
     return new Promise(resolve => {
       resolve(this.createPassThrough(file));
     });
   }
 
-  getKey (file) {
+  getKey(file) {
     const now = new Date();
     let month = now.getMonth() + 1;
     month = month < 10 ? '0' + month : month.toString();
     const prefix = uuid();
-    return `${now.getFullYear().toString()}/${month}/${prefix}${
-      file.clientReportedFileExtension
-    }`;
+    return `${now.getFullYear().toString()}/${month}/${prefix}${file.clientReportedFileExtension}`;
   }
 
-  createPassThrough (file) {
+  createPassThrough(file) {
     const getPublicAssetURL = this.options.getPublicAssetURL;
     const s3 = new aws.S3({ ...this.options.credentials });
     const bucket = this.options.bucket;
@@ -44,10 +43,10 @@ class S3AssetStorage extends AssetStorage {
         len += chunk.length;
         buffer = Buffer.concat([buffer, chunk], len);
       })
-      .on('error', function handleError (err) {
+      .on('error', function handleError(err) {
         debug(err);
       })
-      .on('finish', function streamBuffered () {
+      .on('finish', function streamBuffered() {
         const self = this;
         s3.upload({
           Bucket: bucket,
@@ -56,7 +55,7 @@ class S3AssetStorage extends AssetStorage {
           ContentLength: file.size,
           Body: buffer
         })
-          .on('httpUploadProgress', function (ev) {
+          .on('httpUploadProgress', function(ev) {
             if (ev.total) file.uploadedSize = ev.total;
           })
           .send((err, data) => {
@@ -65,18 +64,13 @@ class S3AssetStorage extends AssetStorage {
             }
             file.s3 = data;
             file.url =
-              typeof getPublicAssetURL === 'function'
-                ? getPublicAssetURL({
-                  ...data,
-                  encodedKey: getKey(file)
-                })
-                : data.Location;
+              typeof getPublicAssetURL === 'function' ? getPublicAssetURL({ ...data, encodedKey: getKey(file) }) : data.Location;
             self.emit('uploadSuccess', file);
           });
       });
   }
 
-  deleteAsset (file) {
+  deleteAsset(file) {
     return new Promise((resolve, reject) => {
       this.s3.deleteObject(
         {
@@ -88,11 +82,11 @@ class S3AssetStorage extends AssetStorage {
     });
   }
 
-  getAssetURL (asset) {
+  getAssetURL(asset) {
     return asset.url;
   }
 
-  streamAsset (asset) {
+  streamAsset(asset) {
     const s3 = new aws.S3({ ...this.options.credentials });
     return s3
       .getObject({

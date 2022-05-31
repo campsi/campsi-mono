@@ -1,3 +1,5 @@
+/* eslint-disable node/no-unsupported-features/es-syntax */
+/* eslint-disable node/no-unpublished-require */
 const async = require('async');
 const debug = require('debug')('campsi:service:assets');
 const paginateCursor = require('../../../../lib/modules/paginateCursor');

@@ -48,7 +48,7 @@ module.exports.can = function can(user, resource, method, state) {
 
 module.exports.getAllowedStatesFromDocForUser = function(user, resource, method, doc) {
   const getPublicStates = () => {
-    const publicPermissions = resource.permissions['public'];
+    const publicPermissions = resource.permissions.public;
     const publicPermissionsStates = Object.keys(publicPermissions);
     return publicPermissionsStates.filter(stateName => isAllowedTo(publicPermissions[stateName], method));
   };

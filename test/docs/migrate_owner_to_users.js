@@ -27,13 +27,13 @@ const services = {
 // Helpers
 function createPizza(data, state, ownerId) {
   return new Promise(function(resolve, reject) {
-    let resource = campsi.services.get('docs').options.resources['pizzas'];
+    const resource = campsi.services.get('docs').options.resources.pizzas;
     builder
       .create({
         user: null,
-        data: data,
-        resource: resource,
-        state: state
+        data,
+        resource,
+        state
       })
       .then(doc => {
         doc.ownedBy = ownerId;
@@ -51,7 +51,7 @@ function createPizza(data, state, ownerId) {
 
 function getPizzaById(id) {
   return new Promise(function(resolve, reject) {
-    let resource = campsi.services.get('docs').options.resources['pizzas'];
+    const resource = campsi.services.get('docs').options.resources.pizzas;
     resource.collection.findOne({ _id: id }, (err, pizza) => {
       return err ? reject(err) : resolve(pizza);
     });
@@ -65,7 +65,7 @@ describe('CRUD', () => {
     const mongoUri = mongoUriBuilder(config.campsi.mongo);
     MongoClient.connect(mongoUri, (err, client) => {
       if (err) throw err;
-      let db = client.db(config.campsi.mongo.database);
+      const db = client.db(config.campsi.mongo.database);
       db.dropDatabase(() => {
         client.close();
         campsi = new CampsiServer(config.campsi);

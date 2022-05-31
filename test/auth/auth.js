@@ -11,7 +11,7 @@ const { btoa } = require('../../services/auth/lib/modules/base64');
 const createUser = require('../helpers/createUser');
 const debug = require('debug')('campsi:test');
 const setupBeforeEach = require('../helpers/setupBeforeEach');
-let expect = chai.expect;
+const expect = chai.expect;
 format.extend(String.prototype);
 chai.use(chaiHttp);
 chai.should();
@@ -30,7 +30,7 @@ const services = {
 };
 
 describe('Auth API', () => {
-  let context = {};
+  const context = {};
   beforeEach(setupBeforeEach(config, services, context));
   afterEach(done => {
     context.server.close(done);
@@ -149,7 +149,7 @@ describe('Auth API', () => {
             res.body.should.be.a('object');
             res.body.should.have.property('message');
             // bdd token must be undefined
-            let filter = {};
+            const filter = {};
             filter['token.value'] = token;
             campsi.db
               .collection('__users__')
@@ -172,7 +172,7 @@ describe('Auth API', () => {
     it('it shoud redirect on /me page on successful connection', done => {
       const campsi = context.campsi;
       createUser(chai, campsi, glenda).then(() => {
-        let state = btoa(
+        const state = btoa(
           JSON.stringify({
             redirectURI: '/auth/me'
           })
@@ -292,11 +292,7 @@ describe('Auth API', () => {
       createUser(chai, campsi, admin, true).then(adminToken => {
         campsi.db
           .collection('__users__')
-          .findOneAndUpdate(
-            { email: admin.email },
-            { $set: { isAdmin: true } },
-            { returnDocument: 'after' }
-          )
+          .findOneAndUpdate({ email: admin.email }, { $set: { isAdmin: true } }, { returnDocument: 'after' })
           .then(updateResult => {
             createUser(chai, campsi, glenda).then(userToken => {
               chai
@@ -312,14 +308,13 @@ describe('Auth API', () => {
                   res.body.should.be.a('array');
                   res.body.length.should.be.equal(2);
                   // glenda
-                  const userId = res.body.filter(
-                    u => u.email === glenda.email
-                  )[0]._id;
+                  const userId = res.body.filter(u => u.email === glenda.email)[0]._id;
                   chai
                     .request(campsi.app)
                     .get(`/auth/users/${userId}/access_token`)
                     .set('Authorization', `Bearer ${adminToken}`)
                     .end((err, res) => {
+                      debug(err);
                       debug(res.body);
                       res.should.have.status(200);
                       res.body.should.have.property('token');
@@ -333,7 +328,6 @@ describe('Auth API', () => {
   });
 
   describe('invitation', () => {
-    
     it('should create a new user', done => {
       const campsi = context.campsi;
       createUser(chai, campsi, glenda, true).then(token => {
@@ -384,15 +378,12 @@ describe('Auth API', () => {
               res.should.be.a('object');
               res.body.should.have.property('id');
               debug(res.body);
-              campsi.db
-                .collection('__users__')
-                .findOne({ email: robert.email }, (err, doc) => {
-                  if (err)
-                    return debug(`received an error from chai: ${err.message}`);
-                  doc.should.be.a('object');
-                  res.body.id.should.be.eq(doc._id.toString());
-                  done();
-                });
+              campsi.db.collection('__users__').findOne({ email: robert.email }, (err, doc) => {
+                if (err) return debug(`received an error from chai: ${err.message}`);
+                doc.should.be.a('object');
+                res.body.id.should.be.eq(doc._id.toString());
+                done();
+              });
             });
         });
     });
@@ -421,8 +412,7 @@ describe('Auth API', () => {
               data: { projectId: 'testProjectId' }
             })
             .end((err, res) => {
-              if (err)
-                return debug(`received an error from chai: ${err.message}`);
+              if (err) return debug(`received an error from chai: ${err.message}`);
               const invitationToken = res.body.invitationToken;
               chai
                 .request(campsi.app)
@@ -441,10 +431,7 @@ describe('Auth API', () => {
                   .post(`/auth/invitations/${invitationToken.value}`)
                   .set('Authorization', 'Bearer ' + glendaToken)
                   .end((err, res) => {
-                    if (err)
-                      return debug(
-                        `received an error from chai: ${err.message}`
-                      );
+                    if (err) return debug(`received an error from chai: ${err.message}`);
                     res.should.have.status(404);
                     done();
                   });

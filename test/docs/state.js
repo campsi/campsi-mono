@@ -14,7 +14,7 @@ const CampsiServer = require('campsi');
 const config = require('config');
 const builder = require('../../services/docs/lib/modules/queryBuilder');
 
-let should = chai.should();
+const should = chai.should();
 let campsi;
 let server;
 format.extend(String.prototype);
@@ -27,13 +27,13 @@ const services = {
 // Helpers
 function createPizza(data, state) {
   return new Promise(function(resolve, reject) {
-    let resource = campsi.services.get('docs').options.resources['pizzas'];
+    const resource = campsi.services.get('docs').options.resources.pizzas;
     builder
       .create({
         user: null,
-        data: data,
-        resource: resource,
-        state: state
+        data,
+        resource,
+        state
       })
       .then(doc => {
         resource.collection.insertOne(doc, (err, result) => {
@@ -53,7 +53,7 @@ describe('State', () => {
     const mongoUri = mongoUriBuilder(config.campsi.mongo);
     MongoClient.connect(mongoUri, (err, client) => {
       if (err) throw err;
-      let db = client.db(config.campsi.mongo.database);
+      const db = client.db(config.campsi.mongo.database);
       db.dropDatabase(() => {
         client.close();
         campsi = new CampsiServer(config.campsi);
@@ -81,7 +81,7 @@ describe('State', () => {
    */
   describe('/POST docs/pizzas/:state', () => {
     it('it should create a document', done => {
-      let data = { name: 'test' };
+      const data = { name: 'test' };
       chai
         .request(campsi.app)
         .post('/docs/pizzas/working_draft')
@@ -107,7 +107,7 @@ describe('State', () => {
    */
   describe('/GET docs/pizzas/:id/:state', () => {
     it('it should retreive a document by id/state', done => {
-      let data = { name: 'test' };
+      const data = { name: 'test' };
       createPizza(data, 'working_draft')
         .then(id => {
           chai
@@ -132,7 +132,7 @@ describe('State', () => {
         });
     });
     it('it should retreive a document by id/state with states', done => {
-      let data = { name: 'test' };
+      const data = { name: 'test' };
       createPizza(data, 'working_draft')
         .then(id => {
           chai
@@ -166,7 +166,7 @@ describe('State', () => {
         });
     });
     it('it should retreive a document by id/state with states empty', done => {
-      let data = { name: 'test' };
+      const data = { name: 'test' };
       createPizza(data, 'working_draft')
         .then(id => {
           chai
@@ -199,8 +199,8 @@ describe('State', () => {
    */
   describe('/PUT docs/pizzas/:id/:state', () => {
     it('it should modify a document by id/state', done => {
-      let data = { name: 'test' };
-      let modifiedData = {
+      const data = { name: 'test' };
+      const modifiedData = {
         name: 'test put',
         base: 'cream'
       };
@@ -215,8 +215,9 @@ describe('State', () => {
                   .set('content-type', 'application/json')
                   .send(modifiedData)
                   .end((err, res) => {
-                    if (err)
+                    if (err) {
                       debug(`received an error from chai: ${err.message}`);
+                    }
                     res.should.have.status(200);
                     res.should.be.json;
                     res.body.should.be.a('object');
@@ -234,8 +235,9 @@ describe('State', () => {
                   .request(campsi.app)
                   .get('/docs/pizzas/{0}/working_draft'.format(id))
                   .end((err, res) => {
-                    if (err)
+                    if (err) {
                       debug(`received an error from chai: ${err.message}`);
+                    }
                     res.should.have.status(200);
                     res.should.be.json;
                     res.body.should.be.a('object');
@@ -268,8 +270,8 @@ describe('State', () => {
    */
   describe('/PUT docs/pizzas/:id/state', () => {
     it('it should not modify a document state by id', done => {
-      let data = { name: 'test' };
-      let stateData = {
+      const data = { name: 'test' };
+      const stateData = {
         from: 'working_draft',
         to: 'published'
       };
@@ -300,7 +302,7 @@ describe('State', () => {
    */
   describe('/DELETE docs/pizzas/:id/state', () => {
     it('it should delete a document by id', done => {
-      let data = { name: 'test' };
+      const data = { name: 'test' };
       createPizza(data, 'working_draft')
         .then(id => {
           chai

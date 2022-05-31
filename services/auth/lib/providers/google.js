@@ -8,7 +8,7 @@
  * @param {String} [options.order]
  * @returns AuthProviderConfig
  */
-module.exports = function (options) {
+module.exports = function(options) {
   return {
     Strategy: require('@passport-next/passport-google-oauth2').Strategy,
     order: options.order,
@@ -19,13 +19,13 @@ module.exports = function (options) {
     },
     title: options.title || 'Google',
     scope: ['profile', 'email'],
-    callback: function (req, accessToken, refreshToken, profile, done) {
+    callback: function(req, accessToken, refreshToken, profile, done) {
       // noinspection JSUnresolvedVariable
       done(null, {
         displayName: profile._json.name,
         email: profile.emails[0].value,
         picture: profile._json.picture,
-        identity: Object.assign({id: profile._json.sub}, profile._json)
+        identity: Object.assign({ id: profile._json.sub }, profile._json)
       });
     }
   };

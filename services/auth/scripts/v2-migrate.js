@@ -1,17 +1,13 @@
+/* eslint-disable no-process-exit */
 const async = require('async');
 const debug = require('debug')('campsi:auth:local:generateEncryptedPasswords');
 const CryptoJS = require('crypto-js');
 const { ObjectId } = require('mongodb');
 const { encryptPassword } = require('../lib/local');
 
-function createEncryptedPassword(
-  collection,
-  salt,
-  removeOldPassword,
-  onComplete
-) {
-  let errors = [];
-  let updates = [];
+function createEncryptedPassword(collection, salt, removeOldPassword, onComplete) {
+  const errors = [];
+  const updates = [];
   collection
     .find({
       'identities.local.password': { $exists: true }
@@ -21,10 +17,7 @@ function createEncryptedPassword(
       async.forEach(
         users,
         (user, cb) => {
-          const decrypted = CryptoJS.AES.decrypt(
-            user.identities.local.password,
-            salt
-          ).toString(CryptoJS.enc.Utf8);
+          const decrypted = CryptoJS.AES.decrypt(user.identities.local.password, salt).toString(CryptoJS.enc.Utf8);
           encryptPassword(decrypted)
             .then(encryptedPassword => {
               const ops = {
@@ -47,14 +40,9 @@ function createEncryptedPassword(
           async.map(
             updates,
             (update, cb) => {
-              collection.updateOne(
-                update[0],
-                update[1],
-                { bypassDocumentValidation: true },
-                (err, cmdResult) => {
-                  cb(err, cmdResult);
-                }
-              );
+              collection.updateOne(update[0], update[1], { bypassDocumentValidation: true }, (err, cmdResult) => {
+                cb(err, cmdResult);
+              });
             },
             (err, results) => {
               if (err) debug(`received an error: ${err.message}`);
@@ -67,35 +55,31 @@ function createEncryptedPassword(
 }
 
 function createTokensProperty(collection, done) {
-  collection
-    .find({ 'token.expiration': { $gt: new Date() } })
-    .toArray((err, users) => {
-      if (err) debug(`received an error: ${err.message}`);
-      async.forEach(
-        users,
-        (user, cb) => {
-          collection.updateOne(
-            { _id: user._id },
-            {
-              $set: {
-                [`tokens.${user.token.value}`]: {
-                  expiration: user.token.expiration,
-                  grantedByProvider: user.identities.local
-                    ? 'local'
-                    : 'anonymous'
-                }
+  collection.find({ 'token.expiration': { $gt: new Date() } }).toArray((err, users) => {
+    if (err) debug(`received an error: ${err.message}`);
+    async.forEach(
+      users,
+      (user, cb) => {
+        collection.updateOne(
+          { _id: user._id },
+          {
+            $set: {
+              [`tokens.${user.token.value}`]: {
+                expiration: user.token.expiration,
+                grantedByProvider: user.identities.local ? 'local' : 'anonymous'
               }
-            },
-            (err, cmdReturn) => {
-              if (err) debug(`received an error: ${err.message}`);
-              debug(cmdReturn);
-              cb();
             }
-          );
-        },
-        done
-      );
-    });
+          },
+          (err, cmdReturn) => {
+            if (err) debug(`received an error: ${err.message}`);
+            debug(cmdReturn);
+            cb();
+          }
+        );
+      },
+      done
+    );
+  });
 }
 
 module.exports = createEncryptedPassword;

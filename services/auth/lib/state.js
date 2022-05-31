@@ -1,8 +1,8 @@
 const debug = require('debug')('campsi');
 const editURL = require('edit-url');
-const {atob, btoa} = require('./modules/base64');
+const { atob, btoa } = require('./modules/base64');
 
-function getState (req) {
+function getState(req) {
   let state = {};
   let decoded;
 
@@ -25,11 +25,11 @@ module.exports.get = getState;
  * @param {ExpressRequest} req
  * @return {String} Base64 encoded JSON object
  */
-module.exports.serialize = function (req) {
-  let state = getState(req);
+module.exports.serialize = function(req) {
+  const state = getState(req);
 
   if (!state.redirectURI && req.headers.referer && !req.xhr) {
-    state.redirectURI = editURL(req.headers.referer, (urlObj) => {
+    state.redirectURI = editURL(req.headers.referer, urlObj => {
       delete urlObj.query.token;
     });
   }

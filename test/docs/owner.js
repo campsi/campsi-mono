@@ -15,7 +15,7 @@ const builder = require('../../services/docs/lib/modules/queryBuilder');
 const fakeId = require('fake-object-id');
 
 chai.should();
-let expect = chai.expect;
+const expect = chai.expect;
 let campsi;
 let server;
 format.extend(String.prototype);
@@ -25,23 +25,23 @@ const services = {
   Docs: require('../../services/docs/lib')
 };
 
-let me = {
+const me = {
   _id: fakeId()
 };
-let notMe = {
+const notMe = {
   _id: fakeId()
 };
 
 // Helpers
 function createEntry(data, owner, state) {
   return new Promise(function(resolve, reject) {
-    let resource = campsi.services.get('docs').options.resources['simple'];
+    const resource = campsi.services.get('docs').options.resources.simple;
     builder
       .create({
         user: owner,
-        data: data,
-        resource: resource,
-        state: state
+        data,
+        resource,
+        state
       })
       .then(doc => {
         resource.collection.insertOne(doc, (err, result) => {
@@ -62,7 +62,7 @@ describe('Owner', () => {
     const mongoUri = mongoUriBuilder(config.campsi.mongo);
     MongoClient.connect(mongoUri, (err, client) => {
       if (err) throw err;
-      let db = client.db(config.campsi.mongo.database);
+      const db = client.db(config.campsi.mongo.database);
       db.dropDatabase(() => {
         client.close();
         campsi = new CampsiServer(config.campsi);
@@ -94,7 +94,7 @@ describe('Owner', () => {
    */
   describe('owner role', () => {
     it('it should create a doc with correct owner', done => {
-      let data = { name: 'test' };
+      const data = { name: 'test' };
       chai
         .request(campsi.app)
         .post('/docs/simple/state-private')
@@ -118,7 +118,7 @@ describe('Owner', () => {
         });
     });
     it('it should not get a document not owned by current user', done => {
-      let data = { name: 'test' };
+      const data = { name: 'test' };
       createEntry(data, notMe, 'state-private').then(id => {
         chai
           .request(campsi.app)
@@ -135,7 +135,7 @@ describe('Owner', () => {
       });
     });
     it('it should get a document owned by current user', done => {
-      let data = { name: 'test' };
+      const data = { name: 'test' };
       createEntry(data, me, 'state-private').then(id => {
         chai
           .request(campsi.app)
@@ -159,7 +159,7 @@ describe('Owner', () => {
       });
     });
     it('it should return an empty array if not on the good state', done => {
-      let data = { name: 'test' };
+      const data = { name: 'test' };
       createEntry(data, notMe, 'state-private').then(() => {
         chai
           .request(campsi.app)
@@ -174,7 +174,7 @@ describe('Owner', () => {
       });
     });
     it('it should return an empty array if current user have not created any document', done => {
-      let data = { name: 'test' };
+      const data = { name: 'test' };
       createEntry(data, notMe, 'state-private').then(() => {
         chai
           .request(campsi.app)
@@ -189,7 +189,7 @@ describe('Owner', () => {
       });
     });
     it('it should not return an empty array if current user have created a document', done => {
-      let data = { name: 'test' };
+      const data = { name: 'test' };
       createEntry(data, me, 'state-private').then(() => {
         chai
           .request(campsi.app)
@@ -204,7 +204,7 @@ describe('Owner', () => {
       });
     });
     it('it should return the list of users', done => {
-      let data = { name: 'test' };
+      const data = { name: 'test' };
       createEntry(data, me, 'state-private').then(id => {
         chai
           .request(campsi.app)
@@ -220,7 +220,7 @@ describe('Owner', () => {
       });
     });
     it('it should add and remove users', done => {
-      let data = { name: 'test' };
+      const data = { name: 'test' };
       createEntry(data, me, 'state-private').then(id => {
         chai
           .request(campsi.app)

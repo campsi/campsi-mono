@@ -1,8 +1,9 @@
+/* eslint-disable array-callback-return */
 module.exports.getResources = function(options) {
-  let result = { resources: [] };
+  const result = { resources: [] };
   Object.entries(options.resources).map(([id, resource]) => {
     result.resources.push({
-      id: id,
+      id,
       label: resource.label,
       type: resource.type,
       states: resource.states,

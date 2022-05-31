@@ -1,3 +1,4 @@
+/* eslint-disable array-callback-return */
 const debug = require('debug')('campsi:service:versioned-docs');
 const createObjectId = require('../../../../lib/modules/createObjectId');
 /**
@@ -11,9 +12,7 @@ const validate = async (resource, doc) => {
     return true;
   } else {
     debug('model have %d error(s)', resource.validate.errors.length);
-    throw new Error(
-      resource.validate.errors.map(e => `${e.dataPath} ${e.message}`).join(', ')
-    );
+    throw new Error(resource.validate.errors.map(e => `${e.dataPath} ${e.message}`).join(', '));
   }
 };
 
@@ -34,13 +33,11 @@ const buildRelsId = (resource, doc) => {
 };
 
 module.exports.find = function find(options) {
-  let filter = {};
+  const filter = {};
   if (options.query) {
-    const relsPath = Object.entries(options.resource.rels || []).map(
-      ([name, rel]) => {
-        return rel.path;
-      }
-    );
+    const relsPath = Object.entries(options.resource.rels || []).map(([name, rel]) => {
+      return rel.path;
+    });
     Object.entries(options.query).map(([prop, val]) => {
       if (prop.startsWith('data.')) {
         prop = prop.slice(5);

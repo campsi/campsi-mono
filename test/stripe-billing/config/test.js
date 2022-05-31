@@ -17,7 +17,7 @@ module.exports = {
       options: {
         secret_key: 'sk_test_TLvEhxPpHyrPhJeyMnJyM9jj',
         default_tax_percent: 20
-      },
+      }
     }
   }
 };

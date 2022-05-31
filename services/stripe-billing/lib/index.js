@@ -1,3 +1,4 @@
+/* eslint-disable no-prototype-builtins */
 const CampsiService = require('../../../lib/service');
 const helpers = require('../../../lib/modules/responseHelpers');
 
@@ -179,35 +180,36 @@ module.exports = class StripeBillingService extends CampsiService {
   fetchSubscription(subscriptionId, cb) {
     this.stripe.subscriptions.retrieve(subscriptionId, cb);
   }
+
   /**
    * @see https://stripe.com/docs/api/invoices/list
    * @param {Object} parameters can be customer, subscription, status... ex: { customer: 'cus_abc123' }
    * @return {Object}
    */
-  fetchInvoices = async parameters => {
+  async fetchInvoices(parameters) {
     const invoices = [];
     parameters = { ...parameters, limit: 100 };
     for await (const invoice of this.stripe.invoices.list(parameters)) {
       invoices.push(invoice);
     }
     return invoices;
-  };
+  }
 
   /**
    * @see https://stripe.com/docs/api/credit_notes/list
    * @param {Object} parameters can be customer, invoice... ex: { customer: 'cus_abc123' }
    * @return {Object}
    */
-  fetchCreditNotes = async parameters => {
+  async fetchCreditNotes(parameters) {
     const creditNotes = [];
     parameters = { ...parameters, limit: 100 };
     for await (const creditNote of this.stripe.creditNotes.list(parameters)) {
       creditNotes.push(creditNote);
     }
     return creditNotes;
-  };
+  }
 
-  checkCouponCodeValidity = async (req, res) => {
+  async checkCouponCodeValidity(req, res) {
     const code = req.params.code;
     if (!code) {
       return helpers.missingParameters(res, new Error('code must be specified'));
@@ -232,7 +234,7 @@ module.exports = class StripeBillingService extends CampsiService {
     } catch (err) {
       return res.status(err.statusCode || 500).json({ message: err.raw?.message || `invalid code ${code}` });
     }
-  };
+  }
 
   /**
    * @see https://stripe.com/docs/api/usage_records/create
@@ -240,7 +242,7 @@ module.exports = class StripeBillingService extends CampsiService {
    * @param {Object} params default action: set
    * @return {Object}
    */
-  createUsageRecord = async (subscriptionItemId, params) => {
+  async createUsageRecord(subscriptionItemId, params) {
     if (!params || typeof params !== 'object') {
       throw new Error('You must provide a params object');
     }
@@ -250,5 +252,5 @@ module.exports = class StripeBillingService extends CampsiService {
     params.action = params.action ?? 'set';
     params.quantity = parseInt(params.quantity);
     return await this.stripe.subscriptionItems.createUsageRecord(subscriptionItemId, params);
-  };
+  }
 };

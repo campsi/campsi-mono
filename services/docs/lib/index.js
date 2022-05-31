@@ -1,3 +1,4 @@
+/* eslint-disable array-callback-return */
 const CampsiService = require('../../../lib/service');
 const param = require('./param');
 const handlers = require('./handlers');
@@ -43,23 +44,17 @@ module.exports = class DocsService extends CampsiService {
     this.router.delete('/:resource/:id', handlers.delDoc);
     this.router.delete('/:resource/:id/:state', handlers.delDoc);
     return new Promise(resolve => {
-      let ajvWriter = new Ajv({ useAssign: true });
+      const ajvWriter = new Ajv({ useAssign: true });
       csdAssign(ajvWriter);
-      let ajvReader = new Ajv({ useVisibility: true });
+      const ajvReader = new Ajv({ useVisibility: true });
       csdVisibility(ajvReader);
       async.eachOf(
         service.options.resources,
         function(resource, name, cb) {
           Object.assign(resource, service.options.classes[resource.class]);
-          resource.collection = server.db.collection(
-            'docs.{0}.{1}'.format(service.path, name)
-          );
+          resource.collection = server.db.collection('docs.{0}.{1}'.format(service.path, name));
           $RefParser
-            .dereference(
-              service.config.optionsBasePath + '/',
-              resource.schema,
-              {}
-            )
+            .dereference(service.config.optionsBasePath + '/', resource.schema, {})
             .then(function(schema) {
               resource.schema = schema;
               resource.validate = ajvWriter.compile(schema);
@@ -77,7 +72,7 @@ module.exports = class DocsService extends CampsiService {
   }
 
   describe() {
-    let desc = super.describe();
+    const desc = super.describe();
     desc.resources = {};
     desc.classes = this.options.classes;
     Object.entries(this.options.resources).map(([path, resource]) => {

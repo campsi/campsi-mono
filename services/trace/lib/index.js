@@ -1,8 +1,9 @@
+/* eslint-disable space-before-function-paren */
 const CampsiService = require('../../../lib/service');
 const handlers = require('./handlers');
 
 module.exports = class TraceService extends CampsiService {
-  initialize () {
+  initialize() {
     const service = this;
 
     this.router.use('/', (req, res, next) => {
@@ -10,11 +11,13 @@ module.exports = class TraceService extends CampsiService {
       next();
     });
     this.router.all('*', handlers.traceRequest);
-    return new Promise((resolve) => { resolve(); });
+    return new Promise(resolve => {
+      resolve();
+    });
   }
 
-  describe () {
-    let desc = super.describe();
+  describe() {
+    const desc = super.describe();
     return desc;
   }
 };

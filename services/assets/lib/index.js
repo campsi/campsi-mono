@@ -1,3 +1,5 @@
+/* eslint-disable node/no-unsupported-features/es-syntax */
+/* eslint-disable node/no-unpublished-require */
 const CampsiService = require('../../../lib/service');
 const helpers = require('../../../lib/modules/responseHelpers');
 const handlers = require('./handlers');
@@ -19,7 +21,7 @@ class AssetsService extends CampsiService {
     });
     this.router.param('asset', param.attachAsset);
     this.router.param('asset', param.attachStorage);
-    this.router.post('/copy', handlers.copyRemote, handlers.postAssets)
+    this.router.post('/copy', handlers.copyRemote, handlers.postAssets);
     this.router.post('/', multer().array('file'), handlers.postAssets);
     this.router.get('/', this.options.allowPublicListing ? handlers.getAssets : notAvailable);
     this.router.get('/local/*', handlers.sendLocalFile);

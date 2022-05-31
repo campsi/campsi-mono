@@ -18,10 +18,10 @@ const { URL } = require('url');
 describe('Modules Test', function() {
   describe('buildLink module', function() {
     it('should return the correct url', function(done) {
-      var app = express();
+      const app = express();
 
       app.get('/test', function(req, res) {
-        let url = buildLink(req, 2, ['foo', 'unknown']);
+        const url = buildLink(req, 2, ['foo', 'unknown']);
         res.json(url);
         res.end();
       });
@@ -32,7 +32,7 @@ describe('Modules Test', function() {
         .end((err, res) => {
           if (err) debug(`received an error from chai: ${err.message}`);
           res.should.have.status(200);
-          let url = new URL(res.body);
+          const url = new URL(res.body);
           url.should.have.property('pathname');
           url.pathname.should.equal('/test');
           url.should.have.property('searchParams');

@@ -1,7 +1,8 @@
 module.exports = {
-  usersFetcher: (users, server) => new Promise((resolve, reject) => {
-    resolve(users.map(user => Object.assign({}, user, {displayName: `External user ${user.userId}`})));
-  }),
+  usersFetcher: (users, server) =>
+    new Promise((resolve, reject) => {
+      resolve(users.map(user => Object.assign({}, user, { displayName: `External user ${user.userId}` })));
+    }),
   roles: {
     admin: {
       label: 'Administrateur',
@@ -167,17 +168,17 @@ module.exports = {
     pizzas: {
       label: 'La carte des pizzas',
       class: 'collection',
-      schema: {'$ref': '../../../schemas/pizza.schema.json'}
+      schema: { $ref: '../../../schemas/pizza.schema.json' }
     },
     contact: {
       label: 'Formulaire de contact du site web',
       class: 'form',
-      schema: {'$ref': '../../../schemas/contact.schema.json'}
+      schema: { $ref: '../../../schemas/contact.schema.json' }
     },
     opening_hours: {
       label: 'Jours et horaires de contact',
       class: 'document',
-      schema: {'$ref': '../../../schemas/opening_hours.schema.json'}
+      schema: { $ref: '../../../schemas/opening_hours.schema.json' }
     },
     categories: {
       label: 'Categories',
@@ -185,9 +186,7 @@ module.exports = {
       webhooks: [
         {
           on: 'POST,PUT,DELETE',
-          states: [
-            'published'
-          ],
+          states: ['published'],
           uri: 'http://127.0.0.1:3001',
           method: 'POST',
           payload: true,
@@ -198,7 +197,7 @@ module.exports = {
           }
         }
       ],
-      schema: {'$ref': '../../../schemas/category.schema.json'}
+      schema: { $ref: '../../../schemas/category.schema.json' }
     },
     articles: {
       label: 'Articles',
@@ -208,25 +207,21 @@ module.exports = {
           path: 'rels.oneToOneRelationship',
           resource: 'categories',
           embed: false,
-          fields: [
-            'label'
-          ]
+          fields: ['label']
         },
         other_categories: {
           path: 'rels.oneToManyRelationship.*',
           resource: 'categories',
           embed: false,
-          fields: [
-            'label'
-          ]
+          fields: ['label']
         }
       },
-      schema: {'$ref': '../../../schemas/article.schema.json'}
+      schema: { $ref: '../../../schemas/article.schema.json' }
     },
     simple: {
       label: 'A Simple Document',
       class: 'test-class',
-      schema: {'$ref': '../../../schemas/document.schema.json'}
+      schema: { $ref: '../../../schemas/document.schema.json' }
     }
   }
 };

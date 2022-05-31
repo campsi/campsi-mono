@@ -13,10 +13,10 @@ const getRequestedStatesFromQuery = (resource, query) => {
 
 module.exports.getDocuments = function(resource, filter, user, query, state, sort, pagination, resources) {
   const queryBuilderOptions = {
-    resource: resource,
-    user: user,
-    query: query,
-    state: state
+    resource,
+    user,
+    query,
+    state
   };
   const filterState = {};
   filterState[`states.${state}`] = { $exists: true };
@@ -107,7 +107,7 @@ module.exports.getDocuments = function(resource, filter, user, query, state, sor
     ? resource.collection.find(dbQuery, { projection: dbFields })
     : resource.collection.aggregate(pipeline);
   const requestedStates = getRequestedStatesFromQuery(resource, query);
-  let result = {};
+  const result = {};
   return new Promise((resolve, reject) => {
     paginateCursor(cursor, pagination)
       .then(info => {
@@ -125,6 +125,7 @@ module.exports.getDocuments = function(resource, filter, user, query, state, sor
           result.nav.next = info.page + 1;
         }
         if (sort) {
+          // eslint-disable-next-line indexof/no-indexof
           sortCursor(cursor, sort, sort.indexOf('data') === 0 ? 'states.{}.data.'.format(state) : '');
         }
         return cursor.toArray();
@@ -136,8 +137,8 @@ module.exports.getDocuments = function(resource, filter, user, query, state, sor
           const states = permissions.filterDocumentStates(doc, allowedStates, requestedStates);
           const returnData = {
             id: doc._id,
-            state: state,
-            states: states,
+            state,
+            states,
             createdAt: currentState.createdAt,
             createdBy: currentState.createdBy,
             data: currentState.data || {}
@@ -190,7 +191,7 @@ module.exports.createDocument = function(resource, data, state, user, parentId, 
         resource.collection.insertOne(doc, (err, result) => {
           if (err) return reject(err);
           resolve({
-            state: state,
+            state,
             id: result.insertedId,
             ...doc.states[state]
           });
@@ -204,10 +205,10 @@ module.exports.setDocument = function(resource, filter, data, state, user) {
   return new Promise((resolve, reject) => {
     builder
       .update({
-        resource: resource,
-        data: data,
-        state: state,
-        user: user
+        resource,
+        data,
+        state,
+        user
       })
       .then(update => {
         resource.collection.updateOne(filter, update, (err, result) => {
@@ -218,8 +219,8 @@ module.exports.setDocument = function(resource, filter, data, state, user) {
           }
           resolve({
             id: filter._id,
-            state: state,
-            data: data
+            state,
+            data
           });
         });
       })
@@ -237,7 +238,7 @@ module.exports.patchDocument = async (resource, filter, data, state, user) => {
 
   return {
     id: filter._id,
-    state: state,
+    state,
     data: updateDoc.value.states[state].data
   };
 };
@@ -406,8 +407,8 @@ module.exports.setDocumentState = function(resource, filter, fromState, toState,
           doc: document,
           from: fromState,
           to: toState,
-          resource: resource,
-          user: user
+          resource,
+          user
         })
         .then(ops => {
           resource.collection.updateOne(filter, ops, (err, result) => {
@@ -473,7 +474,7 @@ module.exports.deleteDocument = function(resource, filter) {
               child.states[stateName].data = Object.assign(docToDelete.states[stateName].data, child.states[stateName].data);
             }
             delete child.parentId;
-            if (!!docToDelete.parentId) {
+            if (docToDelete.parentId) {
               child.parentId = docToDelete.parentId;
             }
             return child;
@@ -507,7 +508,7 @@ const prepareGetDocument = settings => {
 
   return {
     id: doc._id,
-    state: state,
+    state,
     createdAt: currentState.createdAt,
     createdBy: currentState.createdBy,
     modifiedAt: currentState.modifiedAt,

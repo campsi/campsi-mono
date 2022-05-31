@@ -1,3 +1,5 @@
+/* eslint-disable space-before-function-paren */
+/* eslint-disable array-callback-return */
 const debug = require('debug')('campsi:service:trace');
 
 module.exports.traceRequest = function(req, res) {
@@ -12,8 +14,8 @@ module.exports.traceRequest = function(req, res) {
     debug('> ' + name + ': ' + value);
   });
   if (req.is('application/json')) {
-    let output = JSON.stringify(req.body, null, '  ');
-    for (let line of output.split('\n')) {
+    const output = JSON.stringify(req.body, null, '  ');
+    for (const line of output.split('\n')) {
       debug('| ' + line);
     }
   }

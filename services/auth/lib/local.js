@@ -5,13 +5,11 @@ const state = require('./state');
 const bcrypt = require('bcryptjs');
 const debug = require('debug')('campsi:auth:local');
 
-function getMissingParameters (payload, parameters) {
-  return parameters.filter(
-    paramName => typeof payload[paramName] === 'undefined'
-  );
+function getMissingParameters(payload, parameters) {
+  return parameters.filter(paramName => typeof payload[paramName] === 'undefined');
 }
 
-function dispatchUserSignupEvent (req, user) {
+function dispatchUserSignupEvent(req, user) {
   req.service.emit('signup', {
     id: user._id,
     email: user.email,
@@ -24,7 +22,7 @@ function dispatchUserSignupEvent (req, user) {
   });
 }
 
-module.exports.middleware = function (localProvider) {
+module.exports.middleware = function(localProvider) {
   return (req, res, next) => {
     req.authProvider = localProvider;
     state.serialize(req);
@@ -32,7 +30,7 @@ module.exports.middleware = function (localProvider) {
   };
 };
 
-module.exports.signin = function (req, res) {
+module.exports.signin = function(req, res) {
   // could be a one-liner, but I find this more explicit
   // the real signin method is the callback below
   return handlers.callback(req, res);
@@ -47,19 +45,11 @@ module.exports.signin = function (req, res) {
  * @param password
  * @param done
  */
-module.exports.callback = function localCallback (
-  req,
-  username,
-  password,
-  done
-) {
-  let filter = {
+module.exports.callback = function localCallback(req, username, password, done) {
+  const filter = {
     $or: [
       {
-        email: new RegExp(
-          '^' + username.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$',
-          'i'
-        )
+        email: new RegExp('^' + username.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$', 'i')
       },
       { 'identities.local.username': username }
     ]
@@ -73,31 +63,22 @@ module.exports.callback = function localCallback (
         debug('tried to find user with username', username, 'but none found');
         done(null, null);
       }
-      bcrypt.compare(
-        password,
-        user.identities.local.encryptedPassword,
-        function (err, isMatch) {
-          if (err) {
-            debug(
-              'bcrypt password compare error',
-              err,
-              password,
-              user.identities.local.encryptedPassword
-            );
-          }
-          if (isMatch) {
-            user.identity = user.identities.local;
-            return done(null, user);
-          }
-          done(null, null);
+      bcrypt.compare(password, user.identities.local.encryptedPassword, function(err, isMatch) {
+        if (err) {
+          debug('bcrypt password compare error', err, password, user.identities.local.encryptedPassword);
         }
-      );
+        if (isMatch) {
+          user.identity = user.identities.local;
+          return done(null, user);
+        }
+        done(null, null);
+      });
     })
     .catch(done);
 };
 
-module.exports.encryptPassword = function (password, saltRounds) {
-  function byteLength (str) {
+module.exports.encryptPassword = function(password, saltRounds) {
+  function byteLength(str) {
     // returns the byte length of an utf8 string
     let s = str.length;
     for (let i = str.length - 1; i >= 0; i--) {
@@ -113,9 +94,9 @@ module.exports.encryptPassword = function (password, saltRounds) {
     if (byteLength(password) > 72) {
       reject(new Error('Password byte length must not exceed 72 bytes'));
     }
-    bcrypt.genSalt(saltRounds || 2, function (err, generatedSalt) {
+    bcrypt.genSalt(saltRounds || 2, function(err, generatedSalt) {
       if (err) return reject(err);
-      bcrypt.hash(password, generatedSalt, function (err, hash) {
+      bcrypt.hash(password, generatedSalt, function(err, hash) {
         if (err) return reject(err);
         resolve(hash);
       });
@@ -123,41 +104,31 @@ module.exports.encryptPassword = function (password, saltRounds) {
   });
 };
 
-module.exports.createRandomToken = function (username, salt) {
-  return CryptoJS.AES.encrypt(
-    new Date().toISOString() + username,
-    salt
-  ).toString();
+module.exports.createRandomToken = function(username, salt) {
+  return CryptoJS.AES.encrypt(new Date().toISOString() + username, salt).toString();
 };
 
-module.exports.signup = function (req, res) {
+module.exports.signup = function(req, res) {
   const salt = req.authProvider.options.salt;
   const users = req.db.collection('__users__');
-  const missingParameters = ['password', 'displayName', 'username'].filter(
-    prop => {
-      return typeof req.body[prop] === 'undefined' || req.body.prop === '';
-    }
-  );
+  const missingParameters = ['password', 'displayName', 'username'].filter(prop => {
+    return typeof req.body[prop] === 'undefined' || req.body.prop === '';
+  });
   if (missingParameters.length > 0) {
-    return helpers.error(
-      res,
-      new Error(`missing parameters : ${missingParameters.join(', ')}`)
-    );
+    return helpers.error(res, new Error(`missing parameters : ${missingParameters.join(', ')}`));
   }
-  const insertUser = function (user) {
+  const insertUser = function(user) {
     return new Promise((resolve, reject) => {
       users
         .insertOne(user)
-        .then(result =>
-          resolve(Object.assign({}, user, { _id: result.insertedId }))
-        )
+        .then(result => resolve(Object.assign({}, user, { _id: result.insertedId })))
         .catch(err => {
           reject(err);
         });
     });
   };
 
-  const doesLocalUserExist = function (user) {
+  const doesLocalUserExist = function(user) {
     return new Promise((resolve, reject) => {
       users.findOne(
         {
@@ -165,15 +136,13 @@ module.exports.signup = function (req, res) {
           'identities.local': { $exists: true }
         },
         (err, result) => {
-          return err
-            ? reject(new Error('could not perform findOneAndUpdate'))
-            : resolve(result);
+          return err ? reject(new Error('could not perform findOneAndUpdate')) : resolve(result);
         }
       );
     });
   };
 
-  const updateExistingNonLocalUser = function (user) {
+  const updateExistingNonLocalUser = function(user) {
     return new Promise((resolve, reject) => {
       users.findOneAndUpdate(
         {
@@ -192,9 +161,7 @@ module.exports.signup = function (req, res) {
           returnDocument: 'after'
         },
         (err, result) => {
-          return err
-            ? reject(new Error('could not perform findOneAndUpdate'))
-            : resolve(result.value);
+          return err ? reject(new Error('could not perform findOneAndUpdate')) : resolve(result.value);
         }
       );
     });
@@ -203,28 +170,24 @@ module.exports.signup = function (req, res) {
   module.exports
     .encryptPassword(req.body.password)
     .then(encryptedPassword => {
-      let user = {
+      const user = {
         displayName: req.body.displayName,
-        email: email,
+        email,
         data: req.body.data,
         createdAt: new Date(),
         identities: {
           local: {
             id: req.body.username,
             username: req.body.username,
-            encryptedPassword: encryptedPassword,
+            encryptedPassword,
             validated: false,
-            validationToken: module.exports.createRandomToken(
-              req.body.username,
-              salt
-            )
+            validationToken: module.exports.createRandomToken(req.body.username, salt)
           }
         }
       };
 
       // make sure local user doesn't exist already
-      doesLocalUserExist(user)
-      .then( result => {
+      doesLocalUserExist(user).then(result => {
         if (result !== null) {
           return helpers.badRequest(res, new Error('A local user already exists with that email'));
         }
@@ -255,7 +218,7 @@ module.exports.signup = function (req, res) {
  * @param {string} req.query.redirectURI
  * @param {*} res
  */
-module.exports.validate = function (req, res) {
+module.exports.validate = function(req, res) {
   if (!req.query.token) {
     return helpers.error(res, new Error('you must provide a validation token'));
   }
@@ -305,18 +268,15 @@ module.exports.validate = function (req, res) {
  * @param res
  * @return {*}
  */
-module.exports.createResetPasswordToken = function (req, res) {
+module.exports.createResetPasswordToken = function(req, res) {
   const missingParams = getMissingParameters(req.body, ['email']);
   if (missingParams.length > 0) {
-    return helpers.error(
-      res,
-      new Error(`missing parameter(s) : ${missingParams.join(', ')}`)
-    );
+    return helpers.error(res, new Error(`missing parameter(s) : ${missingParams.join(', ')}`));
   }
   const opts = req.authProvider.options;
 
-  let expirationDate = new Date();
-  let exp = opts.resetPasswordTokenExpiration || 10;
+  const expirationDate = new Date();
+  const exp = opts.resetPasswordTokenExpiration || 10;
   expirationDate.setTime(expirationDate.getTime() + exp * 86400000);
 
   const token = module.exports.createRandomToken(req.body.email, opts.salt);
@@ -325,10 +285,7 @@ module.exports.createResetPasswordToken = function (req, res) {
     .collection('__users__')
     .findOneAndUpdate(
       {
-        email: new RegExp(
-          '^' + req.body.email.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$',
-          'i'
-        )
+        email: new RegExp('^' + req.body.email.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$', 'i')
       },
       {
         $set: {
@@ -363,17 +320,14 @@ module.exports.createResetPasswordToken = function (req, res) {
  * @param res
  * @return {*}
  */
-module.exports.resetPassword = function (req, res) {
+module.exports.resetPassword = function(req, res) {
   const missingParams = getMissingParameters(req.body, ['password', 'token']);
   if (missingParams.length > 0) {
-    return helpers.error(
-      res,
-      new Error(`missing parameter(s) : ${missingParams.join(', ')}`)
-    );
+    return helpers.error(res, new Error(`missing parameter(s) : ${missingParams.join(', ')}`));
   }
   module.exports
     .encryptPassword(req.body.password)
-    .then(function (encryptedPassword) {
+    .then(function(encryptedPassword) {
       const filter = {
         'identities.local.passwordResetToken.value': req.body.token,
         'identities.local.passwordResetToken.expiration': { $gt: new Date() }
@@ -397,8 +351,7 @@ module.exports.resetPassword = function (req, res) {
           // we set the username as a param because if the update succeeds,
           // the request is forwarded to the passport local callback and will
           // authorize the user with the new password
-          req.body.username =
-            result.value.identities.local.username || result.value.email;
+          req.body.username = result.value.identities.local.username || result.value.email;
           return handlers.callback(req, res);
         })
         .catch(err => handlers.redirectWithError(req, res, err));

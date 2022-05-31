@@ -10,14 +10,15 @@ const session = require('./middleware/session');
 const createObjectId = require('../../../lib/modules/createObjectId');
 
 module.exports = class AuthService extends CampsiService {
-  initialize () {
+  initialize() {
     this.install();
     this.prepareAuthProviders();
     this.patchRouter();
     return super.initialize();
   }
 
-  prepareAuthProviders () {
+  prepareAuthProviders() {
+    // eslint-disable-next-line array-callback-return
     Object.entries(this.options.providers).map(([name, provider]) => {
       provider.options.passReqToCallback = true;
       provider.options.scope = provider.scope;
@@ -26,15 +27,12 @@ module.exports = class AuthService extends CampsiService {
         provider.callback = local.callback;
       }
       // noinspection JSUnresolvedFunction
-      passport.use(
-        name,
-        new provider.Strategy(provider.options, passportMiddleware)
-      );
+      passport.use(name, new provider.Strategy(provider.options, passportMiddleware));
     });
   }
 
   // eslint-disable-next-line max-statements
-  patchRouter () {
+  patchRouter() {
     const router = this.router;
     const providers = this.options.providers;
     this.router.use((req, res, next) => {
@@ -62,10 +60,7 @@ module.exports = class AuthService extends CampsiService {
       router.use('/local', local.middleware(providers.local));
       router.post('/local/signup', local.signup);
       router.post('/local/signin', local.signin);
-      router.post(
-        '/local/reset-password-token',
-        local.createResetPasswordToken
-      );
+      router.post('/local/reset-password-token', local.createResetPasswordToken);
       router.post('/local/reset-password', local.resetPassword);
       router.get('/local/validate', local.validate);
     }
@@ -73,11 +68,11 @@ module.exports = class AuthService extends CampsiService {
     this.router.get('/:provider/callback', handlers.callback);
   }
 
-  getMiddlewares () {
+  getMiddlewares() {
     return [session, authUser];
   }
 
-  install () {
+  install() {
     this.db
       .collection('__users__')
       .createIndex({ email: 1 }, { unique: true })
@@ -87,7 +82,7 @@ module.exports = class AuthService extends CampsiService {
       });
   }
 
-  async fetchUsers (userIds) {
+  async fetchUsers(userIds) {
     const filter = { _id: { $in: userIds.map(id => createObjectId(id)) } };
     const users = await this.db
       .collection('__users__')

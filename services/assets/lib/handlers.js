@@ -38,48 +38,58 @@ module.exports.copyRemote = function copyRemote(req, res, next) {
     const url = new URL(req.body.url);
     const filename = url.pathname.substring(url.pathname.lastIndexOf('/') + 1);
     const clientReportedFileExtension = filename.substring(filename.lastIndexOf('.'));
-    https.get(req.body.url, res => {
-      const fileProps = {
-        filename,
-        clientReportedFileExtension,
-        clientReportedMimeType: res.headers['content-type'],
-        detectedMimeType: res.headers['content-type']
-      };
-      // Chunked response do not contain the content length.
-      // As a result, we can't just passthrough them to S3,
-      // and we need to write them locally.
-      if (!res.headers['content-length']) {
-        const tempFilePath = path.resolve(tempDir, `copyRemote--${crypto.randomBytes(16).toString('hex')}`);
-        const localWriteStream = fs.createWriteStream(tempFilePath, {
-          flags: 'w'
-        });
-        res.pipe(localWriteStream);
-        localWriteStream.on('finish', () => {
-          localWriteStream.close();
-          const localReadString = fs.createReadStream(tempFilePath);
-          const stats = fs.statSync(tempFilePath);
+    https
+      .get(req.body.url, fetchRes => {
+        if (fetchRes.statusCode !== 200) {
+          return helpers.badRequest(res, {
+            message: 'Asset copy failed'
+          });
+        }
+
+        const fileProps = {
+          filename,
+          clientReportedFileExtension,
+          clientReportedMimeType: fetchRes.headers['content-type'],
+          detectedMimeType: fetchRes.headers['content-type']
+        };
+        // Chunked response do not contain the content length.
+        // As a result, we can't just passthrough them to S3,
+        // and we need to write them locally.
+        if (!fetchRes.headers['content-length']) {
+          const tempFilePath = path.resolve(tempDir, `copyRemote--${crypto.randomBytes(16).toString('hex')}`);
+          const localWriteStream = fs.createWriteStream(tempFilePath, {
+            flags: 'w'
+          });
+          fetchRes.pipe(localWriteStream);
+          localWriteStream.on('finish', () => {
+            localWriteStream.close();
+            const localReadString = fs.createReadStream(tempFilePath);
+            const stats = fs.statSync(tempFilePath);
+            req.files = [
+              {
+                stream: localReadString,
+                size: stats.size,
+                ...fileProps
+              }
+            ];
+            // we store the local file path in order to unlink it afterwards
+            req.unlinkLocalFileAfterUpload = tempFilePath;
+            next();
+          });
+        } else {
           req.files = [
             {
-              stream: localReadString,
-              size: stats.size,
+              stream: fetchRes,
+              size: parseInt(fetchRes.headers['content-length']),
               ...fileProps
             }
           ];
-          // we store the local file path in order to unlink it afterwards
-          req.unlinkLocalFileAfterUpload = tempFilePath;
           next();
-        });
-      } else {
-        req.files = [
-          {
-            stream: res,
-            size: parseInt(res.headers['content-length']),
-            ...fileProps
-          }
-        ];
-        next();
-      }
-    });
+        }
+      })
+      .on('error', function(e) {
+        helpers.badRequest(res, e);
+      });
   } catch (e) {
     return helpers.badRequest(res, e);
   }

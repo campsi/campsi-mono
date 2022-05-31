@@ -197,9 +197,7 @@ module.exports.createDocument = function(resource, data, state, user, parentId, 
           });
         });
       })
-      .catch(error => {
-        return reject(error);
-      });
+      .catch(reject);
   });
 };
 
@@ -226,9 +224,7 @@ module.exports.setDocument = function(resource, filter, data, state, user) {
           });
         });
       })
-      .catch(() => {
-        return reject(new Error('Validation Error'));
-      });
+      .catch(reject);
   });
 };
 
@@ -431,9 +427,7 @@ module.exports.setDocumentState = function(resource, filter, fromState, toState,
             });
           });
         })
-        .catch(err => {
-          reject(err);
-        });
+        .catch(reject);
     };
 
     const stateTo = resource.states[toState];

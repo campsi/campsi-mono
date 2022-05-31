@@ -234,4 +234,22 @@ module.exports = class StripeBillingService extends CampsiService {
       return res.status(err.statusCode || 500).json({ message: err.raw?.message || `invalid code ${code}` });
     }
   }
+
+  /**
+   * @see https://stripe.com/docs/api/usage_records/create
+   * @param {string} subscriptionItemId
+   * @param {Object} params default action: set
+   * @return {Object}
+   */
+  createUsageRecord = async (subscriptionItemId, params) => {
+    if (!params || typeof params !== 'object') {
+      throw new Error('You must provide a params object');
+    }
+    if (!params.hasOwnProperty('quantity') || !Number.isInteger(parseInt(params.quantity))) {
+      throw new Error('You must provide proper quantity');
+    }
+    params.action = params.action ?? 'set';
+    params.quantity = parseInt(params.quantity);
+    return await this.stripe.subscriptionItems.createUsageRecord(subscriptionItemId, params);
+  };
 };

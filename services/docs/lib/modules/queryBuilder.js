@@ -1,5 +1,6 @@
 const debug = require('debug')('campsi:service:docs');
 const { ObjectId } = require('mongodb');
+const ValidationError = require('../../../../lib/errors/ValidationError');
 
 /**
  * Simple utility function that converts a list of arguments
@@ -40,7 +41,7 @@ function validate(resource, doc, doValidate) {
       return resolve(true);
     } else {
       debug('model have %d error(s)', resource.validate.errors.length);
-      return reject(resource.validate.errors);
+      return reject(new ValidationError(resource.validate.errors));
     }
   });
 }
@@ -288,11 +289,7 @@ module.exports.update = function updateDoc(options) {
 
 module.exports.patch = async options => {
   const state = getStateFromOptions(options);
-  try {
-    await validate(options.resource, options.data, state.validate);
-  } catch (e) {
-    throw new Error('Validation Error: ');
-  }
+  await validate(options.resource, options.data, state.validate);
 
   const ops = { $set: {}, $unset: {} };
   ops.$set[join('states', state.name, 'modifiedAt')] = new Date();

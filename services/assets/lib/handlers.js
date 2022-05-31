@@ -40,7 +40,7 @@ module.exports.copyRemote = function copyRemote(req, res, next) {
     const clientReportedFileExtension = filename.substring(filename.lastIndexOf('.'));
     https
       .get(req.body.url, fetchRes => {
-        if (fetchRes.statusCode !== 200) {
+        if (fetchRes.statusCode >= 400) {
           return helpers.badRequest(res, {
             message: 'Asset copy failed'
           });

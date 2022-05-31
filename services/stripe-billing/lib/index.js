@@ -1,3 +1,4 @@
+/* eslint-disable no-prototype-builtins */
 const CampsiService = require('../../../lib/service');
 const helpers = require('../../../lib/modules/responseHelpers');
 
@@ -241,7 +242,7 @@ module.exports = class StripeBillingService extends CampsiService {
    * @param {Object} params default action: set
    * @return {Object}
    */
-  createUsageRecord = async (subscriptionItemId, params) => {
+  async createUsageRecord(subscriptionItemId, params) {
     if (!params || typeof params !== 'object') {
       throw new Error('You must provide a params object');
     }
@@ -251,5 +252,5 @@ module.exports = class StripeBillingService extends CampsiService {
     params.action = params.action ?? 'set';
     params.quantity = parseInt(params.quantity);
     return await this.stripe.subscriptionItems.createUsageRecord(subscriptionItemId, params);
-  };
+  }
 };

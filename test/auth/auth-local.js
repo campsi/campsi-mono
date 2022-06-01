@@ -168,7 +168,7 @@ describe('Auth Local API', () => {
    * Test the /GET local/validate route
    */
   describe('/GET local/validate [default]', () => {
-    it.skip('it should validate the user', done => {
+    it('it should validate the user', done => {
       const campsi = context.campsi;
       let signupPayload;
       let signinToken;
@@ -187,7 +187,7 @@ describe('Auth Local API', () => {
             async.series(
               [
                 serieCb => {
-                  campsi.on('auth/local/signup', payload => {
+                  campsi.on('auth/signup', payload => {
                     signupPayload = payload;
                     // TODO : Test is too fast and validation can failed (especially in travis)
                     // TODO : Bug is not clearly identified (node, mqtt-emitter, mongo, mongo driver)

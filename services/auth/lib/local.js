@@ -128,12 +128,11 @@ module.exports.signup = function(req, res) {
     });
   };
 
-  const doesLocalUserExist = function(user) {
+  const doesUserExist = function(user) {
     return new Promise((resolve, reject) => {
       users.findOne(
         {
-          email: user.email,
-          'identities.local': { $exists: true }
+          email: user.email
         },
         (err, result) => {
           return err ? reject(new Error('could not perform findOneAndUpdate')) : resolve(result);
@@ -142,30 +141,6 @@ module.exports.signup = function(req, res) {
     });
   };
 
-  const updateExistingNonLocalUser = function(user) {
-    return new Promise((resolve, reject) => {
-      users.findOneAndUpdate(
-        {
-          email: user.email,
-          'identities.local': { $exists: false }
-        },
-        {
-          $set: {
-            'identities.local': user.identities.local,
-            email: user.email,
-            data: user.data,
-            updatedAt: new Date()
-          }
-        },
-        {
-          returnDocument: 'after'
-        },
-        (err, result) => {
-          return err ? reject(new Error('could not perform findOneAndUpdate')) : resolve(result.value);
-        }
-      );
-    });
-  };
   const email = String(req.body.email || req.body.username).toLowerCase();
   module.exports
     .encryptPassword(req.body.password)
@@ -186,18 +161,17 @@ module.exports.signup = function(req, res) {
         }
       };
 
-      // make sure local user doesn't exist already
-      doesLocalUserExist(user).then(result => {
+      // make sure user doesn't exist already
+      doesUserExist(user).then(result => {
         if (result !== null) {
-          return helpers.badRequest(res, new Error('A local user already exists with that email'));
+          return helpers.badRequest(res, new Error('A user already exists with that email'));
         }
       });
 
-      updateExistingNonLocalUser(user)
-        .then(updatedUser => updatedUser || insertUser(user))
-        .then(insertedOrUpdatedUser => {
+      insertUser(user)
+        .then(newUser => {
           handlers.callback(req, res);
-          return insertedOrUpdatedUser;
+          return newUser;
         })
         .then(loggedInUser => dispatchUserSignupEvent(req, loggedInUser))
         .catch(err => handlers.redirectWithError(req, res, err));

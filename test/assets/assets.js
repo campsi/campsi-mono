@@ -5,6 +5,8 @@ process.env.NODE_ENV = 'test';
 // Require the dev-dependencies
 const debug = require('debug')('campsi:test');
 const chai = require('chai');
+const assert = chai.assert;
+const expect = chai.expect;
 const chaiHttp = require('chai-http');
 const config = require('config');
 const fs = require('fs');
@@ -87,7 +89,9 @@ describe('Assets API', () => {
         files,
         (file, cb) => {
           createAsset(file)
-            .then(cb)
+            .then(result => {
+              cb();
+            })
             .catch(err => {
               if (err) {
                 throw new Error("Can't create asset");
@@ -106,20 +110,20 @@ describe('Assets API', () => {
    * Test the /GET / route
    */
   describe('/GET/', () => {
-    it.skip('it should return a list of assets', done => {
-      createAssets(Array(5).fill('../rsrc/logo_agilitation.png')).then(() => {
+    it('it should return a list of assets', done => {
+      createAssets(Array(5).fill('./test/rsrc/logo_agilitation.png')).then(() => {
         chai
           .request(context.campsi.app)
           .get('/assets/')
-          // .query({ page: 3, perPage: 2 })
           .end((err, res) => {
             if (err) debug(`received an error from chai: ${err.message}`);
+
             res.should.have.status(200);
             res.should.have.header('x-total-count', '5');
             res.should.have.header('link');
             res.should.be.json;
             res.body.should.be.an('array');
-            res.body.length.should.be.eq(1);
+            res.body.length.should.be.eq(5);
             done();
           });
       });
@@ -145,6 +149,28 @@ describe('Assets API', () => {
         });
     });
   });
+
+  /*
+   * Test the /POST /copy route
+   * We're able to create a new asset from a remote file URL
+   */
+  describe('/POST /copy', () => {
+    it('it should fail if remote URL does not exist', done => {
+      chai
+        .request(context.campsi.app)
+        .post('/assets/copy')
+        .send({
+          url: 'https://axeptio.com/nofilehere.png'
+        })
+        .end((err, res) => {
+          if (err) debug(`received an error from chai: ${err.message}`);
+          res.should.have.status(400);
+          res.should.be.json;
+          done();
+        });
+    });
+  });
+
   /*
    * Test the /POST / route
    */
@@ -182,11 +208,27 @@ describe('Assets API', () => {
       });
     });
   });
+
+  describe('/GET /assets/<asset>', () => {
+    it('it should fail if local asset does not exist', done => {
+      createAsset('./test/rsrc/logo_agilitation.dne')
+        .then(() => {
+          assert.fail('actual', 'expected', 'should not be here');
+        })
+        .catch(err => {
+          err.should.not.be.null;
+          done();
+        });
+    });
+  });
+
   /*
    * Test the /GET /:asset/metadata route
    */
   describe('/GET /:asset/metadata', () => {
     it('it should return the asset metadata', done => {
+      const timeBeforeAssetCreation = new Date();
+
       createAsset('./test/rsrc/logo_agilitation.png').then(asset => {
         chai
           .request(context.campsi.app)
@@ -195,7 +237,25 @@ describe('Assets API', () => {
             if (err) debug(`received an error from chai: ${err.message}`);
             res.should.have.status(200);
             res.should.be.json;
-            // TODO test metadata
+
+            // test metadata
+            res.body.should.have.property('_id');
+            res.body.should.have.property('clientReportedFileExtension');
+            res.body.clientReportedFileExtension.should.eq('.png');
+            res.body.should.have.property('clientReportedMimeType');
+            res.body.clientReportedMimeType.should.eq('image/png');
+            res.body.should.have.property('createdAt');
+            res.body.should.have.property('createdFrom');
+            res.body.should.have.property('detectedFileExtension');
+            res.body.should.have.property('detectedMimeType');
+            res.body.should.have.property('destination');
+            res.body.should.have.property('fieldName');
+            res.body.should.have.property('originalName');
+            res.body.should.have.property('path');
+            res.body.should.have.property('destination');
+            res.body.should.have.property('size');
+            res.body.should.have.property('storage');
+            expect(new Date(res.body.createdAt)).to.be.at.gte(timeBeforeAssetCreation);
             done();
           });
       });
@@ -205,7 +265,7 @@ describe('Assets API', () => {
    * Test the /DELETE /:asset route
    */
   describe('/DELETE /:asset', () => {
-    it('it should return the asset metadata', done => {
+    it('it should delete the asset and then return a 404 when requesting the deleted asset', done => {
       createAsset('./test/rsrc/logo_agilitation.png').then(asset => {
         chai
           .request(context.campsi.app)
@@ -214,8 +274,16 @@ describe('Assets API', () => {
             if (err) debug(`received an error from chai: ${err.message}`);
             res.should.have.status(200);
             res.should.be.json;
-            // TODO test deletion and return
-            done();
+
+            // test was deleted, should send a 404
+            chai
+              .request(context.campsi.app)
+              .get('/assets/{0}'.format(asset.id))
+              .end((err, res) => {
+                if (err) debug(`received an error from chai: ${err.message}`);
+                res.should.have.status(404);
+                done();
+              });
           });
       });
     });

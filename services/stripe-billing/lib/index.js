@@ -156,9 +156,7 @@ module.exports = class StripeBillingService extends CampsiService {
     this.router.get('/invoices/:id', (req, res) => {
       stripe.invoices.retrieve(req.params.id, optionsFromQuery(req.query), defaultHandler(res));
     });
-    this.router.get('/payment_intents/:id', (req, res) => {
-      stripe.paymentIntents.retrieve(req.params.id, optionsFromQuery(req.query), defaultHandler(res));
-    });
+
     this.router.post('/setup_intents', (req, res) => {
       stripe.setupIntents.create(
         {
@@ -171,8 +169,40 @@ module.exports = class StripeBillingService extends CampsiService {
         defaultHandler(res)
       );
     });
-
     this.router.get('/coupons/:code[:]check-validity', this.checkCouponCodeValidity);
+
+    this.router.get('/payment_intents/:id', (req, res) => {
+      stripe.paymentIntents.retrieve(req.params.id, optionsFromQuery(req.query), defaultHandler(res));
+    });
+    this.router.post('/payment_intents/:id[:]confirm', (req, res) => {
+      stripe.paymentIntents.confirm(req.params.id, defaultHandler(res));
+    });
+    this.router.post('/payment_intents', (req, res) => {
+      const payload = {
+        confirm: req.body.confirm || true,
+        amount: req.body.amount,
+        currency: req.body.currency || 'eur',
+        payment_method_types: ['card', 'sepa_debit'],
+        setup_future_usage: req.body.setup_future_usage || 'off_session',
+        customer: req.body.customer
+      };
+      if (req.body.payment_method) {
+        payload.payment_method = req.body.payment_method;
+      }
+      stripe.paymentIntents.create(payload, defaultHandler(res));
+    });
+    this.router.patch('/payment_intents/:id', (req, res) => {
+      const payload = {
+        setup_future_usage: req.body.setup_future_usage || 'off_session'
+      };
+      if (req.body.payment_method) {
+        payload.payment_method = req.body.payment_method;
+      }
+      if (req.body.metadata) {
+        payload.metadata = req.body.metadata;
+      }
+      stripe.paymentIntents.update(req.params.id, payload, defaultHandler(res));
+    });
 
     return super.initialize();
   }

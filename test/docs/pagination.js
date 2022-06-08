@@ -268,7 +268,7 @@ describe('Pagination', () => {
    * Test the /GET docs/pizzas route
    */
   describe('/GET docs/docs/pizzas', () => {
-    it('it should return 6 documents from the end of the list', done => {
+    it('it should return 5 documents from the end of the list', done => {
       chai
         .request(campsi.app)
         .get('/docs/pizzas/?page=6&perPage=19')

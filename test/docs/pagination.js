@@ -15,6 +15,7 @@ const builder = require('../../services/docs/lib/modules/queryBuilder');
 const async = require('async');
 const fakeId = require('fake-object-id');
 const { resolve } = require('path');
+const assert = chai.assert;
 
 chai.should();
 let campsi;
@@ -59,7 +60,7 @@ function createPizzas() {
     const promises = [];
 
     for (let i = 0; i < 100; i++) {
-      pizzas.push({ data: { name: `margherita${i}` }, resource, state: 'published' });
+      pizzas.push({ data: { name: `${i}` }, resource, state: 'published' });
     }
 
     pizzas.forEach(item => {
@@ -110,7 +111,7 @@ describe('Pagination', () => {
     it('it should GET all the pizzas with no pagination', done => {
       chai
         .request(campsi.app)
-        .get('/docs/pizzas/')
+        .get('/docs/pizzas/?sort-name=name')
         .end((err, res) => {
           if (err) debug(`received an error from chai: ${err.message}`);
           res.should.have.status(200);

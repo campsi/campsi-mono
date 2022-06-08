@@ -15,11 +15,13 @@ format.extend(String.prototype);
 chai.use(chaiHttp);
 chai.should();
 
+const firstPassword = 'signup!';
+
 const glenda = {
   displayName: 'Glenda Bennett',
   email: 'glenda@agilitation.fr',
   username: 'glenda',
-  password: 'signup!'
+  password: firstPassword
 };
 
 const services = {
@@ -66,12 +68,20 @@ describe('Auth Local Password Reset', () => {
         resetUserPassword(chai, campsi, glenda.username, passwordResetToken, newPassword).end((err, res) => {
           if (err) debug(`received an error from chai: ${err.message}`);
           res.should.have.status(200);
-          signin(chai, campsi, glenda.username, newPassword).end((err, res) => {
+
+          signin(chai, campsi, glenda.username, firstPassword).end((err, res) => {
             if (err) debug(`received an error from chai: ${err.message}`);
-            res.should.have.status(200);
+            res.should.have.status(400);
             res.should.be.json;
-            res.body.should.have.property('token');
-            done();
+            res.body.should.not.have.property('token');
+
+            signin(chai, campsi, glenda.username, newPassword).end((err, res) => {
+              if (err) debug(`received an error from chai: ${err.message}`);
+              res.should.have.status(200);
+              res.should.be.json;
+              res.body.should.have.property('token');
+              done();
+            });
           });
         });
       });

@@ -283,4 +283,21 @@ module.exports = class StripeBillingService extends CampsiService {
     params.quantity = parseInt(params.quantity);
     return await this.stripe.subscriptionItems.createUsageRecord(subscriptionItemId, params);
   }
+
+  /**
+   * @see https://stripe.com/docs/api/usage_records/subscription_item_summary_list
+   * @param {string} subscriptionItemId
+   * @param {Object} params
+   * @return {array}
+   */
+  async listUsageRecordSummaries(subscriptionItemId, params = {}) {
+    const usageSummary = [];
+    for await (const usage of this.stripe.subscriptionItems.listUsageRecordSummaries(subscriptionItemId, {
+      limit: 100,
+      ...params
+    })) {
+      usageSummary.push(usage);
+    }
+    return usageSummary;
+  }
 };

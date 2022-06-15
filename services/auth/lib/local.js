@@ -127,6 +127,29 @@ module.exports.signup = function(req, res) {
         });
     });
   };
+  const updateInvitedUser = function(user) {
+    return new Promise((resolve, reject) => {
+      users.findOneAndUpdate(
+        {
+          email: user.email
+        },
+        {
+          $set: {
+            'identities.local': user.identities.local,
+            email: user.email,
+            data: user.data,
+            updatedAt: new Date()
+          }
+        },
+        {
+          returnDocument: 'after'
+        },
+        (err, result) => {
+          return err ? reject(new Error('could not perform findOneAndUpdate')) : resolve(result.value);
+        }
+      );
+    });
+  };
 
   const doesUserExist = function(user) {
     return new Promise((resolve, reject) => {
@@ -144,7 +167,7 @@ module.exports.signup = function(req, res) {
   const email = String(req.body.email || req.body.username).toLowerCase();
   module.exports
     .encryptPassword(req.body.password)
-    .then(encryptedPassword => {
+    .then(async encryptedPassword => {
       const user = {
         displayName: req.body.displayName,
         email,
@@ -161,20 +184,28 @@ module.exports.signup = function(req, res) {
         }
       };
 
-      // make sure user doesn't exist already
-      doesUserExist(user).then(result => {
-        if (result !== null) {
-          return helpers.badRequest(res, new Error('A user already exists with that email'));
+      try {
+        let insertedOrUpdatedUser;
+        const existingUser = await doesUserExist(user);
+        if (existingUser) {
+          if (
+            existingUser.identities?.[`invitation-${req.body.invitationToken}`] &&
+            Object.keys(existingUser.identities).length === 1
+          ) {
+            // if user exists due to invitation and without any other provider, then we can update it
+            insertedOrUpdatedUser = await updateInvitedUser(user);
+          } else {
+            return helpers.badRequest(res, new Error('A user already exists with that email'));
+          }
+        } else {
+          insertedOrUpdatedUser = await insertUser(user);
         }
-      });
+        handlers.callback(req, res);
 
-      insertUser(user)
-        .then(newUser => {
-          handlers.callback(req, res);
-          return newUser;
-        })
-        .then(loggedInUser => dispatchUserSignupEvent(req, loggedInUser))
-        .catch(err => handlers.redirectWithError(req, res, err));
+        return dispatchUserSignupEvent(req, insertedOrUpdatedUser);
+      } catch (err) {
+        handlers.redirectWithError(req, res, err);
+      }
     })
     .catch(passwordEncryptionError => {
       debug('Password encryption error', passwordEncryptionError);

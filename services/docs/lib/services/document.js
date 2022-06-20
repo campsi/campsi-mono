@@ -247,18 +247,54 @@ module.exports.getDocument = function(resource, filter, query, user, state, reso
   const requestedStates = getRequestedStatesFromQuery(resource, query);
   const projection = { _id: 1, states: 1, users: 1, groups: 1 };
   const match = { ...filter };
+  let previous;
+  let next;
+
   match[`states.${state}`] = { $exists: true };
+
+  if (query.withLinks) {
+    match._id = { $lte: createObjectId(filter._id) };
+  }
 
   if (!resource.isInheritable) {
     return new Promise((resolve, reject) => {
-      resource.collection.findOne(match, { projection }, (err, doc) => {
+      let queryFunction;
+
+      if (query.withLinks) {
+        queryFunction = resource.collection
+          .find(match, { projection })
+          .sort({ _id: -1 })
+          .limit(2)
+          .toArray();
+      } else {
+        queryFunction = resource.collection.findOne(match, { projection });
+      }
+
+      queryFunction.then((results, err) => {
+        let doc;
         if (err) return reject(err);
+        if (query.withLinks) {
+          if (results === null || results.length === 0) {
+            return reject(new Error('Document Not Found'));
+          }
+
+          if (results.length === 2) {
+            previous = results[1];
+            doc = results[0];
+          } else {
+            doc = results[0];
+          }
+        } else {
+          doc = results;
+        }
+
         if (doc === null) {
           return reject(new Error('Document Not Found'));
         }
         if (doc.states[state] === undefined) {
           return reject(new Error('Document Not Found'));
         }
+
         const returnValue = prepareGetDocument({
           doc,
           state,
@@ -267,8 +303,30 @@ module.exports.getDocument = function(resource, filter, query, user, state, reso
           resource,
           user
         });
+
         embedDocs.one(resource, query.embed, user, returnValue.data, resources).then(doc => {
-          resolve(returnValue);
+          if (query.withLinks) {
+            // get next
+            match._id = { $gt: createObjectId(filter._id) };
+
+            resource.collection
+              .find(match, { projection })
+              .sort({ _id: 1 })
+              .limit(1)
+              .toArray()
+              .then((nextItem, err) => {
+                if (!err && nextItem && nextItem.length === 1) {
+                  next = nextItem[0];
+                }
+
+                if (next) returnValue.next_id = next._id;
+                if (previous) returnValue.previous_id = previous._id;
+
+                resolve(returnValue);
+              });
+          } else {
+            resolve(returnValue);
+          }
         });
       });
     });

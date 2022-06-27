@@ -88,6 +88,19 @@ function getPizzaWithLinks(id) {
   });
 }
 
+function getPizzaWithLinksInHeader(id) {
+  return new Promise(resolve => {
+    chai
+      .request(campsi.app)
+      .get(`/docs/pizzas/${id}`)
+      .set({ 'With-Links': true })
+      .end((err, res) => {
+        if (err) debug(`received an error from chai: ${err.message}`);
+        resolve(res.body);
+      });
+  });
+}
+
 function getPizzaWithoutLinks(id) {
   return new Promise(resolve => {
     chai
@@ -95,6 +108,31 @@ function getPizzaWithoutLinks(id) {
       .get(`/docs/pizzas/${id}`)
       .end((err, res) => {
         if (err) debug(`received an error from chai: ${err.message}`);
+        resolve(res.body);
+      });
+  });
+}
+
+function getPizzaWithLinkOptionSetToFalse(id) {
+  return new Promise(resolve => {
+    chai
+      .request(campsi.app)
+      .get(`/docs/pizzas/${id}?withLinks=false`)
+      .end((err, res) => {
+        if (err) debug(`received an error from chai: ${err.message}`);
+        resolve(res.body);
+      });
+  });
+}
+
+function getPizzaWithoutLinksInHeader(id) {
+  return new Promise(resolve => {
+    chai
+      .request(campsi.app)
+      .get(`/docs/pizzas/${id}`)
+      .set({ 'With-Links': false })
+      .end((err, res) => {
+        if (err) console.log(`received an error from chai: ${err.message}`);
         resolve(res.body);
       });
   });
@@ -159,28 +197,40 @@ describe('Document links', () => {
   /*
    * Test the /GET docs/pizzas route
    */
-  describe('/GET first from the collection should have no previous link but should have next link', () => {
-    it('it should get a document with a link to the next one and the previous one', done => {
+  describe('/GET pizzas starting from the first all the way to last following the links', () => {
+    it('gets first pizza with correct links', done => {
       getPizzaWithLinks(firstPizza).then(body => {
         body.next_id.should.eq(secondPizza);
         body.should.not.have.property('previous_id');
-        getPizzaWithLinks(secondPizza).then(body => {
-          body.previous_id.should.eq(firstPizza);
-          body.next_id.should.eq(thirdPizza);
-          getPizzaWithLinks(thirdPizza).then(body => {
-            body.previous_id.should.eq(secondPizza);
-            body.next_id.should.eq(fourthPizza);
-            getPizzaWithLinks(fourthPizza).then(body => {
-              body.previous_id.should.eq(thirdPizza);
-              body.next_id.should.eq(fifthPizza);
-              getPizzaWithLinks(fifthPizza).then(body => {
-                body.should.not.have.property('next_id');
-                body.previous_id.should.eq(fourthPizza);
-                done();
-              });
-            });
-          });
-        });
+        done();
+      });
+    });
+    it('gets 2nd pizza with correct links', done => {
+      getPizzaWithLinksInHeader(secondPizza).then(body => {
+        body.previous_id.should.eq(firstPizza);
+        body.next_id.should.eq(thirdPizza);
+        done();
+      });
+    });
+    it('gets third pizza with correct links', done => {
+      getPizzaWithLinks(thirdPizza).then(body => {
+        body.previous_id.should.eq(secondPizza);
+        body.next_id.should.eq(fourthPizza);
+        done();
+      });
+    });
+    it('gets fourth pizza with correct links', done => {
+      getPizzaWithLinksInHeader(fourthPizza).then(body => {
+        body.previous_id.should.eq(thirdPizza);
+        body.next_id.should.eq(fifthPizza);
+        done();
+      });
+    });
+    it('gets fifth pizza with correct links', done => {
+      getPizzaWithLinks(fifthPizza).then(body => {
+        body.should.not.have.property('next_id');
+        body.previous_id.should.eq(fourthPizza);
+        done();
       });
     });
   });
@@ -188,18 +238,40 @@ describe('Document links', () => {
   /*
    * Test the /GET docs/pizzas route
    */
-  describe('GET WITHOUT LINKS', () => {
-    it('it should get a document with no links', done => {
-      getPizzaWithoutLinks(firstPizza).then(body => {
-        getPizzaWithoutLinks(secondPizza).then(body => {
-          getPizzaWithoutLinks(thirdPizza).then(body => {
-            getPizzaWithoutLinks(fourthPizza).then(body => {
-              getPizzaWithoutLinks(fifthPizza).then(body => {
-                done();
-              });
-            });
-          });
-        });
+  describe('/GET each pizza one by one with links switched off or set to false, checks for no links', () => {
+    it('it should get first pizza with no links returned', done => {
+      getPizzaWithLinkOptionSetToFalse(firstPizza).then(body => {
+        body.should.not.have.property('next_id');
+        body.should.not.have.property('previous_id');
+        done();
+      });
+    });
+    it('it should get 2nd pizza with no links returned', done => {
+      getPizzaWithoutLinks(secondPizza).then(body => {
+        body.should.not.have.property('next_id');
+        body.should.not.have.property('previous_id');
+        done();
+      });
+    });
+    it('it should get 3rd pizza with no links returned', done => {
+      getPizzaWithoutLinksInHeader(thirdPizza).then(body => {
+        body.should.not.have.property('next_id');
+        body.should.not.have.property('previous_id');
+        done();
+      });
+    });
+    it('it should get 4th pizza with no links returned', done => {
+      getPizzaWithoutLinks(fourthPizza).then(body => {
+        body.should.not.have.property('next_id');
+        body.should.not.have.property('previous_id');
+        done();
+      });
+    });
+    it('it should get 5th pizza with no links returned', done => {
+      getPizzaWithoutLinksInHeader(fifthPizza).then(body => {
+        body.should.not.have.property('next_id');
+        body.should.not.have.property('previous_id');
+        done();
       });
     });
   });

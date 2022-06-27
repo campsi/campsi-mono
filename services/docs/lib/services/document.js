@@ -243,16 +243,19 @@ module.exports.patchDocument = async (resource, filter, data, state, user) => {
   };
 };
 
-module.exports.getDocument = function(resource, filter, query, user, state, resources) {
+module.exports.getDocument = function(resource, filter, query, user, state, resources, headers) {
   const requestedStates = getRequestedStatesFromQuery(resource, query);
   const projection = { _id: 1, states: 1, users: 1, groups: 1 };
   const match = { ...filter };
+  const withLinks =
+    (headers['with-links'] && headers['with-links'] === 'true') || (query.withLinks && query.withLinks === 'true');
+
   let previous;
   let next;
 
   match[`states.${state}`] = { $exists: true };
 
-  if (query.withLinks) {
+  if (withLinks) {
     match._id = { $lte: createObjectId(filter._id) };
   }
 
@@ -260,7 +263,7 @@ module.exports.getDocument = function(resource, filter, query, user, state, reso
     return new Promise((resolve, reject) => {
       let queryFunction;
 
-      if (query.withLinks) {
+      if (withLinks) {
         queryFunction = resource.collection
           .find(match, { projection })
           .sort({ _id: -1 })
@@ -273,7 +276,7 @@ module.exports.getDocument = function(resource, filter, query, user, state, reso
       queryFunction.then((results, err) => {
         let doc;
         if (err) return reject(err);
-        if (query.withLinks) {
+        if (withLinks) {
           if (results === null || results.length === 0) {
             return reject(new Error('Document Not Found'));
           }
@@ -305,7 +308,7 @@ module.exports.getDocument = function(resource, filter, query, user, state, reso
         });
 
         embedDocs.one(resource, query.embed, user, returnValue.data, resources).then(doc => {
-          if (query.withLinks) {
+          if (withLinks) {
             // get next
             match._id = { $gt: createObjectId(filter._id) };
 
@@ -319,8 +322,8 @@ module.exports.getDocument = function(resource, filter, query, user, state, reso
                   next = nextItem[0];
                 }
 
-                if (next) returnValue.next_id = next._id;
-                if (previous) returnValue.previous_id = previous._id;
+                if (next && next._id) returnValue.next_id = next._id;
+                if (previous && previous._id) returnValue.previous_id = previous._id;
 
                 resolve(returnValue);
               });

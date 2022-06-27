@@ -133,7 +133,7 @@ module.exports.patchDoc = async (req, res) => {
 // get a doc
 module.exports.getDoc = function(req, res) {
   documentService
-    .getDocument(req.resource, req.filter, req.query, req.user, req.state, req.options.resources)
+    .getDocument(req.resource, req.filter, req.query, req.user, req.state, req.options.resources, req.headers)
     .then(result => helpers.json(res, result))
     .catch(err => helpers.notFound(res, err));
 };

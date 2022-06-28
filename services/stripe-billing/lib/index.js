@@ -239,7 +239,8 @@ module.exports = class StripeBillingService extends CampsiService {
     return creditNotes;
   }
 
-  async checkCouponCodeValidity(req, res) {
+  /* eslint-disable */
+  checkCouponCodeValidity = async (req, res) => {
     const code = req.params.code;
     if (!code) {
       return helpers.missingParameters(res, new Error('code must be specified'));
@@ -264,7 +265,7 @@ module.exports = class StripeBillingService extends CampsiService {
     } catch (err) {
       return res.status(err.statusCode || 500).json({ message: err.raw?.message || `invalid code ${code}` });
     }
-  }
+  };
 
   /**
    * @see https://stripe.com/docs/api/usage_records/create

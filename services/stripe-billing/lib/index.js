@@ -216,30 +216,33 @@ module.exports = class StripeBillingService extends CampsiService {
    * @param {Object} parameters can be customer, subscription, status... ex: { customer: 'cus_abc123' }
    * @return {Object}
    */
-  async fetchInvoices(parameters) {
+  // eslint-disable-next-line
+  fetchInvoices = async parameters => {
     const invoices = [];
     parameters = { ...parameters, limit: 100 };
     for await (const invoice of this.stripe.invoices.list(parameters)) {
       invoices.push(invoice);
     }
     return invoices;
-  }
+  };
 
   /**
    * @see https://stripe.com/docs/api/credit_notes/list
    * @param {Object} parameters can be customer, invoice... ex: { customer: 'cus_abc123' }
    * @return {Object}
    */
-  async fetchCreditNotes(parameters) {
+  // eslint-disable-next-line
+  fetchCreditNotes = async parameters => {
     const creditNotes = [];
     parameters = { ...parameters, limit: 100 };
     for await (const creditNote of this.stripe.creditNotes.list(parameters)) {
       creditNotes.push(creditNote);
     }
     return creditNotes;
-  }
+  };
 
-  async checkCouponCodeValidity(req, res) {
+  // eslint-disable-next-line
+  checkCouponCodeValidity = async (req, res) => {
     const code = req.params.code;
     if (!code) {
       return helpers.missingParameters(res, new Error('code must be specified'));
@@ -264,7 +267,7 @@ module.exports = class StripeBillingService extends CampsiService {
     } catch (err) {
       return res.status(err.statusCode || 500).json({ message: err.raw?.message || `invalid code ${code}` });
     }
-  }
+  };
 
   /**
    * @see https://stripe.com/docs/api/usage_records/create

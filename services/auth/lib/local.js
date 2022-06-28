@@ -22,7 +22,7 @@ function dispatchUserSignupEvent(req, user) {
   });
 }
 
-module.exports.middleware = function(localProvider) {
+module.exports.middleware = function (localProvider) {
   return (req, res, next) => {
     req.authProvider = localProvider;
     state.serialize(req);
@@ -30,7 +30,7 @@ module.exports.middleware = function(localProvider) {
   };
 };
 
-module.exports.signin = function(req, res) {
+module.exports.signin = function (req, res) {
   // could be a one-liner, but I find this more explicit
   // the real signin method is the callback below
   return handlers.callback(req, res);
@@ -63,7 +63,7 @@ module.exports.callback = function localCallback(req, username, password, done) 
         debug('tried to find user with username', username, 'but none found');
         done(null, null);
       }
-      bcrypt.compare(password, user.identities.local.encryptedPassword, function(err, isMatch) {
+      bcrypt.compare(password, user.identities.local.encryptedPassword, function (err, isMatch) {
         if (err) {
           debug('bcrypt password compare error', err, password, user.identities.local.encryptedPassword);
         }
@@ -77,7 +77,7 @@ module.exports.callback = function localCallback(req, username, password, done) 
     .catch(done);
 };
 
-module.exports.encryptPassword = function(password, saltRounds) {
+module.exports.encryptPassword = function (password, saltRounds) {
   function byteLength(str) {
     // returns the byte length of an utf8 string
     let s = str.length;
@@ -94,9 +94,9 @@ module.exports.encryptPassword = function(password, saltRounds) {
     if (byteLength(password) > 72) {
       reject(new Error('Password byte length must not exceed 72 bytes'));
     }
-    bcrypt.genSalt(saltRounds || 2, function(err, generatedSalt) {
+    bcrypt.genSalt(saltRounds || 2, function (err, generatedSalt) {
       if (err) return reject(err);
-      bcrypt.hash(password, generatedSalt, function(err, hash) {
+      bcrypt.hash(password, generatedSalt, function (err, hash) {
         if (err) return reject(err);
         resolve(hash);
       });
@@ -104,11 +104,11 @@ module.exports.encryptPassword = function(password, saltRounds) {
   });
 };
 
-module.exports.createRandomToken = function(username, salt) {
+module.exports.createRandomToken = function (username, salt) {
   return CryptoJS.AES.encrypt(new Date().toISOString() + username, salt).toString();
 };
 
-module.exports.signup = function(req, res) {
+module.exports.signup = function (req, res) {
   const salt = req.authProvider.options.salt;
   const users = req.db.collection('__users__');
   const missingParameters = ['password', 'displayName', 'username'].filter(prop => {
@@ -117,7 +117,7 @@ module.exports.signup = function(req, res) {
   if (missingParameters.length > 0) {
     return helpers.error(res, new Error(`missing parameters : ${missingParameters.join(', ')}`));
   }
-  const insertUser = function(user) {
+  const insertUser = function (user) {
     return new Promise((resolve, reject) => {
       users
         .insertOne(user)
@@ -127,7 +127,7 @@ module.exports.signup = function(req, res) {
         });
     });
   };
-  const updateInvitedUser = function(user) {
+  const updateInvitedUser = function (user) {
     return new Promise((resolve, reject) => {
       users.findOneAndUpdate(
         {
@@ -151,7 +151,7 @@ module.exports.signup = function(req, res) {
     });
   };
 
-  const doesUserExist = function(user) {
+  const doesUserExist = function (user) {
     return new Promise((resolve, reject) => {
       users.findOne(
         {
@@ -223,7 +223,7 @@ module.exports.signup = function(req, res) {
  * @param {string} req.query.redirectURI
  * @param {*} res
  */
-module.exports.validate = function(req, res) {
+module.exports.validate = function (req, res) {
   if (!req.query.token) {
     return helpers.error(res, new Error('you must provide a validation token'));
   }
@@ -273,7 +273,7 @@ module.exports.validate = function(req, res) {
  * @param res
  * @return {*}
  */
-module.exports.createResetPasswordToken = function(req, res) {
+module.exports.createResetPasswordToken = function (req, res) {
   const missingParams = getMissingParameters(req.body, ['email']);
   if (missingParams.length > 0) {
     return helpers.error(res, new Error(`missing parameter(s) : ${missingParams.join(', ')}`));
@@ -325,14 +325,14 @@ module.exports.createResetPasswordToken = function(req, res) {
  * @param res
  * @return {*}
  */
-module.exports.resetPassword = function(req, res) {
+module.exports.resetPassword = function (req, res) {
   const missingParams = getMissingParameters(req.body, ['password', 'token']);
   if (missingParams.length > 0) {
     return helpers.error(res, new Error(`missing parameter(s) : ${missingParams.join(', ')}`));
   }
   module.exports
     .encryptPassword(req.body.password)
-    .then(function(encryptedPassword) {
+    .then(function (encryptedPassword) {
       const filter = {
         'identities.local.passwordResetToken.value': req.body.token,
         'identities.local.passwordResetToken.expiration': { $gt: new Date() }
@@ -365,7 +365,56 @@ module.exports.resetPassword = function(req, res) {
       debug('Could not encrypt password', passwordEncryptionError);
       helpers.error({
         error: true,
-        message: 'an error occured while encrypting the password specified'
+        message: 'an error occurred while encrypting the password specified'
+      });
+    });
+};
+
+/**
+ * Update the password for the current login user
+ *
+ * @param req
+ * @param res
+ * @return {*}
+ */
+module.exports.updatePassword = function (req, res) {
+  const missingParams = getMissingParameters(req.body, ['new', 'confirm']);
+  if (missingParams.length > 0) {
+    return helpers.error(res, new Error(`missing parameter(s) : ${missingParams.join(', ')}`));
+  }
+
+  if (req.body.new !== req.body.confirm) {
+    return helpers.error(res, new Error('new and confirmation password do not match'));
+  }
+
+  module.exports
+    .encryptPassword(req.body.new)
+    .then(encryptedPassword => {
+      const filter = {
+        _id: req.user._id
+      };
+
+      const update = {
+        $set: {
+          'identities.local.encryptedPassword': encryptedPassword
+        }
+      };
+
+      req.db
+        .collection('__users__')
+        .findOneAndUpdate(filter, update)
+        .then(() => {
+          return res.json({ success: true });
+        })
+        .catch(err => {
+          return helpers.error(res, err);
+        });
+    })
+    .catch(passwordEncryptionError => {
+      debug('Could not encrypt password', passwordEncryptionError);
+      helpers.error({
+        error: true,
+        message: 'an error occurred while encrypting the new password'
       });
     });
 };

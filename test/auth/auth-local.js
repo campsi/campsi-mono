@@ -142,7 +142,7 @@ describe('Auth Local API', () => {
       );
     });
   });
-  describe('/POST local/signup [merge account]', function() {
+  describe('/POST local/signup [merge account]', function () {
     it('it should merge the existing user account', done => {
       const campsi = context.campsi;
       chai
@@ -200,10 +200,7 @@ describe('Auth Local API', () => {
                   let validateUrl = '/auth/local/validate';
                   validateUrl += '?token=' + toURL(signupPayload.token);
                   validateUrl += '&redirectURI=' + toURL('/trace/local-signup-validate-redirect');
-                  chai
-                    .request(campsi.app)
-                    .get(validateUrl)
-                    .end(serieCb);
+                  chai.request(campsi.app).get(validateUrl).end(serieCb);
                 },
                 serieCb => {
                   chai
@@ -342,7 +339,7 @@ describe('Auth Local API', () => {
   /*
    * Test the /POST local/signin route
    */
-  describe('/POST local/signin [bad paramaters]', () => {
+  describe('/POST local/signin [bad parameters]', () => {
     it('it should return an error', done => {
       const campsi = context.campsi;
       createUser(campsi, glenda).then(() => {
@@ -406,6 +403,77 @@ describe('Auth Local API', () => {
             res.body.should.be.a('object');
             res.body.should.have.property('token');
             res.body.token.should.be.a('string');
+            done();
+          });
+      });
+    });
+  });
+  /*
+   * Test the /PUT local/update-password route
+   */
+  describe('/PUT local/update-password [bad parameters]', () => {
+    it('it should return an error', done => {
+      const campsi = context.campsi;
+      createUser(campsi, glenda).then(() => {
+        chai
+          .request(campsi.app)
+          .put('/auth/local/update-password')
+          .set('content-type', 'application/json')
+          .send({
+            bad: 'parameters'
+          })
+          .end((err, res) => {
+            if (err) debug(`received an error from chai: ${err.message}`);
+            res.should.have.status(400);
+            res.should.be.json;
+            res.body.should.be.a('object');
+            res.body.should.have.property('message');
+            done();
+          });
+      });
+    });
+  });
+  describe('/PUT local/update-password [bad credentials]', () => {
+    it('it should sign in the user', done => {
+      const campsi = context.campsi;
+      createUser(campsi, glenda).then(() => {
+        chai
+          .request(campsi.app)
+          .put('/auth/local/update-password')
+          .set('content-type', 'application/json')
+          .send({
+            username: 'glenda',
+            password: 'wrong!'
+          })
+          .end((err, res) => {
+            if (err) debug(`received an error from chai: ${err.message}`);
+            res.should.have.status(400);
+            res.should.be.json;
+            res.body.should.be.a('object');
+            res.body.should.have.property('message');
+            done();
+          });
+      });
+    });
+  });
+  describe('/PUT local/update-password [new & confirm do not match]', () => {
+    it('it should success', done => {
+      const campsi = context.campsi;
+      createUser(campsi, glenda).then(() => {
+        chai
+          .request(campsi.app)
+          .put('/auth/local/update-password')
+          .set('content-type', 'application/json')
+          .send({
+            new: 'Glenda@agilitation.fr',
+            confirm: 'signup!'
+          })
+          .end((err, res) => {
+            if (err) debug(`received an error from chai: ${err.message}`);
+            res.should.have.status(400);
+            res.should.be.json;
+            res.body.should.be.a('object');
+            res.body.should.have.property('message');
             done();
           });
       });

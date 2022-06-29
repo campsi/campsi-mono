@@ -2,7 +2,15 @@
 const CampsiService = require('../../../lib/service');
 const helpers = require('../../../lib/modules/responseHelpers');
 
+const subscriptionExpand = ['latest_invoice', 'latest_invoice.payment_intent', 'pending_setup_intent'];
+const customerExpand = ['tax_ids'];
+
 const bodyToCustomer = (body, sourcePropertyName, user) => {
+  const expand =
+    body.expand && typeof body.expand === 'string'
+      ? [...new Set([...customerExpand, ...body.expand.split('|')])]
+      : customerExpand;
+
   return {
     name: String(body.name),
     description: String(body.description),
@@ -16,11 +24,9 @@ const bodyToCustomer = (body, sourcePropertyName, user) => {
     metadata: Object.assign(body.metadata || {}, user ? { user: user._id.toString() } : {}),
     shipping: body.shipping,
     preferred_locales: [...new Set(['fr-FR', ...(body.preferred_locales ?? [])])],
-    expand: ['tax_ids']
+    expand
   };
 };
-
-const subscriptionExpand = ['latest_invoice', 'latest_invoice.payment_intent', 'pending_setup_intent'];
 
 const optionsFromQuery = query => {
   const options = {};
@@ -59,7 +65,7 @@ module.exports = class StripeBillingService extends CampsiService {
     });
 
     this.router.get('/customers/:id', (req, res) => {
-      req.query.expand = [...new Set([...(req.query?.expand?.split('|') || []), 'tax_ids'])].join('|');
+      req.query.expand = [...new Set([...customerExpand, ...(req.query?.expand?.split('|') || [])])].join('|');
       stripe.customers.retrieve(req.params.id, optionsFromQuery(req.query), defaultHandler(res));
     });
 
@@ -68,11 +74,11 @@ module.exports = class StripeBillingService extends CampsiService {
     });
 
     this.router.patch('/customers/:id', (req, res) => {
-      const payload = req.body;
-      if (payload.expand && typeof payload.expand === 'string') {
-        payload.expand = payload.expand.split('|');
-      }
-      stripe.customers.update(req.params.id, payload, defaultHandler(res));
+      req.body.expand =
+        req.body.expand && typeof req.body.expand === 'string'
+          ? [...new Set([...customerExpand, ...req.body.expand.split('|')])]
+          : customerExpand;
+      stripe.customers.update(req.params.id, req.body, defaultHandler(res));
     });
 
     this.router.delete('/customers/:id', (req, res) => {
@@ -100,6 +106,11 @@ module.exports = class StripeBillingService extends CampsiService {
     });
 
     this.router.post('/subscriptions', (req, res) => {
+      const expand =
+        req.body.expand && typeof req.body.expand === 'string'
+          ? [...new Set([...subscriptionExpand, ...req.body.expand.split('|')])]
+          : subscriptionExpand;
+
       stripe.subscriptions.create(
         {
           customer: req.body.customer,
@@ -108,7 +119,7 @@ module.exports = class StripeBillingService extends CampsiService {
           metadata: req.body.metadata,
           coupon: req.body.coupon,
           promotion_code: req.body.promotion_code,
-          expand: subscriptionExpand,
+          expand,
           default_tax_rates: req.body.default_tax_rates,
           default_source: req.body.default_source
         },
@@ -117,6 +128,7 @@ module.exports = class StripeBillingService extends CampsiService {
     });
 
     this.router.get('/subscriptions/:id', (req, res) => {
+      req.query.expand = [...new Set([...subscriptionExpand, ...(req.query?.expand?.split('|') || [])])].join('|');
       stripe.subscriptions.retrieve(req.params.id, optionsFromQuery(req.query), defaultHandler(res));
     });
 
@@ -125,6 +137,10 @@ module.exports = class StripeBillingService extends CampsiService {
     });
 
     this.router.put('/subscriptions/:id', (req, res) => {
+      const expand =
+        req.body.expand && typeof req.body.expand === 'string'
+          ? [...new Set([...subscriptionExpand, ...req.body.expand.split('|')])]
+          : subscriptionExpand;
       stripe.subscriptions.update(
         req.params.id,
         {
@@ -133,7 +149,7 @@ module.exports = class StripeBillingService extends CampsiService {
           metadata: req.body.metadata,
           coupon: req.body.coupon,
           promotion_code: req.body.promotion_code,
-          expand: subscriptionExpand,
+          expand,
           default_tax_rates: req.body.default_tax_rates,
           default_source: req.body.default_source
         },
@@ -144,7 +160,7 @@ module.exports = class StripeBillingService extends CampsiService {
     this.router.patch('/subscriptions/:id', (req, res) => {
       const payload = req.body;
       if (payload.expand && typeof payload.expand === 'string') {
-        payload.expand = payload.expand.split('|');
+        payload.expand = [...new Set([...subscriptionExpand, ...payload.expand.split('|')])];
       }
       stripe.subscriptions.update(req.params.id, payload, defaultHandler(res));
     });

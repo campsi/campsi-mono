@@ -56,6 +56,7 @@ module.exports = class AuthService extends CampsiService {
     router.get('/logout', handlers.logout);
     router.post('/invitations', handlers.inviteUser);
     router.post('/invitations/:invitationToken', handlers.acceptInvitation);
+
     if (providers.local) {
       router.use('/local', local.middleware(providers.local));
       router.post('/local/signup', local.signup);
@@ -63,6 +64,7 @@ module.exports = class AuthService extends CampsiService {
       router.post('/local/reset-password-token', local.createResetPasswordToken);
       router.post('/local/reset-password', local.resetPassword);
       router.get('/local/validate', local.validate);
+      router.put('/local/update-password', local.updatePassword);
     }
     this.router.get('/:provider', handlers.initAuth);
     this.router.get('/:provider/callback', handlers.callback);
@@ -84,10 +86,7 @@ module.exports = class AuthService extends CampsiService {
 
   async fetchUsers(userIds) {
     const filter = { _id: { $in: userIds.map(id => createObjectId(id)) } };
-    const users = await this.db
-      .collection('__users__')
-      .find(filter)
-      .toArray();
+    const users = await this.db.collection('__users__').find(filter).toArray();
     const map = users.reduce((map, user) => {
       map[user._id.toString()] = user;
       return map;

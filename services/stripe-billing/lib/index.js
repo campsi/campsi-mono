@@ -130,7 +130,11 @@ module.exports = class StripeBillingService extends CampsiService {
     });
 
     this.router.delete('/subscriptions/:id', (req, res) => {
-      stripe.subscriptions.del(req.params.id, defaultHandler(res));
+      const params = {};
+      if (req.body.invoice_now) {
+        params.invoice_now = req.body.invoice_now;
+      }
+      stripe.subscriptions.del(req.params.id, params, defaultHandler(res));
     });
 
     this.router.put('/subscriptions/:id', (req, res) => {

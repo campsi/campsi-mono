@@ -25,6 +25,8 @@ function dispatchError(res, error) {
       return helpers.validationError(res, error);
     case error.message === 'Not Found':
       return helpers.notFound(res, error);
+    case error.message === 'Unauthorized':
+      return helpers.unauthorized(res, error);
     default:
       return helpers.error(res, error);
   }

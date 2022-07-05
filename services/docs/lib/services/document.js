@@ -4,6 +4,9 @@ const paginateCursor = require('../../../../lib/modules/paginateCursor');
 const sortCursor = require('../../../../lib/modules/sortCursor');
 const createObjectId = require('../../../../lib/modules/createObjectId');
 const permissions = require('../modules/permissions');
+const { ObjectId } = require('mongodb');
+
+const createError = require('http-errors');
 
 // Helper functions
 const getDocUsersList = doc => Object.keys(doc ? doc.users : []).map(k => doc.users[k]);
@@ -11,7 +14,7 @@ const getRequestedStatesFromQuery = (resource, query) => {
   return query.states ? query.states.split(',') : Object.keys(resource.states);
 };
 
-module.exports.getDocuments = function(resource, filter, user, query, state, sort, pagination, resources) {
+module.exports.getDocuments = function (resource, filter, user, query, state, sort, pagination, resources) {
   const queryBuilderOptions = {
     resource,
     user,
@@ -162,7 +165,7 @@ module.exports.getDocuments = function(resource, filter, user, query, state, sor
   });
 };
 
-module.exports.createDocument = function(resource, data, state, user, parentId, groups) {
+module.exports.createDocument = function (resource, data, state, user, parentId, groups) {
   return new Promise((resolve, reject) => {
     builder
       .create({
@@ -201,7 +204,7 @@ module.exports.createDocument = function(resource, data, state, user, parentId, 
   });
 };
 
-module.exports.setDocument = function(resource, filter, data, state, user) {
+module.exports.setDocument = function (resource, filter, data, state, user) {
   return new Promise((resolve, reject) => {
     builder
       .update({
@@ -214,14 +217,19 @@ module.exports.setDocument = function(resource, filter, data, state, user) {
         resource.collection.updateOne(filter, update, (err, result) => {
           if (err) return reject(err);
 
+          // if document not found, must be a permissions issue
           if (result.modifiedCount !== 1) {
-            return reject(new Error('Not Found'));
+            resource.collection.findOne({ _id: ObjectId(filter._id) }, {}, (_err, doc) => {
+              if (!doc) return reject(new createError.NotFound('Not Found'));
+              return reject(new createError.Unauthorized('Unauthorized'));
+            });
+          } else {
+            resolve({
+              id: filter._id,
+              state,
+              data
+            });
           }
-          resolve({
-            id: filter._id,
-            state,
-            data
-          });
         });
       })
       .catch(reject);
@@ -243,7 +251,7 @@ module.exports.patchDocument = async (resource, filter, data, state, user) => {
   };
 };
 
-module.exports.getDocument = function(resource, filter, query, user, state, resources) {
+module.exports.getDocument = function (resource, filter, query, user, state, resources) {
   const requestedStates = getRequestedStatesFromQuery(resource, query);
   const projection = { _id: 1, states: 1, users: 1, groups: 1 };
   const match = { ...filter };
@@ -337,7 +345,7 @@ module.exports.getDocument = function(resource, filter, query, user, state, reso
   }
 };
 
-module.exports.getDocumentUsers = function(resource, filter) {
+module.exports.getDocumentUsers = function (resource, filter) {
   return new Promise((resolve, reject) => {
     resource.collection.findOne(filter, { projection: { users: 1 } }, (err, doc) => {
       if (err) {
@@ -348,7 +356,7 @@ module.exports.getDocumentUsers = function(resource, filter) {
   });
 };
 
-module.exports.addUserToDocument = function(resource, filter, userDetails) {
+module.exports.addUserToDocument = function (resource, filter, userDetails) {
   return new Promise((resolve, reject) => {
     resource.collection.findOne(filter, (err, document) => {
       if (err || !document) return reject(err || 'Document is null');
@@ -374,7 +382,7 @@ module.exports.addUserToDocument = function(resource, filter, userDetails) {
   });
 };
 
-module.exports.removeUserFromDocument = function(resource, filter, userId, db) {
+module.exports.removeUserFromDocument = function (resource, filter, userId, db) {
   const removeUserFromDoc = new Promise((resolve, reject) => {
     const ops = { $unset: { [`users.${userId}`]: 1 } };
     const options = { returnDocument: 'after', projection: { users: 1 } };
@@ -399,9 +407,9 @@ module.exports.removeUserFromDocument = function(resource, filter, userId, db) {
   return Promise.all([removeUserFromDoc, removeGroupFromUser]).then(values => values[0]);
 };
 
-module.exports.setDocumentState = function(resource, filter, fromState, toState, user) {
+module.exports.setDocumentState = function (resource, filter, fromState, toState, user) {
   return new Promise((resolve, reject) => {
-    const doSetState = function(document) {
+    const doSetState = function (document) {
       builder
         .setState({
           doc: document,
@@ -454,7 +462,7 @@ module.exports.setDocumentState = function(resource, filter, fromState, toState,
   });
 };
 
-module.exports.deleteDocument = function(resource, filter) {
+module.exports.deleteDocument = function (resource, filter) {
   if (!resource.isInheritable) {
     return resource.collection.deleteOne(filter);
   } else {

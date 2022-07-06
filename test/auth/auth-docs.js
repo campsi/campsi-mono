@@ -108,13 +108,13 @@ describe('Auth Local API', () => {
                             .end((_err, res) => {
                               res.should.have.status(200);
 
-                              const id  = new ObjectId().toHexString();
+                              const id = new ObjectId().toHexString();
 
                               chai
                                 .request(campsi.app)
                                 .put(`/docs/opening_hours/${id.toString()}`)
                                 .set('content-type', 'application/json')
-                                .set('Authorization', 'Bearer ' + token)
+                                .set('Authorization', 'Bearer ' + token2)
                                 .send({ name: 'test modified' })
                                 .end((_err, res) => {
                                   res.should.have.status(404);

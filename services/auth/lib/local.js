@@ -18,9 +18,7 @@ function dispatchUserSignupEvent(req, user) {
     data: user.data,
     authProvider: 'local',
     requestBody: req.body,
-    requestHeaders: req.headers,
-    utm_source: user.utm_source,
-    utm_medium: user.utm_medium
+    requestHeaders: req.headers
   });
 }
 
@@ -130,28 +128,18 @@ module.exports.signup = function (req, res) {
     });
   };
   const updateInvitedUser = function (user) {
-    const setObj = {
-      'identities.local': user.identities.local,
-      email: user.email,
-      data: user.data,
-      updatedAt: new Date()
-    };
-
-    if (user.utm_source) {
-      setObj.utm_source = user.utm_source;
-    }
-
-    if (user.utm_medium) {
-      setObj.utm_medium = user.utm_medium;
-    }
-
     return new Promise((resolve, reject) => {
       users.findOneAndUpdate(
         {
           email: user.email
         },
         {
-          $set: setObj
+          $set: {
+            'identities.local': user.identities.local,
+            email: user.email,
+            data: user.data,
+            updatedAt: new Date()
+          }
         },
         {
           returnDocument: 'after'
@@ -193,9 +181,7 @@ module.exports.signup = function (req, res) {
             validated: false,
             validationToken: module.exports.createRandomToken(req.body.username, salt)
           }
-        },
-        utm_source: req.body.utm_source,
-        utm_medium: req.body.utm_medium
+        }
       };
 
       try {

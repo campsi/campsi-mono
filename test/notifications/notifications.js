@@ -12,7 +12,7 @@ chai.use(chaiHttp);
 chai.should();
 
 const services = {
-  Notification: require('../../services/notifications')
+  Notifications: require('../../services/notifications')
 };
 
 describe('Notifications Service', () => {
@@ -27,12 +27,15 @@ describe('Notifications Service', () => {
    */
   describe('/GET', () => {
     it('should return the service description', done => {
-      chai.request.get('/').end((err, res) => {
-        if (err) debug(`received an error from chai: ${err.message}`);
-        res.should.have.status(200);
-        res.should.be.json;
-        done();
-      });
+      chai
+        .request(context.campsi.app)
+        .get('/')
+        .end((err, res) => {
+          if (err) debug(`received an error from chai: ${err.message}`);
+          res.should.have.status(200);
+          res.should.be.json;
+          done();
+        });
     });
   });
 });

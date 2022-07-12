@@ -40,7 +40,7 @@ module.exports = {
     title: 'Test',
     publicURL: 'http://localhost:3000/v1',
     mongo: {
-      uri: 'mongodb://localhost:27017/test-campsi',
+      uri: 'mongodb://localhost:27018/test-campsi',
       database: 'test-campsi'
     }
   },
@@ -135,6 +135,9 @@ module.exports = {
         channel: 'webhooks',
         requireAuth: true
       }
+    },
+    notifications: {
+      title: 'Notifications'
     }
   }
 };

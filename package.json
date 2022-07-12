@@ -14,6 +14,7 @@
     "test-trace": "mocha \"./test/trace/*.js\" --exit",
     "test-versioned-docs": "mocha  \"./test/versioned-docs/*.js\" --exit",
     "test-stripe-billing": "mocha \"./test/stripe-billing/*.js\" --exit",
+    "test-notifications": " mocha -R dot './test/notifications/*.js' --exit",
     "test": " mocha -R dot './test/{,!(launchers)/**/}/*.js' --exit",
     "prepare": "husky install"
   },

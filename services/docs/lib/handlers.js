@@ -30,7 +30,7 @@ function dispatchError(res, error) {
   }
 }
 
-module.exports.getDocuments = function(req, res) {
+module.exports.getDocuments = function (req, res) {
   const pagination = {};
   const perPage = req.query.perPage || req.resource.perPage;
   if (perPage) pagination.perPage = perPage;
@@ -74,7 +74,7 @@ Object.defineProperty(module.exports.getDocuments, 'apidoc', {
   }
 });
 
-module.exports.postDoc = function(req, res) {
+module.exports.postDoc = function (req, res) {
   if (!!req.query?.parentId && !ObjectId.isValid(req.query.parentId)) {
     return helpers.badRequest(res, new Error('Invalid parent id'));
   }
@@ -91,7 +91,7 @@ module.exports.postDoc = function(req, res) {
 };
 
 // modify the state of a doc
-module.exports.putDocState = function(req, res) {
+module.exports.putDocState = function (req, res) {
   documentService
     .setDocumentState(req.resource, req.filter, req.body.from, req.body.to, req.user)
     .then(result => helpers.json(res, result))
@@ -102,7 +102,7 @@ module.exports.putDocState = function(req, res) {
 };
 
 // modify a doc
-module.exports.putDoc = function(req, res) {
+module.exports.putDoc = function (req, res) {
   documentService
     .setDocument(req.resource, req.filter, req.body, req.state, req.user)
     .then(result => helpers.json(res, result))
@@ -131,14 +131,26 @@ module.exports.patchDoc = async (req, res) => {
 };
 
 // get a doc
-module.exports.getDoc = function(req, res) {
+module.exports.getDoc = function (req, res) {
   documentService
     .getDocument(req.resource, req.filter, req.query, req.user, req.state, req.options.resources, req.headers)
+    .then(result =>
+      documentService.getDocumentLinks(
+        req.resource,
+        req.filter,
+        req.query,
+        req.user,
+        req.state,
+        req.options.resources,
+        req.headers,
+        result
+      )
+    )
     .then(result => helpers.json(res, result))
     .catch(err => helpers.notFound(res, err));
 };
 
-module.exports.delDoc = function(req, res) {
+module.exports.delDoc = function (req, res) {
   documentService
     .deleteDocument(req.resource, req.filter)
     .then(result => {
@@ -148,7 +160,7 @@ module.exports.delDoc = function(req, res) {
     .catch(err => helpers.notFound(res, err));
 };
 
-module.exports.getResources = function(req, res) {
+module.exports.getResources = function (req, res) {
   resourceService.getResources(req.options).then(result => {
     return helpers.json(res, result);
   });
@@ -160,7 +172,7 @@ Object.defineProperty(module.exports.getResources, 'apidoc', {
   }
 });
 
-module.exports.getDocUsers = function(req, res) {
+module.exports.getDocUsers = function (req, res) {
   documentService
     .getDocumentUsers(req.resource, req.filter)
     .then(users => userService.fetchUsers(users, req.options, req.service.server))
@@ -168,7 +180,7 @@ module.exports.getDocUsers = function(req, res) {
     .catch(err => helpers.notFound(res, err));
 };
 
-module.exports.postDocUser = function(req, res) {
+module.exports.postDocUser = function (req, res) {
   documentService
     .addUserToDocument(req.resource, req.filter, req.body)
     .then(users => userService.fetchUsers(users, req.options, req.service.server))
@@ -177,7 +189,7 @@ module.exports.postDocUser = function(req, res) {
     .catch(err => helpers.notFound(res, err));
 };
 
-module.exports.delDocUser = function(req, res) {
+module.exports.delDocUser = function (req, res) {
   documentService
     .removeUserFromDocument(req.resource, req.filter, req.params.user, req.db)
     .then(users => userService.fetchUsers(users, req.options, req.service.server))

@@ -34,6 +34,11 @@ describe('Notifications Service', () => {
           if (err) debug(`received an error from chai: ${err.message}`);
           res.should.have.status(200);
           res.should.be.json;
+          res.body.should.be.a('object');
+          res.body.services.notifications.should.be.a('object');
+          res.body.services.notifications.title.should.be.eq('Notifications');
+          res.body.services.notifications.class.should.be.eq('NotificationsService');
+
           done();
         });
     });

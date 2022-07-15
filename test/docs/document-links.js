@@ -1,12 +1,12 @@
 /* eslint-disable no-unused-expressions */
 process.env.NODE_CONFIG_DIR = './test/docs/config';
 process.env.NODE_ENV = 'test';
-
 // Require the dev-dependencies
 const { MongoClient } = require('mongodb');
 const mongoUriBuilder = require('mongo-uri-builder');
 const debug = require('debug')('campsi:test');
 const chai = require('chai');
+const expect = chai.expect;
 const chaiHttp = require('chai-http');
 const format = require('string-format');
 const CampsiServer = require('campsi');
@@ -26,6 +26,9 @@ let secondPizza;
 let thirdPizza;
 let fourthPizza;
 let fifthPizza;
+
+let nextPizzaURL;
+let previousPizzaUrl;
 
 const owner = {
   _id: fakeId()
@@ -62,6 +65,21 @@ function buildPizzaDoc(data, resource, state) {
 }
 
 // Helpers
+
+function extractNavigationLinks(link) {
+  const links = {};
+  const splitNavLinks = link.split(',');
+
+  if (!link) return links;
+
+  splitNavLinks.forEach(navLink => {
+    const linkData = /<([^>]+)>;\s+rel="([^"]+)"/gi.exec(navLink);
+    links[linkData[2]] = linkData[1];
+  });
+
+  return links;
+}
+
 function createPizzas() {
   return new Promise(function (resolve, reject) {
     const resource = campsi.services.get('docs').options.resources.pizzas;
@@ -102,7 +120,20 @@ function getPizzaWithLinksInHeader(id) {
       .set({ 'With-Links': true })
       .end((err, res) => {
         if (err) debug(`received an error from chai: ${err.message}`);
-        resolve(res.body);
+        resolve(res);
+      });
+  });
+}
+
+function getPizzaWithLinksInHeaderFromURL(url) {
+  return new Promise(resolve => {
+    chai
+      .request(campsi.app)
+      .get(new URL(url).pathname)
+      .set({ 'With-Links': true })
+      .end((err, res) => {
+        if (err) debug(`received an error from chai: ${err.message}`);
+        resolve(res);
       });
   });
 }
@@ -114,7 +145,7 @@ function getPizzaWithoutLinks(id) {
       .get(`/docs/pizzas/${id}`)
       .end((err, res) => {
         if (err) debug(`received an error from chai: ${err.message}`);
-        resolve(res.body);
+        resolve(res);
       });
   });
 }
@@ -126,7 +157,7 @@ function getPizzaWithLinkOptionSetToFalse(id) {
       .get(`/docs/pizzas/${id}?withLinks=false`)
       .end((err, res) => {
         if (err) debug(`received an error from chai: ${err.message}`);
-        resolve(res.body);
+        resolve(res);
       });
   });
 }
@@ -205,9 +236,20 @@ describe('Document links', () => {
    */
   describe('/GET pizzas starting from the first all the way to last following the links', () => {
     it('gets first pizza with correct links', done => {
-      getPizzaWithLinksInHeader(firstPizza).then(body => {
-        body.nav.next.should.eq(secondPizza);
-        body.nav.should.not.have.property('previous');
+      getPizzaWithLinksInHeader(firstPizza).then(res => {
+        const next = res.links.next;
+        const previous = res.links.previous;
+        const headerLinks = res.headers.link;
+
+        expect(headerLinks).to.not.be.undefined;
+        expect(previous).to.be.undefined;
+        expect(next).to.not.be.undefined;
+
+        next.substring(next.lastIndexOf('/') + 1).should.eq(secondPizza);
+
+        const parsedHeaderLinks = extractNavigationLinks(headerLinks);
+        parsedHeaderLinks.next.substring(parsedHeaderLinks.next.lastIndexOf('/') + 1).should.eq(secondPizza);
+        expect(parsedHeaderLinks.previous).to.undefined;
         done();
       });
     });
@@ -219,56 +261,197 @@ describe('Document links', () => {
       });
     });
     it('gets third pizza with correct links', done => {
-      getPizzaWithLinksInHeader(thirdPizza).then(body => {
-        body.nav.previous.should.eq(secondPizza);
-        body.nav.next.should.eq(fourthPizza);
+      getPizzaWithLinksInHeader(thirdPizza).then(res => {
+        const headerLinks = res.headers.link;
+        expect(headerLinks).to.not.be.undefined;
+        res.body.nav.previous.should.eq(secondPizza);
+        res.body.nav.next.should.eq(fourthPizza);
+        const parsedHeaderLinks = extractNavigationLinks(headerLinks);
+        parsedHeaderLinks.previous.substring(parsedHeaderLinks.previous.lastIndexOf('/') + 1).should.eq(secondPizza);
+        parsedHeaderLinks.next.substring(parsedHeaderLinks.next.lastIndexOf('/') + 1).should.eq(fourthPizza);
         done();
       });
     });
     it('gets fourth pizza with correct links', done => {
-      getPizzaWithLinksInHeader(fourthPizza).then(body => {
-        body.nav.previous.should.eq(thirdPizza);
-        body.nav.next.should.eq(fifthPizza);
+      getPizzaWithLinksInHeader(fourthPizza).then(res => {
+        const headerLinks = res.headers.link;
+        expect(headerLinks).to.not.be.undefined;
+        res.body.nav.previous.should.eq(thirdPizza);
+        res.body.nav.next.should.eq(fifthPizza);
+        const parsedHeaderLinks = extractNavigationLinks(headerLinks);
+        parsedHeaderLinks.previous.substring(parsedHeaderLinks.previous.lastIndexOf('/') + 1).should.eq(thirdPizza);
+        parsedHeaderLinks.next.substring(parsedHeaderLinks.next.lastIndexOf('/') + 1).should.eq(fifthPizza);
         done();
       });
     });
     it('gets fifth pizza with correct links', done => {
-      getPizzaWithLinks(fifthPizza).then(body => {
-        body.nav.should.not.have.property('next');
-        body.nav.previous.should.eq(fourthPizza);
+      getPizzaWithLinksInHeader(fifthPizza).then(res => {
+        const headerLinks = res.headers.link;
+        expect(headerLinks).to.not.be.undefined;
+        res.body.nav.should.not.have.property('next');
+        res.body.nav.previous.should.eq(fourthPizza);
+        const parsedHeaderLinks = extractNavigationLinks(headerLinks);
+        parsedHeaderLinks.previous.substring(parsedHeaderLinks.previous.lastIndexOf('/') + 1).should.eq(fourthPizza);
+        expect(parsedHeaderLinks.next).to.undefined;
+        done();
+      });
+    });
+    it('gets first pizza and nvaigates to the 2nd pizza via next URL', done => {
+      getPizzaWithLinksInHeader(firstPizza).then(res => {
+        const headerLinks = res.headers.link;
+
+        expect(headerLinks).to.not.be.undefined;
+        res.body.id.should.eq(firstPizza);
+        const parsedHeaderLinks = extractNavigationLinks(headerLinks);
+        parsedHeaderLinks.next.substring(parsedHeaderLinks.next.lastIndexOf('/') + 1).should.eq(secondPizza);
+        expect(parsedHeaderLinks.previous).to.undefined;
+        nextPizzaURL = parsedHeaderLinks.next;
+        done();
+      });
+    });
+    it('gets 2nd pizza from next url and navigates to the 3rd pizza via next URL', done => {
+      getPizzaWithLinksInHeaderFromURL(nextPizzaURL).then(res => {
+        const headerLinks = res.headers.link;
+
+        expect(headerLinks).to.not.be.undefined;
+        res.body.id.should.eq(secondPizza);
+        const parsedHeaderLinks = extractNavigationLinks(headerLinks);
+        parsedHeaderLinks.next.substring(parsedHeaderLinks.next.lastIndexOf('/') + 1).should.eq(thirdPizza);
+        parsedHeaderLinks.previous.substring(parsedHeaderLinks.previous.lastIndexOf('/') + 1).should.eq(firstPizza);
+        nextPizzaURL = parsedHeaderLinks.next;
+        done();
+      });
+    });
+    it('gets 3rd pizza from next url and navigates to the 4th pizza via next URL', done => {
+      getPizzaWithLinksInHeaderFromURL(nextPizzaURL).then(res => {
+        const headerLinks = res.headers.link;
+
+        expect(headerLinks).to.not.be.undefined;
+        res.body.id.should.eq(thirdPizza);
+        const parsedHeaderLinks = extractNavigationLinks(headerLinks);
+        parsedHeaderLinks.next.substring(parsedHeaderLinks.next.lastIndexOf('/') + 1).should.eq(fourthPizza);
+        parsedHeaderLinks.previous.substring(parsedHeaderLinks.previous.lastIndexOf('/') + 1).should.eq(secondPizza);
+        nextPizzaURL = parsedHeaderLinks.next;
+        done();
+      });
+    });
+    it('gets 4th pizza from next url and navigates to the 5th pizza via next URL', done => {
+      getPizzaWithLinksInHeaderFromURL(nextPizzaURL).then(res => {
+        const headerLinks = res.headers.link;
+
+        expect(headerLinks).to.not.be.undefined;
+        res.body.id.should.eq(fourthPizza);
+        const parsedHeaderLinks = extractNavigationLinks(headerLinks);
+        parsedHeaderLinks.next.substring(parsedHeaderLinks.next.lastIndexOf('/') + 1).should.eq(fifthPizza);
+        parsedHeaderLinks.previous.substring(parsedHeaderLinks.previous.lastIndexOf('/') + 1).should.eq(thirdPizza);
+        nextPizzaURL = parsedHeaderLinks.next;
+        done();
+      });
+    });
+    it('gets 5th pizza from next url and can not navigate any further forward', done => {
+      getPizzaWithLinksInHeaderFromURL(nextPizzaURL).then(res => {
+        const headerLinks = res.headers.link;
+
+        expect(headerLinks).to.not.be.undefined;
+        expect(headerLinks.next).to.be.undefined;
+        res.body.id.should.eq(fifthPizza);
+        const parsedHeaderLinks = extractNavigationLinks(headerLinks);
+        parsedHeaderLinks.previous.substring(parsedHeaderLinks.previous.lastIndexOf('/') + 1).should.eq(fourthPizza);
+        previousPizzaUrl = parsedHeaderLinks.previous;
+        done();
+      });
+    });
+    it('gets 4th pizza from previous url and navigates to 3rd', done => {
+      getPizzaWithLinksInHeaderFromURL(previousPizzaUrl).then(res => {
+        const headerLinks = res.headers.link;
+
+        expect(headerLinks).to.not.be.undefined;
+        res.body.id.should.eq(fourthPizza);
+        const parsedHeaderLinks = extractNavigationLinks(headerLinks);
+        parsedHeaderLinks.next.substring(parsedHeaderLinks.next.lastIndexOf('/') + 1).should.eq(fifthPizza);
+        parsedHeaderLinks.previous.substring(parsedHeaderLinks.previous.lastIndexOf('/') + 1).should.eq(thirdPizza);
+        previousPizzaUrl = parsedHeaderLinks.previous;
+        done();
+      });
+    });
+    it('gets 3rd pizza from previous url and navigates to 2nd', done => {
+      getPizzaWithLinksInHeaderFromURL(previousPizzaUrl).then(res => {
+        const headerLinks = res.headers.link;
+
+        expect(headerLinks).to.not.be.undefined;
+        res.body.id.should.eq(thirdPizza);
+        const parsedHeaderLinks = extractNavigationLinks(headerLinks);
+        parsedHeaderLinks.next.substring(parsedHeaderLinks.next.lastIndexOf('/') + 1).should.eq(fourthPizza);
+        parsedHeaderLinks.previous.substring(parsedHeaderLinks.previous.lastIndexOf('/') + 1).should.eq(secondPizza);
+        previousPizzaUrl = parsedHeaderLinks.previous;
+        done();
+      });
+    });
+    it('gets 2nd pizza from previous url and navigates to 1st', done => {
+      getPizzaWithLinksInHeaderFromURL(previousPizzaUrl).then(res => {
+        const headerLinks = res.headers.link;
+
+        expect(headerLinks).to.not.be.undefined;
+        res.body.id.should.eq(secondPizza);
+        const parsedHeaderLinks = extractNavigationLinks(headerLinks);
+        parsedHeaderLinks.next.substring(parsedHeaderLinks.next.lastIndexOf('/') + 1).should.eq(thirdPizza);
+        parsedHeaderLinks.previous.substring(parsedHeaderLinks.previous.lastIndexOf('/') + 1).should.eq(firstPizza);
+        previousPizzaUrl = parsedHeaderLinks.previous;
+        done();
+      });
+    });
+    it('gets 1st pizza from previous url and navigates to 1st', done => {
+      getPizzaWithLinksInHeaderFromURL(previousPizzaUrl).then(res => {
+        const headerLinks = res.headers.link;
+
+        expect(headerLinks).to.not.be.undefined;
+        expect(headerLinks.previous).to.be.undefined;
+        res.body.id.should.eq(firstPizza);
+        const parsedHeaderLinks = extractNavigationLinks(headerLinks);
+        parsedHeaderLinks.next.substring(parsedHeaderLinks.next.lastIndexOf('/') + 1).should.eq(secondPizza);
         done();
       });
     });
     it('it should get first pizza with no links returned', done => {
-      getPizzaWithLinkOptionSetToFalse(firstPizza).then(body => {
-        body.should.not.have.property('nav');
-        body.should.not.have.property('nav');
+      getPizzaWithLinkOptionSetToFalse(firstPizza).then(res => {
+        res.body.id.should.eq(firstPizza);
+        expect(res.headers.link).to.be.undefined;
+        res.body.should.not.have.property('nav');
+        res.body.should.not.have.property('nav');
         done();
       });
     });
     it('it should get 2nd pizza with no links returned', done => {
-      getPizzaWithoutLinks(secondPizza).then(body => {
-        body.should.not.have.property('nav');
-        body.should.not.have.property('nav');
+      getPizzaWithoutLinks(secondPizza).then(res => {
+        res.body.id.should.eq(secondPizza);
+        expect(res.headers.link).to.be.undefined;
+        res.body.should.not.have.property('nav');
+        res.body.should.not.have.property('nav');
         done();
       });
     });
     it('it should get 3rd pizza with no links returned', done => {
       getPizzaWithoutLinksInHeader(thirdPizza).then(res => {
+        res.body.id.should.eq(thirdPizza);
+        expect(res.headers.link).to.be.undefined;
         res.body.should.not.have.property('nav');
         res.body.should.not.have.property('nav');
         done();
       });
     });
     it('it should get 4th pizza with no links returned', done => {
-      getPizzaWithoutLinks(fourthPizza).then(body => {
-        body.should.not.have.property('nav');
-        body.should.not.have.property('nav');
+      getPizzaWithoutLinks(fourthPizza).then(res => {
+        res.body.id.should.eq(fourthPizza);
+        expect(res.headers.link).to.be.undefined;
+        res.body.should.not.have.property('nav');
+        res.body.should.not.have.property('nav');
         done();
       });
     });
     it('it should get 5th pizza with no links returned', done => {
       getPizzaWithoutLinksInHeader(fifthPizza).then(res => {
+        expect(res.headers.link).to.be.undefined;
+        res.body.id.should.eq(fifthPizza);
         res.body.should.not.have.property('nav');
         res.body.should.not.have.property('nav');
         done();

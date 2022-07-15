@@ -3,6 +3,7 @@ const resourceService = require('./services/resource');
 const documentService = require('./services/document');
 const userService = require('./services/user');
 const buildLink = require('../../../lib/modules/buildLink');
+const buildSingleDocumentLink = require('../../../lib/modules/buildLink');
 const debug = require('debug')('campsi:docs');
 const { ObjectId } = require('mongodb');
 const ValidationError = require('../../../lib/errors/ValidationError');
@@ -146,7 +147,26 @@ module.exports.getDoc = function (req, res) {
         result
       )
     )
-    .then(result => helpers.json(res, result))
+    .then(result => {
+      if (result.nav && (result.nav.next || result.nav.previous)) {
+        const headers = {};
+        const links = [];
+
+        Object.entries(result.nav).forEach(([rel, id]) => {
+          links.push(`<${buildSingleDocumentLink(req, id)}>; rel="${rel}"`);
+        });
+
+        const headersKeys = [];
+        if (links.length) {
+          headers.Link = links.join(', ');
+          headersKeys.push('Link');
+        }
+        headers['Access-Control-Expose-Headers'] = headersKeys.join(', ');
+        return helpers.json(res, result, headers);
+      } else {
+        return helpers.json(res, result);
+      }
+    })
     .catch(err => helpers.notFound(res, err));
 };
 

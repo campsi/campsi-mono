@@ -47,6 +47,7 @@ function genInsert(provider, profile) {
     email: profile.email.toLowerCase(),
     displayName: profile.displayName,
     picture: profile.picture,
+    data: { country: profile.country },
     identities: {},
     createdAt: new Date(),
     groups: []

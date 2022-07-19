@@ -245,6 +245,8 @@ module.exports.patchDocument = async (resource, filter, data, state, user) => {
 };
 
 module.exports.getDocumentLinks = function (resource, filter, query, _user, state, _resources, headers, result) {
+  const nav = {};
+
   return new Promise((resolve, _reject) => {
     if (
       (headers &&
@@ -252,7 +254,7 @@ module.exports.getDocumentLinks = function (resource, filter, query, _user, stat
         (!query.withLinks || query.withLinks === 'false')) ||
       resource.isInheritable
     ) {
-      return resolve(result);
+      return resolve([nav, result]);
     }
 
     const projection = { _id: 1, states: 1, users: 1, groups: 1 };
@@ -272,7 +274,7 @@ module.exports.getDocumentLinks = function (resource, filter, query, _user, stat
       .toArray()
       .then((doc, err) => {
         // if there is an error don't build the links
-        if (err) return resolve(result);
+        if (err) return resolve([nav, result]);
 
         if (doc && doc.length > 0) {
           previous = doc[0];
@@ -291,12 +293,10 @@ module.exports.getDocumentLinks = function (resource, filter, query, _user, stat
               next = doc[0];
             }
 
-            result.nav = {};
+            if (next && next._id) nav.next = next._id;
+            if (previous && previous._id) nav.previous = previous._id;
 
-            if (next && next._id) result.nav.next = next._id;
-            if (previous && previous._id) result.nav.previous = previous._id;
-
-            return resolve(result);
+            return resolve([nav, result]);
           })
           .catch(err => {
             console.log(err);

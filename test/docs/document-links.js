@@ -100,18 +100,6 @@ function createPizzas() {
   });
 }
 
-function getPizzaWithLinks(id) {
-  return new Promise(resolve => {
-    chai
-      .request(campsi.app)
-      .get(`/docs/pizzas/${id}?withLinks=true`)
-      .end((err, res) => {
-        if (err) debug(`received an error from chai: ${err.message}`);
-        resolve(res.body);
-      });
-  });
-}
-
 function getPizzaWithLinksInHeader(id) {
   return new Promise(resolve => {
     chai
@@ -237,16 +225,8 @@ describe('Document links', () => {
   describe('/GET pizzas starting from the first all the way to last following the links', () => {
     it('gets first pizza with correct links', done => {
       getPizzaWithLinksInHeader(firstPizza).then(res => {
-        const next = res.links.next;
-        const previous = res.links.previous;
         const headerLinks = res.headers.link;
-
         expect(headerLinks).to.not.be.undefined;
-        expect(previous).to.be.undefined;
-        expect(next).to.not.be.undefined;
-
-        next.substring(next.lastIndexOf('/') + 1).should.eq(secondPizza);
-
         const parsedHeaderLinks = extractNavigationLinks(headerLinks);
         parsedHeaderLinks.next.substring(parsedHeaderLinks.next.lastIndexOf('/') + 1).should.eq(secondPizza);
         expect(parsedHeaderLinks.previous).to.undefined;
@@ -254,9 +234,12 @@ describe('Document links', () => {
       });
     });
     it('gets 2nd pizza with correct links', done => {
-      getPizzaWithLinks(secondPizza).then(body => {
-        body.nav.previous.should.eq(firstPizza);
-        body.nav.next.should.eq(thirdPizza);
+      getPizzaWithLinksInHeader(secondPizza).then(res => {
+        const headerLinks = res.headers.link;
+        expect(headerLinks).to.not.be.undefined;
+        const parsedHeaderLinks = extractNavigationLinks(headerLinks);
+        parsedHeaderLinks.next.substring(parsedHeaderLinks.next.lastIndexOf('/') + 1).should.eq(thirdPizza);
+        parsedHeaderLinks.previous.substring(parsedHeaderLinks.previous.lastIndexOf('/') + 1).should.eq(firstPizza);
         done();
       });
     });
@@ -264,8 +247,6 @@ describe('Document links', () => {
       getPizzaWithLinksInHeader(thirdPizza).then(res => {
         const headerLinks = res.headers.link;
         expect(headerLinks).to.not.be.undefined;
-        res.body.nav.previous.should.eq(secondPizza);
-        res.body.nav.next.should.eq(fourthPizza);
         const parsedHeaderLinks = extractNavigationLinks(headerLinks);
         parsedHeaderLinks.previous.substring(parsedHeaderLinks.previous.lastIndexOf('/') + 1).should.eq(secondPizza);
         parsedHeaderLinks.next.substring(parsedHeaderLinks.next.lastIndexOf('/') + 1).should.eq(fourthPizza);
@@ -276,8 +257,6 @@ describe('Document links', () => {
       getPizzaWithLinksInHeader(fourthPizza).then(res => {
         const headerLinks = res.headers.link;
         expect(headerLinks).to.not.be.undefined;
-        res.body.nav.previous.should.eq(thirdPizza);
-        res.body.nav.next.should.eq(fifthPizza);
         const parsedHeaderLinks = extractNavigationLinks(headerLinks);
         parsedHeaderLinks.previous.substring(parsedHeaderLinks.previous.lastIndexOf('/') + 1).should.eq(thirdPizza);
         parsedHeaderLinks.next.substring(parsedHeaderLinks.next.lastIndexOf('/') + 1).should.eq(fifthPizza);
@@ -288,8 +267,6 @@ describe('Document links', () => {
       getPizzaWithLinksInHeader(fifthPizza).then(res => {
         const headerLinks = res.headers.link;
         expect(headerLinks).to.not.be.undefined;
-        res.body.nav.should.not.have.property('next');
-        res.body.nav.previous.should.eq(fourthPizza);
         const parsedHeaderLinks = extractNavigationLinks(headerLinks);
         parsedHeaderLinks.previous.substring(parsedHeaderLinks.previous.lastIndexOf('/') + 1).should.eq(fourthPizza);
         expect(parsedHeaderLinks.next).to.undefined;
@@ -416,8 +393,6 @@ describe('Document links', () => {
       getPizzaWithLinkOptionSetToFalse(firstPizza).then(res => {
         res.body.id.should.eq(firstPizza);
         expect(res.headers.link).to.be.undefined;
-        res.body.should.not.have.property('nav');
-        res.body.should.not.have.property('nav');
         done();
       });
     });
@@ -425,8 +400,6 @@ describe('Document links', () => {
       getPizzaWithoutLinks(secondPizza).then(res => {
         res.body.id.should.eq(secondPizza);
         expect(res.headers.link).to.be.undefined;
-        res.body.should.not.have.property('nav');
-        res.body.should.not.have.property('nav');
         done();
       });
     });
@@ -434,8 +407,6 @@ describe('Document links', () => {
       getPizzaWithoutLinksInHeader(thirdPizza).then(res => {
         res.body.id.should.eq(thirdPizza);
         expect(res.headers.link).to.be.undefined;
-        res.body.should.not.have.property('nav');
-        res.body.should.not.have.property('nav');
         done();
       });
     });
@@ -443,8 +414,6 @@ describe('Document links', () => {
       getPizzaWithoutLinks(fourthPizza).then(res => {
         res.body.id.should.eq(fourthPizza);
         expect(res.headers.link).to.be.undefined;
-        res.body.should.not.have.property('nav');
-        res.body.should.not.have.property('nav');
         done();
       });
     });
@@ -452,16 +421,13 @@ describe('Document links', () => {
       getPizzaWithoutLinksInHeader(fifthPizza).then(res => {
         expect(res.headers.link).to.be.undefined;
         res.body.id.should.eq(fifthPizza);
-        res.body.should.not.have.property('nav');
-        res.body.should.not.have.property('nav');
         done();
       });
     });
     it('should fail if I delete a document and ask for it', done => {
       deletePizza(fourthPizza).then(() => {
         getPizzaWithoutLinksInHeader(fourthPizza).then(res => {
-          res.body.should.not.have.property('nav');
-          res.body.should.not.have.property('nav');
+          expect(res.headers.link).to.be.undefined;
           res.status.should.eq(404);
           done();
         });

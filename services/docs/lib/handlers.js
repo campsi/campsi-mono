@@ -147,12 +147,12 @@ module.exports.getDoc = function (req, res) {
         result
       )
     )
-    .then(result => {
-      if (result.nav && (result.nav.next || result.nav.previous)) {
+    .then(([nav, result]) => {
+      if (nav && (nav.next || nav.previous)) {
         const headers = {};
         const links = [];
 
-        Object.entries(result.nav).forEach(([rel, id]) => {
+        Object.entries(nav).forEach(([rel, id]) => {
           links.push(`<${buildSingleDocumentLink(req, id)}>; rel="${rel}"`);
         });
 

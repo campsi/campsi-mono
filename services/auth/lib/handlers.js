@@ -13,11 +13,47 @@ function logout(req, res) {
   }
 
   const update = { $set: { token: 'null' } };
-  req.db
-    .collection('__users__')
-    .findOneAndUpdate({ _id: req.user._id }, update)
-    .then(() => {
-      return res.json({ message: 'signed out' });
+  const usersCollection = req.db.collection('__users__');
+  const token = req.authBearerToken;
+  const user = req.user;
+
+  usersCollection
+    .findOneAndUpdate({ _id: user._id }, update)
+    .then(result => {
+      // move current token from tokens and archive it
+      // except if marked "donotdelete".
+      usersCollection
+        .findOneAndUpdate(
+          { _id: user._id, [`tokens.${token}.donotdelete`]: { $exists: false } },
+          { $unset: { [`tokens.${token}`]: '' } },
+          { returnDocument: 'before' }
+        )
+        .then(result => {
+          let tokenToArchive;
+
+          if (result && result.value) {
+            tokenToArchive = {
+              [`${token}`]: {
+                userId: user._id,
+                ...result.value.tokens[token]
+              }
+            };
+          }
+
+          if (tokenToArchive) {
+            req.db
+              .collection('__users__.tokens_log')
+              .insertOne(tokenToArchive)
+              .then(() => {
+                return res.json({ message: 'signed out' });
+              })
+              .catch(() => {
+                return res.json({ message: 'signed out' });
+              });
+          } else {
+            return res.json({ message: 'signed out' });
+          }
+        });
     })
     .catch(error => {
       return helpers.error(res, error);

@@ -29,29 +29,26 @@ function logout(req, res) {
           { returnDocument: 'before' }
         )
         .then(result => {
-          let tokenToArchive;
-
+          // move old token to __users__.tokens_log
           if (result && result.value) {
-            tokenToArchive = {
+            const tokenToArchive = {
               [`${token}`]: {
                 userId: user._id,
                 ...result.value.tokens[token]
               }
             };
-          }
 
-          if (tokenToArchive) {
             req.db
               .collection('__users__.tokens_log')
               .insertOne(tokenToArchive)
               .then(() => {
                 return res.json({ message: 'signed out' });
               })
-              .catch(() => {
-                return res.json({ message: 'signed out' });
+              .catch(err => {
+                return res.status(500).json({ message: err });
               });
           } else {
-            return res.json({ message: 'signed out' });
+            return res.json({ message: 'user not signed out' });
           }
         });
     })

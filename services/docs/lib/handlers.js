@@ -147,8 +147,7 @@ module.exports.getDoc = function (req, res) {
         result
       )
     )
-    .then(ret => {
-      const { result, nav } = ret;
+    .then(({ result, nav }) => {
       if (nav && (nav.next || nav.previous)) {
         const headers = {};
         const links = [];

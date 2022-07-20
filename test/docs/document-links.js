@@ -27,6 +27,12 @@ let thirdPizza;
 let fourthPizza;
 let fifthPizza;
 
+let firstPizzaWD;
+let secondPizzaWD;
+let thirdPizzaWD;
+let fourthPizzaWD;
+let fifthPizzaWD;
+
 let nextPizzaURL;
 let previousPizzaUrl;
 
@@ -80,14 +86,14 @@ function extractNavigationLinks(link) {
   return links;
 }
 
-function createPizzas() {
+function createPizzas(state) {
   return new Promise(function (resolve, reject) {
     const resource = campsi.services.get('docs').options.resources.pizzas;
     const pizzas = [];
     const promises = [];
 
     for (let i = 0; i < 5; i++) {
-      pizzas.push({ data: { name: `margherita_${i}` }, resource, state: 'published' });
+      pizzas.push({ data: { name: `margherita_${i}` }, resource, state });
     }
 
     pizzas.forEach(item => {
@@ -97,6 +103,19 @@ function createPizzas() {
     Promise.all(promises).then(() => {
       resolve();
     });
+  });
+}
+
+function getPizzaWithLinksInHeaderByState(id, state) {
+  return new Promise(resolve => {
+    chai
+      .request(campsi.app)
+      .get(`/docs/pizzas/${id}/${state}`)
+      .set({ 'With-Links': true })
+      .end((err, res) => {
+        if (err) debug(`received an error from chai: ${err.message}`);
+        resolve(res);
+      });
   });
 }
 
@@ -179,7 +198,7 @@ describe('Document links', () => {
         campsi.on('campsi/ready', () => {
           server = campsi.listen(config.port);
 
-          createPizzas().then(() => done());
+          createPizzas('published').then(() => createPizzas('working_draft').then(() => done()));
         });
 
         campsi.start().catch(err => {
@@ -216,6 +235,92 @@ describe('Document links', () => {
 
           done();
         });
+    });
+  });
+
+  /*
+   * Test the /GET docs/pizzas route
+   */
+  describe('/GET docs/docs/pizzas/working_draft', () => {
+    it('it should get all the pizzas that are in working draft state', done => {
+      chai
+        .request(campsi.app)
+        .get('/docs/pizzas/?state=working_draft')
+        .end((err, res) => {
+          if (err) debug(`received an error from chai: ${err.message}`);
+          res.should.have.status(200);
+          res.should.not.have.header('link');
+          res.should.be.json;
+          res.body.should.be.a('array');
+          firstPizzaWD = res.body[0].id;
+          secondPizzaWD = res.body[1].id;
+          thirdPizzaWD = res.body[2].id;
+          fourthPizzaWD = res.body[3].id;
+          fifthPizzaWD = res.body[4].id;
+
+          done();
+        });
+    });
+  });
+
+  describe('/GET pizzas starting from the first all the way to last following the links', () => {
+    it('gets first pizza with state working_draft with correct links', done => {
+      getPizzaWithLinksInHeaderByState(firstPizzaWD, 'working_draft').then(res => {
+        const headerLinks = res.headers.link;
+        expect(headerLinks).to.not.be.undefined;
+        const parsedHeaderLinks = extractNavigationLinks(headerLinks);
+        const nextId = parsedHeaderLinks.next.split('/')[5];
+        nextId.should.eq(secondPizzaWD);
+        expect(parsedHeaderLinks.previous).to.undefined;
+        done();
+      });
+    });
+    it('gets 2nd pizza  with state working_draft with correct links', done => {
+      getPizzaWithLinksInHeaderByState(secondPizzaWD, 'working_draft').then(res => {
+        const headerLinks = res.headers.link;
+        expect(headerLinks).to.not.be.undefined;
+        const parsedHeaderLinks = extractNavigationLinks(headerLinks);
+        const nextId = parsedHeaderLinks.next.split('/')[5];
+        nextId.should.eq(thirdPizzaWD);
+        const previousID = parsedHeaderLinks.previous.split('/')[5];
+        previousID.should.eq(firstPizzaWD);
+        done();
+      });
+    });
+    it('gets 3rd pizza  with state working_draft with correct links', done => {
+      getPizzaWithLinksInHeaderByState(thirdPizzaWD, 'working_draft').then(res => {
+        const headerLinks = res.headers.link;
+        expect(headerLinks).to.not.be.undefined;
+        const parsedHeaderLinks = extractNavigationLinks(headerLinks);
+        const nextId = parsedHeaderLinks.next.split('/')[5];
+        nextId.should.eq(fourthPizzaWD);
+        const previousID = parsedHeaderLinks.previous.split('/')[5];
+        previousID.should.eq(secondPizzaWD);
+        done();
+      });
+    });
+    it('gets 4th pizza  with state working_draft with correct links', done => {
+      getPizzaWithLinksInHeaderByState(fourthPizzaWD, 'working_draft').then(res => {
+        const headerLinks = res.headers.link;
+        expect(headerLinks).to.not.be.undefined;
+        const parsedHeaderLinks = extractNavigationLinks(headerLinks);
+        const nextId = parsedHeaderLinks.next.split('/')[5];
+        nextId.should.eq(fifthPizzaWD);
+        const previousID = parsedHeaderLinks.previous.split('/')[5];
+        previousID.should.eq(thirdPizzaWD);
+        done();
+      });
+    });
+    it('gets 5th pizza  with state working_draft with correct links', done => {
+      getPizzaWithLinksInHeaderByState(fifthPizzaWD, 'working_draft').then(res => {
+        const headerLinks = res.headers.link;
+        expect(headerLinks).to.not.be.undefined;
+        const parsedHeaderLinks = extractNavigationLinks(headerLinks);
+        expect(parsedHeaderLinks.next).to.undefined;
+        const previousID = parsedHeaderLinks.previous.split('/')[5];
+        previousID.should.eq(fourthPizzaWD);
+        done();
+      });
     });
   });
 

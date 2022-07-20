@@ -35,7 +35,7 @@ module.exports = function(options) {
         email: profile._json.email,
         picture: profile.picture,
         identity: profile._json,
-        country: 'FR'
+        country: 'FR' // Facebook don't authorize us to get the location from the user, so instead we put FR
       });
     }
   };

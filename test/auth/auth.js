@@ -210,7 +210,15 @@ describe('Auth API', () => {
                 .get('/auth/logout')
                 .set('Authorization', 'Bearer ' + bobtoken)
                 .end((_err, res) => {
-                  done();
+                  const query = { $or: [{ [`${bobtoken}`]: { $exists: true } }, { [`${glendatoken}`]: { $exists: true } }] };
+                  campsi.db
+                    .collection('__users__.tokens_log')
+                    .find(query)
+                    .toArray()
+                    .then(result => {
+                      result.length.should.eq(2);
+                      done();
+                    });
                 });
             });
         });

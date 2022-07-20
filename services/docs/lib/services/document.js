@@ -254,7 +254,7 @@ module.exports.getDocumentLinks = function (resource, filter, query, _user, stat
         (!query.withLinks || query.withLinks === 'false')) ||
       resource.isInheritable
     ) {
-      return resolve([nav, result]);
+      return resolve({ nav, result });
     }
 
     const projection = { _id: 1, states: 1, users: 1, groups: 1 };
@@ -274,7 +274,7 @@ module.exports.getDocumentLinks = function (resource, filter, query, _user, stat
       .toArray()
       .then((doc, err) => {
         // if there is an error don't build the links
-        if (err) return resolve([nav, result]);
+        if (err) return resolve({ nav, result });
 
         if (doc && doc.length > 0) {
           previous = doc[0];
@@ -296,7 +296,7 @@ module.exports.getDocumentLinks = function (resource, filter, query, _user, stat
             if (next && next._id) nav.next = next._id;
             if (previous && previous._id) nav.previous = previous._id;
 
-            return resolve([nav, result]);
+            return resolve({ nav, result });
           })
           .catch(err => {
             console.log(err);

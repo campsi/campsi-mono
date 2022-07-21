@@ -35,6 +35,10 @@ function genUpdate(provider, profile) {
   return { update, updateToken: token };
 }
 
+function extractCountry(country) {
+  return country.split('-').length > 1 ? country.split('-')[1].toUpperCase() : country.toUpperCase();
+}
+
 /**
  *
  * @param provider
@@ -47,6 +51,7 @@ function genInsert(provider, profile) {
     email: profile.email.toLowerCase(),
     displayName: profile.displayName,
     picture: profile.picture,
+    data: { country: profile.country ? extractCountry(profile.country) : null },
     identities: {},
     createdAt: new Date(),
     groups: []

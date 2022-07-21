@@ -25,7 +25,8 @@ module.exports = function(options) {
         displayName: profile._json.name,
         email: profile.emails[0].value,
         picture: profile._json.picture,
-        identity: Object.assign({ id: profile._json.sub }, profile._json)
+        identity: Object.assign({ id: profile._json.sub }, profile._json),
+        country: profile._json.locale
       });
     }
   };

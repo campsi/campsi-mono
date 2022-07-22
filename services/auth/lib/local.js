@@ -312,8 +312,8 @@ module.exports.createResetPasswordToken = function (req, res) {
       });
       return res.json({ success: true });
     })
-    .catch(err => {
-      return helpers.error(res, err);
+    .catch(() => {
+      return res.json({ success: true });
     });
 };
 

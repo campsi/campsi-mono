@@ -3,8 +3,7 @@ const resourceService = require('./services/resource');
 const documentService = require('./services/document');
 const userService = require('./services/user');
 const buildLink = require('../../../lib/modules/buildLink');
-const buildSingleDocumentLink = require('../../../lib/modules/buildLink');
-const debug = require('debug')('campsi:docs');
+const buildSingleDocumentLink = require('../../../lib/modules/buildSingleDocumentLink');
 const { ObjectId } = require('mongodb');
 const ValidationError = require('../../../lib/errors/ValidationError');
 

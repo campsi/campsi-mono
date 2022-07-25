@@ -155,7 +155,7 @@ module.exports.getDoc = function (req, res) {
         const links = [];
 
         Object.entries(nav).forEach(([rel, id]) => {
-          links.push(`<${buildSingleDocumentLink(req, id)}>; rel="${rel}"`);
+          links.push(`<${buildSingleDocumentLink.buildSingleDocumentLink(req, id)}>; rel="${rel}"`);
         });
 
         const headersKeys = [];

@@ -4,6 +4,9 @@ const paginateCursor = require('../../../../lib/modules/paginateCursor');
 const sortCursor = require('../../../../lib/modules/sortCursor');
 const createObjectId = require('../../../../lib/modules/createObjectId');
 const permissions = require('../modules/permissions');
+const { ObjectId } = require('mongodb');
+
+const createError = require('http-errors');
 
 // Helper functions
 const getDocUsersList = doc => Object.keys(doc ? doc.users : []).map(k => doc.users[k]);
@@ -214,14 +217,19 @@ module.exports.setDocument = function (resource, filter, data, state, user) {
         resource.collection.updateOne(filter, update, (err, result) => {
           if (err) return reject(err);
 
+          // if document not found, must be a permissions issue
           if (result.modifiedCount !== 1) {
-            return reject(new Error('Not Found'));
+            resource.collection.findOne({ _id: ObjectId(filter._id) }, {}, (_err, doc) => {
+              if (!doc) return reject(new createError.NotFound('Not Found'));
+              return reject(new createError.Unauthorized('Unauthorized'));
+            });
+          } else {
+            resolve({
+              id: filter._id,
+              state,
+              data
+            });
           }
-          resolve({
-            id: filter._id,
-            state,
-            data
-          });
         });
       })
       .catch(reject);
@@ -309,7 +317,7 @@ module.exports.getDocumentLinks = function (resource, filter, query, _user, stat
   });
 };
 
-module.exports.getDocument = function (resource, filter, query, user, state, resources, _headers) {
+module.exports.getDocument = function (resource, filter, query, user, state, resources) {
   const requestedStates = getRequestedStatesFromQuery(resource, query);
   const projection = { _id: 1, states: 1, users: 1, groups: 1 };
   const match = { ...filter };

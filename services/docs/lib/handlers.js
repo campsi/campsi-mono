@@ -3,7 +3,7 @@ const resourceService = require('./services/resource');
 const documentService = require('./services/document');
 const userService = require('./services/user');
 const buildLink = require('../../../lib/modules/buildLink');
-const debug = require('debug')('campsi:docs');
+const buildSingleDocumentLink = require('../../../lib/modules/buildSingleDocumentLink');
 const { ObjectId } = require('mongodb');
 const ValidationError = require('../../../lib/errors/ValidationError');
 
@@ -154,7 +154,7 @@ module.exports.getDoc = function (req, res) {
         const links = [];
 
         Object.entries(nav).forEach(([rel, id]) => {
-          links.push(`<${buildLink.buildSingleDocumentLink(req, id)}>; rel="${rel}"`);
+          links.push(`<${buildSingleDocumentLink(req, id)}>; rel="${rel}"`);
         });
 
         const headersKeys = [];

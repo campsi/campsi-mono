@@ -29,7 +29,14 @@ function me(req, res) {
     return helpers.unauthorized(res);
   }
   delete req.user.identities?.local?.encryptedPassword;
+
   res.json(req.user);
+
+  req.db
+    .collection('__users__')
+    .findOneAndUpdate({ _id: req.user._id }, { $set: { lastSeenAt: new Date() } }, {})
+    .then(_result => {})
+    .catch(error => helpers.error(res, error));
 }
 
 function updateMe(req, res) {
@@ -253,7 +260,7 @@ function inviteUser(req, res) {
     return helpers.unauthorized(res, new Error('You must be authentified to send an invitation'));
   }
   const invitationToken = builder.genBearerToken(100);
-  const dispatchInvitationEvent = function(payload) {
+  const dispatchInvitationEvent = function (payload) {
     req.service.emit('invitation/created', payload);
   };
   const filter = {

@@ -54,7 +54,6 @@ module.exports.callback = function localCallback(req, username, password, done) 
       { 'identities.local.username': username }
     ]
   };
-  debug('signin passport callback', username, password, filter);
   req.db
     .collection('__users__')
     .findOne(filter)
@@ -63,6 +62,7 @@ module.exports.callback = function localCallback(req, username, password, done) 
         debug('tried to find user with username', username, 'but none found');
         done(null, null);
       }
+      debug('signin passport callback', username, user.identities.local.encryptedPassword, filter);
       bcrypt.compare(password, user.identities.local.encryptedPassword, function (err, isMatch) {
         if (err) {
           debug('bcrypt password compare error', err, password, user.identities.local.encryptedPassword);

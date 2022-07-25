@@ -251,6 +251,72 @@ module.exports.patchDocument = async (resource, filter, data, state, user) => {
   };
 };
 
+module.exports.getDocumentLinks = function (resource, filter, query, _user, state, _resources, headers, result) {
+  const nav = {};
+
+  return new Promise((resolve, reject) => {
+    if (
+      (headers &&
+        (!headers['with-links'] || headers['with-links'] === 'false') &&
+        (!query.withLinks || query.withLinks === 'false')) ||
+      resource.isInheritable
+    ) {
+      return resolve({ nav, result });
+    }
+
+    const projection = { _id: 1, states: 1, users: 1, groups: 1 };
+
+    let previous;
+    let next;
+    const match = { ...filter };
+    match[`states.${state}`] = { $exists: true };
+
+    // get item before
+    match._id = { $lt: createObjectId(filter._id) };
+
+    resource.collection
+      .find(match, { projection })
+      .sort({ _id: -1 })
+      .limit(1)
+      .toArray()
+      .then((doc, err) => {
+        // if there is an error don't build the links
+        if (err) return resolve({ nav, result });
+
+        if (doc && doc.length > 0) {
+          previous = doc[0];
+        }
+
+        // find next
+        match._id = { $gt: createObjectId(filter._id) };
+
+        resource.collection
+          .find(match, { projection })
+          .sort({ _id: 1 })
+          .limit(1)
+          .toArray()
+          .then((doc, err) => {
+            if (!err && doc && doc.length === 1) {
+              next = doc[0];
+            }
+
+            if (next && next._id) nav.next = next._id;
+            if (previous && previous._id) nav.previous = previous._id;
+
+            return resolve({ nav, result });
+          })
+          .catch(err => {
+            console.log(err);
+            return reject(err);
+          });
+      })
+      .catch(err => {
+        console.log(err);
+        return reject(err);
+      });
+  });
+};
+
 module.exports.getDocument = function (resource, filter, query, user, state, resources) {
   const requestedStates = getRequestedStatesFromQuery(resource, query);
   const projection = { _id: 1, states: 1, users: 1, groups: 1 };
@@ -275,7 +341,7 @@ module.exports.getDocument = function (resource, filter, query, user, state, res
           resource,
           user
         });
-        embedDocs.one(resource, query.embed, user, returnValue.data, resources).then(doc => {
+        embedDocs.one(resource, query.embed, user, returnValue.data, resources).then(_doc => {
           resolve(returnValue);
         });
       });
@@ -336,7 +402,7 @@ module.exports.getDocument = function (resource, filter, query, user, state, res
             resource,
             user
           });
-          embedDocs.one(resource, query.embed, user, returnValue.data, resources).then(doc => resolve(returnValue));
+          embedDocs.one(resource, query.embed, user, returnValue.data, resources).then(_doc => resolve(returnValue));
         })
         .catch(err => {
           reject(err);
@@ -398,7 +464,7 @@ module.exports.removeUserFromDocument = function (resource, filter, userId, db) 
   const removeGroupFromUser = new Promise((resolve, reject) => {
     const filter = { _id: createObjectId(userId) };
     const update = { $pull: { groups: { $in: groups } } };
-    db.collection('__users__').updateOne(filter, update, (err, result) => {
+    db.collection('__users__').updateOne(filter, update, (err, _result) => {
       if (err) return reject(err);
       return resolve(null);
     });
@@ -474,7 +540,7 @@ module.exports.deleteDocument = function (resource, filter) {
           await resource.collection.deleteOne(filter);
           return {};
         }
-        Object.keys(docToDelete.states).forEach((stateName, index) => {
+        Object.keys(docToDelete.states).forEach((stateName, _index) => {
           children.forEach(child => {
             if (!child.states[stateName]) {
               child.states[stateName] = docToDelete.states[stateName];

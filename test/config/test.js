@@ -135,6 +135,10 @@ module.exports = {
         channel: 'webhooks',
         requireAuth: true
       }
+    },
+    notifications: {
+      title: 'Notifications',
+      option: {}
     }
   }
 };

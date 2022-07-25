@@ -4,7 +4,6 @@ const paginateCursor = require('../../../../lib/modules/paginateCursor');
 const sortCursor = require('../../../../lib/modules/sortCursor');
 const createObjectId = require('../../../../lib/modules/createObjectId');
 const permissions = require('../modules/permissions');
-const { reject } = require('async');
 
 // Helper functions
 const getDocUsersList = doc => Object.keys(doc ? doc.users : []).map(k => doc.users[k]);
@@ -247,7 +246,7 @@ module.exports.patchDocument = async (resource, filter, data, state, user) => {
 module.exports.getDocumentLinks = function (resource, filter, query, _user, state, _resources, headers, result) {
   const nav = {};
 
-  return new Promise((resolve, _reject) => {
+  return new Promise((resolve, reject) => {
     if (
       (headers &&
         (!headers['with-links'] || headers['with-links'] === 'false') &&

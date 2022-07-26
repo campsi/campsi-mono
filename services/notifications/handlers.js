@@ -1,12 +1,31 @@
+/* eslint-disable array-callback-return */
 const helpers = require('../../lib/modules/responseHelpers');
 const debug = require('debug')('campsi:notifications');
 const createObjectId = require('../../lib/modules/createObjectId');
+
+module.exports.getResources = async function (req, res) {
+  const result = { resources: [] };
+  result.classes = req.options.classes;
+  Object.entries(req.options.resources).map(([id, resource]) => {
+    result.resources.push({
+      id,
+      label: resource.label,
+      type: resource.type,
+      states: resource.states,
+      defaultState: resource.defaultState,
+      permissions: resource.permissions,
+      schema: resource.schema
+    });
+  });
+
+  return helpers.json(res, result);
+};
 
 module.exports.getNotifications = async function (req, res) {
   try {
     debug('getNotifications :: Start');
 
-    const notifications = await req.service.collection.find().sort({ createdAt: -1 }).toArray();
+    const notifications = await req.resource.collection.find().sort({ createdAt: -1 }).toArray();
 
     debug('getNotifications :: End');
 
@@ -24,7 +43,7 @@ module.exports.getNotification = async function (req, res) {
 
     const notificationId = createObjectId(req.params.id);
 
-    const notification = await req.service.collection.findOne({ _id: notificationId });
+    const notification = await req.resource.collection.findOne({ _id: notificationId });
 
     if (!notification) {
       debug(`getNotification :: Error :: Notification Not Found :: ${notificationId}`);
@@ -43,11 +62,17 @@ module.exports.getNotification = async function (req, res) {
 
 module.exports.createNotification = async function (req, res) {
   try {
-    debug(`createNotification :: Start :: ${req.body}`);
+    debug('createNotification :: Start ::', req.body);
+
+    if (!(await req.resource.validate(req.body))) {
+      debug('createNotification :: model have %d error(s)', req.resource.validate.errors.length);
+
+      return helpers.error(res, new Error(req.resource.validate.errors.map(e => `${e.dataPath} ${e.message}`).join(', ')));
+    }
 
     const notification = { createdAt: new Date(), createdBy: null, modifiedAt: null, modifiedBy: null, data: req.body };
 
-    const { insertedId } = await req.service.collection.insertOne(notification);
+    const { insertedId } = await req.resource.collection.insertOne(notification);
 
     req.service.emit('notification/created', { ...notification, _id: insertedId });
 
@@ -69,7 +94,7 @@ module.exports.deleteNotification = async function (req, res) {
 
     const notificationId = createObjectId(req.params.id);
 
-    const { deletedCount } = await req.service.collection.deleteOne({ _id: notificationId });
+    const { deletedCount } = await req.resource.collection.deleteOne({ _id: notificationId });
 
     if (deletedCount === 0) {
       debug(`deleteNotification :: Error :: Notification Not Found :: ${notificationId}`);
@@ -89,9 +114,15 @@ module.exports.deleteNotification = async function (req, res) {
 
 module.exports.updateNotification = async function (req, res) {
   try {
-    debug(`updateNotification :: Start :: ${req.params.id}`);
+    debug(`updateNotification :: Start :: ${req.params.id} :: `, req.body);
 
     const notificationId = createObjectId(req.params.id);
+
+    if (!(await req.resource.validate(req.body))) {
+      debug('createNotification :: model have %d error(s)', req.resource.validate.errors.length);
+
+      return helpers.error(res, new Error(req.resource.validate.errors.map(e => `${e.dataPath} ${e.message}`).join(', ')));
+    }
 
     const ops = {
       $set: {
@@ -101,7 +132,7 @@ module.exports.updateNotification = async function (req, res) {
       }
     };
 
-    const { value: updatedNotification } = await req.service.collection.findOneAndUpdate({ _id: notificationId }, ops, {
+    const { value: updatedNotification } = await req.resource.collection.findOneAndUpdate({ _id: notificationId }, ops, {
       returnDocument: 'after'
     });
 
@@ -123,7 +154,7 @@ module.exports.updateNotification = async function (req, res) {
 
 module.exports.patchNotification = async function (req, res) {
   try {
-    debug(`patchNotification :: Start :: ${req.params.id}`);
+    debug(`patchNotification :: Start :: ${req.params.id} ::`, req.body);
 
     const notificationId = createObjectId(req.params.id);
 
@@ -144,7 +175,7 @@ module.exports.patchNotification = async function (req, res) {
       delete ops.$unset;
     }
 
-    const { value: updatedNotification } = await req.service.collection.findOneAndUpdate({ _id: notificationId }, ops, {
+    const { value: updatedNotification } = await req.resource.collection.findOneAndUpdate({ _id: notificationId }, ops, {
       returnDocument: 'after'
     });
 

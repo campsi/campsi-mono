@@ -22,42 +22,46 @@ const services = {
 describe('Notification CRUD', () => {
   const context = {};
   before(setupBeforeEach(config, services, context));
-  after(done => {
-    context.server.close(done);
+  after(async () => {
+    await context.campsi.services.get('notifications').db.collection('notifications.notifications').deleteMany();
+    await context.server.close();
   });
 
   describe('GET /', () => {
     before(async () => {
-      await context.campsi.services.get('notifications').collection.insertMany([
-        {
-          createdAt: new Date('2022-06-29'),
-          createdBy: null,
-          modifiedAt: new Date('2022-06-30'),
-          modifiedBy: null,
-          data: {
-            attr1: true,
-            attr2: 'string'
+      await context.campsi.services
+        .get('notifications')
+        .db.collection('notifications.notifications')
+        .insertMany([
+          {
+            createdAt: new Date('2022-06-29'),
+            createdBy: null,
+            modifiedAt: new Date('2022-06-30'),
+            modifiedBy: null,
+            data: {
+              attr1: true,
+              attr2: 'string'
+            }
+          },
+          {
+            createdAt: new Date('2022-07-22'),
+            createdBy: null,
+            modifiedAt: null,
+            modifiedBy: null,
+            data: {
+              attr1: false,
+              attr2: 'azerty'
+            }
           }
-        },
-        {
-          createdAt: new Date('2022-07-22'),
-          createdBy: null,
-          modifiedAt: null,
-          modifiedBy: null,
-          data: {
-            attr1: false,
-            attr2: 'azerty'
-          }
-        }
-      ]);
+        ]);
     });
 
     after(async () => {
-      await context.campsi.services.get('notifications').collection.deleteMany();
+      await context.campsi.services.get('notifications').db.collection('notifications.notifications').deleteMany();
     });
 
     it('should GET all notifications', async () => {
-      const res = await chai.request(context.campsi.app).get('/notifications');
+      const res = await chai.request(context.campsi.app).get('/notifications/notifications');
       res.should.have.status(200);
       res.should.be.json;
       res.body.should.be.a('object');
@@ -69,38 +73,41 @@ describe('Notification CRUD', () => {
 
   describe('GET /:id', () => {
     before(async () => {
-      await context.campsi.services.get('notifications').collection.insertMany([
-        {
-          _id: createObjectId('62da6d6944273d3f648d3633'),
-          createdAt: new Date('2022-06-29'),
-          createdBy: null,
-          modifiedAt: new Date('2022-06-30'),
-          modifiedBy: null,
-          data: {
-            attr1: true,
-            attr2: 'string'
+      await context.campsi.services
+        .get('notifications')
+        .db.collection('notifications.notifications')
+        .insertMany([
+          {
+            _id: createObjectId('62da6d6944273d3f648d3633'),
+            createdAt: new Date('2022-06-29'),
+            createdBy: null,
+            modifiedAt: new Date('2022-06-30'),
+            modifiedBy: null,
+            data: {
+              attr1: true,
+              attr2: 'string'
+            }
+          },
+          {
+            _id: createObjectId('62da6d78181fd43fd38ddf4e'),
+            createdAt: new Date('2022-07-22'),
+            createdBy: null,
+            modifiedAt: null,
+            modifiedBy: null,
+            data: {
+              attr1: false,
+              attr2: 'azerty'
+            }
           }
-        },
-        {
-          _id: createObjectId('62da6d78181fd43fd38ddf4e'),
-          createdAt: new Date('2022-07-22'),
-          createdBy: null,
-          modifiedAt: null,
-          modifiedBy: null,
-          data: {
-            attr1: false,
-            attr2: 'azerty'
-          }
-        }
-      ]);
+        ]);
     });
 
     after(async () => {
-      await context.campsi.services.get('notifications').collection.deleteMany();
+      await context.campsi.services.get('notifications').db.collection('notifications.notifications').deleteMany();
     });
 
     it('should GET the notification with id "62da6d78181fd43fd38ddf4e"', async () => {
-      const res = await chai.request(context.campsi.app).get('/notifications/62da6d78181fd43fd38ddf4e');
+      const res = await chai.request(context.campsi.app).get('/notifications/notifications/62da6d78181fd43fd38ddf4e');
       res.should.have.status(200);
       res.should.be.json;
       res.body.should.be.a('object');
@@ -109,8 +116,8 @@ describe('Notification CRUD', () => {
       res.body.notification._id.should.be.eq('62da6d78181fd43fd38ddf4e');
     });
 
-    it('should return a 404 error with id "123"', async () => {
-      const res = await chai.request(context.campsi.app).get('/notifications/123');
+    it('should return a 404 error with id "62dfb51303b0b916370d8439"', async () => {
+      const res = await chai.request(context.campsi.app).get('/notifications/notifications/62dfb51303b0b916370d8439');
 
       res.should.have.status(404);
       res.should.be.json;
@@ -120,15 +127,20 @@ describe('Notification CRUD', () => {
   });
 
   describe('POST /', () => {
+    after(async () => {
+      await context.campsi.services.get('notifications').db.collection('notifications.notifications').deleteMany();
+    });
+
     it('should CREATE a new notification', async () => {
-      const res = await chai.request(context.campsi.app).post('/notifications').send({
+      const res = await chai.request(context.campsi.app).post('/notifications/notifications').send({
         attr1: true,
         attr2: 'string'
       });
 
       const createdNotification = await context.campsi.services
         .get('notifications')
-        .collection.findOne({ _id: createObjectId(res.body._id) });
+        .db.collection('notifications.notifications')
+        .findOne({ _id: createObjectId(res.body._id) });
 
       res.should.have.status(200);
       res.should.be.json;
@@ -144,7 +156,7 @@ describe('Notification CRUD', () => {
 
       sandbox.spy(context.campsi.services.get('notifications'), 'emit');
 
-      await chai.request(context.campsi.app).post('/notifications').send({
+      await chai.request(context.campsi.app).post('/notifications/notifications').send({
         attr1: true,
         attr2: 'string'
       });
@@ -157,38 +169,41 @@ describe('Notification CRUD', () => {
 
   describe('PUT /:id', () => {
     before(async () => {
-      await context.campsi.services.get('notifications').collection.insertMany([
-        {
-          _id: createObjectId('62da6d6944273d3f648d3633'),
-          createdAt: new Date('2022-06-29'),
-          createdBy: null,
-          modifiedAt: new Date('2022-06-30'),
-          modifiedBy: null,
-          data: {
-            attr1: true,
-            attr2: 'string'
+      await await context.campsi.services
+        .get('notifications')
+        .db.collection('notifications.notifications')
+        .insertMany([
+          {
+            _id: createObjectId('62da6d6944273d3f648d3633'),
+            createdAt: new Date('2022-06-29'),
+            createdBy: null,
+            modifiedAt: new Date('2022-06-30'),
+            modifiedBy: null,
+            data: {
+              attr1: true,
+              attr2: 'string'
+            }
+          },
+          {
+            _id: createObjectId('62da6d78181fd43fd38ddf4e'),
+            createdAt: new Date('2022-07-22'),
+            createdBy: null,
+            modifiedAt: null,
+            modifiedBy: null,
+            data: {
+              attr1: false,
+              attr2: 'azerty'
+            }
           }
-        },
-        {
-          _id: createObjectId('62da6d78181fd43fd38ddf4e'),
-          createdAt: new Date('2022-07-22'),
-          createdBy: null,
-          modifiedAt: null,
-          modifiedBy: null,
-          data: {
-            attr1: false,
-            attr2: 'azerty'
-          }
-        }
-      ]);
+        ]);
     });
 
     after(async () => {
-      await context.campsi.services.get('notifications').collection.deleteMany();
+      await context.campsi.services.get('notifications').db.collection('notifications.notifications').deleteMany();
     });
 
     it('should UPDATE a notification', async () => {
-      const res = await chai.request(context.campsi.app).put('/notifications/62da6d78181fd43fd38ddf4e').send({
+      const res = await chai.request(context.campsi.app).put('/notifications/notifications/62da6d78181fd43fd38ddf4e').send({
         key1: true,
         key2: 'string'
       });
@@ -203,8 +218,8 @@ describe('Notification CRUD', () => {
       res.body.notification.modifiedAt.should.be.not.null;
     });
 
-    it('should return a 404 error with id "123"', async () => {
-      const res = await chai.request(context.campsi.app).put('/notifications/123');
+    it('should return a 404 error with id "62dfb51303b0b916370d8439"', async () => {
+      const res = await chai.request(context.campsi.app).put('/notifications/notifications/62dfb51303b0b916370d8439');
 
       res.should.have.status(404);
       res.should.be.json;
@@ -217,7 +232,7 @@ describe('Notification CRUD', () => {
 
       sandbox.spy(context.campsi.services.get('notifications'), 'emit');
 
-      await chai.request(context.campsi.app).put('/notifications/62da6d78181fd43fd38ddf4e').send({
+      await chai.request(context.campsi.app).put('/notifications/notifications/62da6d78181fd43fd38ddf4e').send({
         key1: true,
         key2: 'string'
       });
@@ -230,39 +245,42 @@ describe('Notification CRUD', () => {
 
   describe('PATCH /:id', () => {
     before(async () => {
-      await context.campsi.services.get('notifications').collection.insertMany([
-        {
-          _id: createObjectId('62da6d6944273d3f648d3633'),
-          createdAt: new Date('2022-06-29'),
-          createdBy: null,
-          modifiedAt: new Date('2022-06-30'),
-          modifiedBy: null,
-          data: {
-            attr1: true,
-            attr2: 'string'
+      await context.campsi.services
+        .get('notifications')
+        .db.collection('notifications.notifications')
+        .insertMany([
+          {
+            _id: createObjectId('62da6d6944273d3f648d3633'),
+            createdAt: new Date('2022-06-29'),
+            createdBy: null,
+            modifiedAt: new Date('2022-06-30'),
+            modifiedBy: null,
+            data: {
+              attr1: true,
+              attr2: 'string'
+            }
+          },
+          {
+            _id: createObjectId('62da6d78181fd43fd38ddf4e'),
+            createdAt: new Date('2022-07-22'),
+            createdBy: null,
+            modifiedAt: null,
+            modifiedBy: null,
+            data: {
+              attr1: false,
+              attr2: 'azerty',
+              attr3: 'azerty'
+            }
           }
-        },
-        {
-          _id: createObjectId('62da6d78181fd43fd38ddf4e'),
-          createdAt: new Date('2022-07-22'),
-          createdBy: null,
-          modifiedAt: null,
-          modifiedBy: null,
-          data: {
-            attr1: false,
-            attr2: 'azerty',
-            attr3: 'azerty'
-          }
-        }
-      ]);
+        ]);
     });
 
     after(async () => {
-      await context.campsi.services.get('notifications').collection.deleteMany();
+      await context.campsi.services.get('notifications').db.collection('notifications.notifications').deleteMany();
     });
 
     it('should PATCH a notification', async () => {
-      const res = await chai.request(context.campsi.app).patch('/notifications/62da6d78181fd43fd38ddf4e').send({
+      const res = await chai.request(context.campsi.app).patch('/notifications/notifications/62da6d78181fd43fd38ddf4e').send({
         key1: true,
         attr1: 'string',
         attr3: null
@@ -280,8 +298,8 @@ describe('Notification CRUD', () => {
       chai.expect(res.body.notification.data.attr3).to.be.undefined;
     });
 
-    it('should return a 404 error with id "123"', async () => {
-      const res = await chai.request(context.campsi.app).patch('/notifications/123');
+    it('should return a 404 error with id "62dfb51303b0b916370d8439"', async () => {
+      const res = await chai.request(context.campsi.app).patch('/notifications/notifications/62dfb51303b0b916370d8439');
 
       res.should.have.status(404);
       res.should.be.json;
@@ -294,7 +312,7 @@ describe('Notification CRUD', () => {
 
       sandbox.spy(context.campsi.services.get('notifications'), 'emit');
 
-      await chai.request(context.campsi.app).patch('/notifications/62da6d78181fd43fd38ddf4e').send({
+      await chai.request(context.campsi.app).patch('/notifications/notifications/62da6d78181fd43fd38ddf4e').send({
         key1: true,
         attr1: 'string',
         attr3: null
@@ -308,41 +326,48 @@ describe('Notification CRUD', () => {
 
   describe('DELETE /:id', () => {
     beforeEach(async () => {
-      await context.campsi.services.get('notifications').collection.insertMany([
-        {
-          _id: createObjectId('62da6d6944273d3f648d3633'),
-          createdAt: new Date('2022-06-29'),
-          createdBy: null,
-          modifiedAt: new Date('2022-06-30'),
-          modifiedBy: null,
-          data: {
-            attr1: true,
-            attr2: 'string'
+      await context.campsi.services
+        .get('notifications')
+        .db.collection('notifications.notifications')
+        .insertMany([
+          {
+            _id: createObjectId('62da6d6944273d3f648d3633'),
+            createdAt: new Date('2022-06-29'),
+            createdBy: null,
+            modifiedAt: new Date('2022-06-30'),
+            modifiedBy: null,
+            data: {
+              attr1: true,
+              attr2: 'string'
+            }
+          },
+          {
+            _id: createObjectId('62da6d78181fd43fd38ddf4e'),
+            createdAt: new Date('2022-07-22'),
+            createdBy: null,
+            modifiedAt: null,
+            modifiedBy: null,
+            data: {
+              attr1: false,
+              attr2: 'azerty',
+              attr3: 'azerty'
+            }
           }
-        },
-        {
-          _id: createObjectId('62da6d78181fd43fd38ddf4e'),
-          createdAt: new Date('2022-07-22'),
-          createdBy: null,
-          modifiedAt: null,
-          modifiedBy: null,
-          data: {
-            attr1: false,
-            attr2: 'azerty',
-            attr3: 'azerty'
-          }
-        }
-      ]);
+        ]);
     });
 
     afterEach(async () => {
-      await context.campsi.services.get('notifications').collection.deleteMany();
+      await context.campsi.services.get('notifications').db.collection('notifications.notifications').deleteMany();
     });
 
     it('should DELETE a notification', async () => {
-      const res = await chai.request(context.campsi.app).delete('/notifications/62da6d78181fd43fd38ddf4e');
+      const res = await chai.request(context.campsi.app).delete('/notifications/notifications/62da6d78181fd43fd38ddf4e');
 
-      const allNotifications = await context.campsi.services.get('notifications').collection.find().toArray();
+      const allNotifications = await context.campsi.services
+        .get('notifications')
+        .db.collection('notifications.notifications')
+        .find()
+        .toArray();
 
       res.should.have.status(200);
       res.should.be.json;
@@ -351,8 +376,8 @@ describe('Notification CRUD', () => {
       chai.expect(allNotifications.length).to.be.eq(1);
     });
 
-    it('should return a 404 error with id "123"', async () => {
-      const res = await chai.request(context.campsi.app).delete('/notifications/123');
+    it('should return a 404 error with id "62dfb51303b0b916370d8439"', async () => {
+      const res = await chai.request(context.campsi.app).delete('/notifications/notifications/62dfb51303b0b916370d8439');
 
       res.should.have.status(404);
       res.should.be.json;
@@ -365,7 +390,7 @@ describe('Notification CRUD', () => {
 
       sandbox.spy(context.campsi.services.get('notifications'), 'emit');
 
-      await chai.request(context.campsi.app).delete('/notifications/62da6d78181fd43fd38ddf4e');
+      await chai.request(context.campsi.app).delete('/notifications/notifications/62da6d78181fd43fd38ddf4e');
 
       chai.expect(context.campsi.services.get('notifications').emit.calledOnce).to.be.true;
 

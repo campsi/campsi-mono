@@ -390,6 +390,33 @@ function addGroupsToUser(req, res) {
     .catch(error => helpers.error(res, error));
 }
 
+function deleteUser(req, res) {
+  if (req.user && req.user.isAdmin) {
+    let userId;
+    try {
+      userId = new ObjectId(req.params.userId);
+
+      const update = { $set: { email: '', displayName: '', picture: '', data: {}, identities: {}, deletedOn: new Date() } };
+
+      req.db
+        .collection('__users__')
+        .findOneAndUpdate({ _id: userId, deletedOn: { $exists: false } }, update, { returnDocument: 'after' })
+        .then(result => {
+          if (result && result.value) {
+            res.json(result.value);
+          } else {
+            helpers.notFound(res, new Error('User not found or already deleted'));
+          }
+        })
+        .catch(error => helpers.error(res, error));
+    } catch (e) {
+      return redirectWithError(req, res, new Error('Erroneous userId'));
+    }
+  } else {
+    redirectWithError(req, res, new Error('Only admin users are allowed to delete users'));
+  }
+}
+
 module.exports = {
   initAuth,
   redirectWithError,
@@ -404,5 +431,6 @@ module.exports = {
   logout,
   inviteUser,
   acceptInvitation,
-  addGroupsToUser
+  addGroupsToUser,
+  deleteUser
 };

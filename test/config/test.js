@@ -138,7 +138,20 @@ module.exports = {
     },
     notifications: {
       title: 'Notifications',
-      option: {}
+      description: 'Notifications Center',
+      options: {
+        usersFetcher: () => {},
+        roles: {},
+        classes: {},
+        resources: {
+          notifications: {
+            label: 'notifications',
+            class: 'publicEntry',
+            schema: require('../schemas/notification.schema')
+          }
+        }
+      },
+      optionsBasePath: path.dirname(path.join(__dirname, '../'))
     }
   }
 };

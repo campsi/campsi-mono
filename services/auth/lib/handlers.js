@@ -21,10 +21,10 @@ function logout(req, res) {
     .findOneAndUpdate({ _id: user._id }, update)
     .then(result => {
       // move current token from tokens and archive it
-      // except if marked "donotdelete".
+      // except if marked "doNotDelete".
       usersCollection
         .findOneAndUpdate(
-          { _id: user._id, [`tokens.${token}.donotdelete`]: { $exists: false } },
+          { _id: user._id, [`tokens.${token}.doNotDelete`]: { $exists: false } },
           { $unset: { [`tokens.${token}`]: '' } },
           { returnDocument: 'before' }
         )

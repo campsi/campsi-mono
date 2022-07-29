@@ -146,7 +146,8 @@ describe('Notification CRUD', () => {
       res.should.be.json;
       res.body.should.be.a('object');
       res.body.success.should.be.eq(true);
-      res.body._id.should.be.a('string');
+      res.body.notification.should.be.a('object');
+      res.body.notification._id.should.be.a('string');
 
       chai.expect(createdNotification).should.not.be.null;
     });

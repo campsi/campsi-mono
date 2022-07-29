@@ -80,7 +80,7 @@ module.exports.createNotification = async function (req, res) {
 
     debug('createNotification :: End');
 
-    return helpers.json(res, { success: true, _id: insertedId });
+    return helpers.json(res, { success: true, notification: {...notification, _id: insertedId } });
   } catch (err) {
     debug(`createNotification :: Error :: ${err.message} :: ${err.stack}`);
 

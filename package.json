@@ -24,14 +24,14 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/campsi/campsi-mono.git"
+    "url": "git+https://github.com/campsi/campsi-mono-ci-test.git"
   },
   "author": "",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/campsi/campsi-mono/issues"
+    "url": "https://github.com/campsi/campsi-mono-ci-test/issues"
   },
-  "homepage": "https://github.com/campsi/campsi-mono#readme",
+  "homepage": "https://github.com/campsi/campsi-mono-ce-test#readme",
   "peerDependencies": {
     "async": "^2.6.3",
     "body-parser": "^1.18.2",

@@ -1,6 +1,6 @@
 {
   "name": "campsi-ci",
-  "version": "1.1.4",
+  "version": "0.0.0-semantic-release",
   "description": "Configurable API for managing and publishing document-oriented content",
   "main": "index.js",
   "scripts": {

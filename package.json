@@ -1,5 +1,5 @@
 {
-  "name": "campsi",
+  "name": "campsi-ci",
   "version": "1.1.4",
   "description": "Configurable API for managing and publishing document-oriented content",
   "main": "index.js",
@@ -73,6 +73,8 @@
     "yargs": "^16.1.0"
   },
   "devDependencies": {
+    "@commitlint/cli": "^17.0.3",
+    "@commitlint/config-conventional": "^17.0.3",
     "async": "^2.6.3",
     "body-parser": "^1.18.2",
     "campsi": "./",

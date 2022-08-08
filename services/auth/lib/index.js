@@ -47,6 +47,7 @@ module.exports = class AuthService extends CampsiService {
     });
     router.get('/users', handlers.getUsers);
     router.get('/users/:userId/access_token', handlers.getAccessTokenForUser);
+    router.patch('/users/soft-delete/:userId', handlers.softDelete);
     router.get('/providers', handlers.getProviders);
     router.get('/me', handlers.me);
     router.put('/me', handlers.updateMe);
@@ -56,7 +57,6 @@ module.exports = class AuthService extends CampsiService {
     router.get('/logout', handlers.logout);
     router.post('/invitations', handlers.inviteUser);
     router.post('/invitations/:invitationToken', handlers.acceptInvitation);
-    router.delete('/users/:userId', handlers.deleteUser);
 
     if (providers.local) {
       router.use('/local', local.middleware(providers.local));

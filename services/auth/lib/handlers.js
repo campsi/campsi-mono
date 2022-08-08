@@ -260,7 +260,7 @@ function inviteUser(req, res) {
     return helpers.unauthorized(res, new Error('You must be authentified to send an invitation'));
   }
   const invitationToken = builder.genBearerToken(100);
-  const dispatchInvitationEvent = function (payload) {
+  const dispatchInvitationEvent = function(payload) {
     req.service.emit('invitation/created', payload);
   };
   const filter = {
@@ -390,22 +390,39 @@ function addGroupsToUser(req, res) {
     .catch(error => helpers.error(res, error));
 }
 
-function deleteUser(req, res) {
+function softDelete(req, res) {
   if (req.user && req.user.isAdmin) {
     let userId;
     try {
       userId = new ObjectId(req.params.userId);
 
+      // set email, displayName, picture, data, identities to empty
+      // add deletedOn date
       const update = { $set: { email: '', displayName: '', picture: '', data: {}, identities: {}, deletedOn: new Date() } };
-
       req.db
         .collection('__users__')
         .findOneAndUpdate({ _id: userId, deletedOn: { $exists: false } }, update, { returnDocument: 'after' })
         .then(result => {
+          // also anonymize additional field if passed in
           if (result && result.value) {
-            res.json(result.value);
+            const additionalFieldName = req.body.additionalFieldName;
+            const additionalFieldCollectionName = req.body.additionalFieldCollectionName;
+
+            if (additionalFieldName && additionalFieldCollectionName) {
+              req.db
+                .collection(additionalFieldCollectionName)
+                .findOneAndUpdate({ [additionalFieldName]: { $exists: true } }, { $set: { [additionalFieldName]: '' } })
+                .then(udpated => {
+                  res.json(result.value);
+                })
+                .catch(err => {
+                  console.log(err);
+                });
+            } else {
+              res.json(result.value);
+            }
           } else {
-            helpers.notFound(res, new Error('User not found or already deleted'));
+            helpers.notFound(res, new Error('User not found or already soft deleted'));
           }
         })
         .catch(error => helpers.error(res, error));
@@ -413,7 +430,7 @@ function deleteUser(req, res) {
       return redirectWithError(req, res, new Error('Erroneous userId'));
     }
   } else {
-    redirectWithError(req, res, new Error('Only admin users are allowed to delete users'));
+    return helpers.unauthorized(res);
   }
 }
 
@@ -432,5 +449,5 @@ module.exports = {
   inviteUser,
   acceptInvitation,
   addGroupsToUser,
-  deleteUser
+  softDelete
 };

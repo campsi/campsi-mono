@@ -51,11 +51,11 @@ class S3AssetStorage extends AssetStorage {
         s3.upload({
           Bucket: bucket,
           Key: getKey(file, false),
-          ContentType: file.detectedMimeType || 'application/octet-stream',
+          ContentType: file.mimetype || 'application/octet-stream',
           ContentLength: file.size,
           Body: buffer
         })
-          .on('httpUploadProgress', function(ev) {
+          .on('httpUploadProgress', function (ev) {
             if (ev.total) file.uploadedSize = ev.total;
           })
           .send((err, data) => {

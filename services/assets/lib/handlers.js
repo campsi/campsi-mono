@@ -11,11 +11,30 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const crypto = require('crypto');
-
 const tempDir = os.tmpdir();
+const { Readable } = require('stream');
 
-module.exports.postAssets = function postAssets(req, res) {
-  // TODO create our own structure for files, be independent from multer
+module.exports.postAssets = async (req, res, next) => {
+  if (req.files && typeof req.files === 'object' && !Array.isArray(req.files)) {
+    const files = [];
+    await Promise.all(
+      Object.entries(req.files).map(async ([fieldname, values]) => {
+        await Promise.all(
+          values.map(async file => {
+            file.stream = Readable.from(file.data);
+            file.originalName = file.name;
+            file.fieldName = fieldname;
+            file.clientReportedFileExtension = file.name.substring(file.name.lastIndexOf('.'));
+            file.clientReportedMimeType = file.mimetype;
+            file.detectedMimeType = file.mimetype;
+            files.push(file);
+          })
+        );
+      })
+    );
+    req.files = files;
+  }
+
   serviceAsset
     .createAsset(req.service, req.files, req.user, req.headers)
     .then(data => helpers.json(res, data))
@@ -87,7 +106,7 @@ module.exports.copyRemote = function copyRemote(req, res, next) {
           next();
         }
       })
-      .on('error', function(e) {
+      .on('error', function (e) {
         helpers.badRequest(res, e);
       });
   } catch (e) {
@@ -147,7 +166,7 @@ module.exports.streamAsset = function streamAsset(req, res) {
       {
         headers: { Connection: 'keep-alive' }
       },
-      function(newRes) {
+      function (newRes) {
         const headers = newRes.headers;
         headers['Content-Disposition'] = 'attachment; filename="{0}"'.format(req.asset.originalName);
         headers['Content-Type'] = req.asset.clientReportedMimeType;
@@ -157,7 +176,7 @@ module.exports.streamAsset = function streamAsset(req, res) {
         newRes.pipe(res);
       }
     )
-    .on('error', function(err) {
+    .on('error', function (err) {
       debug('Streaming error: %s', err);
       res.statusCode = 500;
       res.json({

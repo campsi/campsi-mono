@@ -5,11 +5,11 @@ const helpers = require('../../../lib/modules/responseHelpers');
 const handlers = require('./handlers');
 const param = require('./param');
 const format = require('string-format');
+const busboyBodyParser = require('busboy-body-parser');
 const notAvailable = (req, res) => {
   helpers.serviceNotAvailable(res, new Error('Assets listing is not available'));
 };
 format.extend(String.prototype);
-const busboyBodyParser = require('busboy-body-parser');
 
 class AssetsService extends CampsiService {
   async initialize() {
@@ -18,7 +18,6 @@ class AssetsService extends CampsiService {
       req.service = this;
       next();
     });
-    // this.server.app.use(busboyBodyParser({ multi: true }));
     this.router.param('asset', param.attachAsset);
     this.router.param('asset', param.attachStorage);
     this.router.post('/copy', handlers.copyRemote, handlers.postAssets);

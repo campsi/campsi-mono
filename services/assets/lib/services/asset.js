@@ -6,7 +6,7 @@ const paginateCursor = require('../../../../lib/modules/paginateCursor');
 const sortCursor = require('../../../../lib/modules/sortCursor');
 const { ObjectId } = require('mongodb');
 
-module.exports.getAssets = function(service, pagination, sort) {
+module.exports.getAssets = function (service, pagination, sort) {
   return new Promise((resolve, reject) => {
     const cursor = service.collection.find({});
     const result = {};
@@ -38,7 +38,7 @@ module.exports.getAssets = function(service, pagination, sort) {
   });
 };
 
-module.exports.createAsset = function(service, files, user, headers) {
+module.exports.createAsset = function (service, files, user, headers) {
   return new Promise((resolve, reject) => {
     if (!files || !files.length) {
       return reject(new Error("Can't find file"));
@@ -57,8 +57,6 @@ module.exports.createAsset = function(service, files, user, headers) {
 
         function onSuccess() {
           file.stream.destroy();
-          delete file.stream;
-          delete file.fieldname;
           cb();
         }
 
@@ -78,10 +76,7 @@ module.exports.createAsset = function(service, files, user, headers) {
         storage
           .store(file)
           .then(storageStream => {
-            file.stream
-              .pipe(storageStream)
-              .on('uploadSuccess', onSuccess)
-              .on('uploadError', onError);
+            file.stream.pipe(storageStream).on('uploadSuccess', onSuccess).on('uploadError', onError);
           })
           .catch(onError);
       },
@@ -89,7 +84,15 @@ module.exports.createAsset = function(service, files, user, headers) {
         files = files.map(file => {
           // we delete the stream in order to prevent infinite loop
           // while BSON serializing the object
-          return { _id: new ObjectId(), ...file, stream: undefined };
+          delete file.stream;
+          delete file.fieldname;
+          delete file.data;
+          delete file.name;
+          delete file.encoding;
+          delete file.mimetype;
+          delete file.storage;
+          delete file.truncated;
+          return { _id: new ObjectId(), ...file };
         });
         service.collection.insertMany(files).then(result => {
           resolve(files);
@@ -99,7 +102,7 @@ module.exports.createAsset = function(service, files, user, headers) {
   });
 };
 
-module.exports.deleteAsset = function(service, storage, asset) {
+module.exports.deleteAsset = function (service, storage, asset) {
   return new Promise((resolve, reject) => {
     storage
       .deleteAsset(asset)

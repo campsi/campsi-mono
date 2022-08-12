@@ -55,7 +55,7 @@ class S3AssetStorage extends AssetStorage {
           ContentLength: file.size,
           Body: buffer
         })
-          .on('httpUploadProgress', function(ev) {
+          .on('httpUploadProgress', function (ev) {
             if (ev.total) file.uploadedSize = ev.total;
           })
           .send((err, data) => {

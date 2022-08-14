@@ -46,7 +46,7 @@ module.exports.isDocumentLockedByOtherUser = function (state, filter, user, edit
 };
 
 module.exports.lockDocument = async function (resource, state, filter, tokenTimeout, user, req) {
-  const { editLock } = req.service.options;
+  const editLock = req.service.options?.editLock || { collectionName: 'dock-lock', lockTimeoutSeconds: 3600 };
   const lockCollection = req.db.collection(editLock.collectionName);
   const timeout = new Date();
 

@@ -45,7 +45,13 @@ module.exports.attach = (req, res, next, options) => {
     const lockChek = new Promise((resolve, reject) => {
       if (req.method === 'PUT' || req.method === 'POST' || req.method === 'PATCH' || req.method === 'DELETE') {
         documentService
-          .isDocumentLockedByOtherUser(req.state, req.filter, req.user, req.service.options.editLock, req.db)
+          .isDocumentLockedByOtherUser(
+            req.state,
+            req.filter,
+            req.user,
+            req.service.options?.editLock || { collectionName: 'dock-lock', lockTimeoutSeconds: 3600 },
+            req.db
+          )
           .then(lock => {
             if (lock) {
               reject(helpers.unauthorized(res));

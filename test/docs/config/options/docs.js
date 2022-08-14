@@ -223,5 +223,9 @@ module.exports = {
       class: 'test-class',
       schema: { $ref: '../../../schemas/document.schema.json' }
     }
+  },
+  editLock: {
+    collectionName: 'dock-lock',
+    lockTimeoutSeconds: 3600
   }
 };

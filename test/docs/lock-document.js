@@ -45,6 +45,7 @@ describe('locks', () => {
   describe('Document lock tests', () => {
     let userToken;
     let docId;
+    let privateDocId;
 
     it('it should return the created object', async () => {
       const campsi = context.campsi;
@@ -129,6 +130,91 @@ describe('locks', () => {
         .send({ name: '5 cheeses' });
 
       res.should.have.status(401);
+    });
+
+    it('it should let us create a working draft pizza doc', async () => {
+      const campsi = context.campsi;
+
+      const res = await chai
+        .request(campsi.app)
+        .post('/docs/pizzas/working_draft')
+        .set('Authorization', 'Bearer ' + nownerToken)
+        .send({ name: '6 cheeses' });
+
+      res.should.have.status(200);
+
+      privateDocId = res.body.id;
+    });
+
+    it('it should let us update the working_draft pizza', async () => {
+      const campsi = context.campsi;
+
+      const res = await chai
+        .request(campsi.app)
+        .put(`/docs/pizzas/${privateDocId}/working_draft`)
+        .set('Authorization', 'Bearer ' + nownerToken)
+        .send({ name: '7 cheeses' });
+
+      res.should.have.status(200);
+    });
+
+    it('it should let us lock the working_draft pizza', async () => {
+      const campsi = context.campsi;
+
+      const res = await chai
+        .request(campsi.app)
+        .post(`/docs/pizzas/${privateDocId}/working_draft/locks/lock`)
+        .set('Authorization', 'Bearer ' + nownerToken);
+
+      res.should.have.status(200);
+    });
+
+    it('it should let us update the locked the working_draft pizza', async () => {
+      const campsi = context.campsi;
+
+      const res = await chai
+        .request(campsi.app)
+        .put(`/docs/pizzas/${privateDocId}/working_draft`)
+        .set('Authorization', 'Bearer ' + nownerToken)
+        .send({ name: '8 cheeses' });
+
+      res.should.have.status(200);
+    });
+
+    it('it should block us from updating the locked the working_draft pizza', async () => {
+      const campsi = context.campsi;
+
+      const res = await chai
+        .request(campsi.app)
+        .put(`/docs/pizzas/${privateDocId}/working_draft`)
+        .set('Authorization', 'Bearer ' + userToken)
+        .send({ name: '9 cheeses' });
+
+      res.should.have.status(401);
+    });
+
+    it('it should let us modify the public version', async () => {
+      const campsi = context.campsi;
+
+      const res = await chai
+        .request(campsi.app)
+        .put(`/docs/pizzas/${privateDocId}`)
+        .set('Authorization', 'Bearer ' + userToken)
+        .send({ name: '9 cheeses' });
+
+      res.should.have.status(200);
+    });
+
+    it('it should let us lock the public version', async () => {
+      const campsi = context.campsi;
+
+      const res = await chai
+        .request(campsi.app)
+        .post(`/docs/pizzas/${privateDocId}/locks/lock`)
+        .set('Authorization', 'Bearer ' + userToken)
+        .send({ name: '9 cheeses' });
+
+      res.should.have.status(200);
     });
   });
 });

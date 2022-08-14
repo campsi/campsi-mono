@@ -14,6 +14,80 @@ const getRequestedStatesFromQuery = (resource, query) => {
   return query.states ? query.states.split(',') : Object.keys(resource.states);
 };
 
+const getDocumentLock = function (state, filter, lockCollection) {
+  return new Promise((resolve, reject) => {
+    if (!filter._id) {
+      return resolve(undefined);
+    }
+
+    const match = { documentId: filter._id, [`${state}`]: { $exists: true } };
+    lockCollection.findOne(match, (err, doc) => {
+      if (err) reject(err);
+      resolve(doc);
+    });
+  });
+};
+
+module.exports.isDocumentLockedByOtherUser = function (state, filter, user, editLock, db) {
+  return new Promise((resolve, reject) => {
+    getDocumentLock(state, filter, db.collection(editLock.collectionName)).then(lock => {
+      if (!lock) return resolve(false);
+
+      const lockedBy = lock?.[`${state}`];
+
+      if (!lockedBy) return resolve(false);
+
+      const lockExpired = new Date().getTime() > new Date(lockedBy.timeout).getTime();
+      const sameUser = new ObjectId(user?._id).equals(lockedBy.userId);
+
+      resolve(!sameUser && !lockExpired);
+    });
+  });
+};
+
+module.exports.lockDocument = async function (resource, state, filter, tokenTimeout, user, req) {
+  const { editLock } = req.service.options;
+  const lockCollection = req.db.collection(editLock.collectionName);
+  const timeout = new Date();
+
+  tokenTimeout
+    ? timeout.setTime(timeout.getTime() + tokenTimeout * 1000)
+    : timeout.setTime(timeout.getTime() + editLock.lockTimeoutSeconds * 1000);
+
+  // look for an existing lock
+  const lock = await getDocumentLock(state, filter, lockCollection);
+
+  // lock if no lock found
+  if (!lock) {
+    const lock = {
+      documentId: filter._id,
+      [`${state}`]: {
+        timeout,
+        userId: user._id
+      }
+    };
+
+    const result = await lockCollection.insertOne(lock);
+    return result;
+  } else if (new ObjectId(user._id).equals(lock[`${state}`].userId) || lock[`${state}`].timeout < new Date()) {
+    // update / overwrite the existing lock because it belongs to the same user
+    // for the same doc state or the old has lock expired
+    const find = { documentId: filter._id, [`${state}`]: { $exists: true } };
+    const update = {
+      $set: {
+        [`${state}.timeout`]: timeout,
+        [`${state}.userId`]: user._id
+      }
+    };
+
+    // const update = { [`${state}.timeout`]: timeout, [`${state}.userId`]: user._id };
+    const result = await lockCollection.findOneAndUpdate(find, update);
+    return result;
+  } else {
+    return undefined;
+  }
+};
+
 module.exports.getDocuments = function (resource, filter, user, query, state, sort, pagination, resources) {
   const queryBuilderOptions = {
     resource,

@@ -30,9 +30,11 @@ module.exports = class DocsService extends CampsiService {
     this.router.param('resource', param.attachResource(service.options));
     this.router.get('/', handlers.getResources);
     this.router.get('/:resource', handlers.getDocuments);
+    this.router.post('/:resource/:id/locks/lock', handlers.lockDocument);
     this.router.get('/:resource/:id/users', handlers.getDocUsers);
     this.router.post('/:resource/:id/users', handlers.postDocUser);
     this.router.delete('/:resource/:id/users/:user', handlers.delDocUser);
+    this.router.post('/:resource/:id/:state/locks/lock', handlers.lockDocument);
     this.router.get('/:resource/:id/:state', handlers.getDoc);
     this.router.get('/:resource/:id', handlers.getDoc);
     this.router.post('/:resource/:state', handlers.postDoc);
@@ -50,18 +52,18 @@ module.exports = class DocsService extends CampsiService {
       csdVisibility(ajvReader);
       async.eachOf(
         service.options.resources,
-        function(resource, name, cb) {
+        function (resource, name, cb) {
           Object.assign(resource, service.options.classes[resource.class]);
           resource.collection = server.db.collection('docs.{0}.{1}'.format(service.path, name));
           $RefParser
             .dereference(service.config.optionsBasePath + '/', resource.schema, {})
-            .then(function(schema) {
+            .then(function (schema) {
               resource.schema = schema;
               resource.validate = ajvWriter.compile(schema);
               resource.filter = ajvWriter.compile(schema);
               cb();
             })
-            .catch(function(error) {
+            .catch(function (error) {
               debug(error);
               cb();
             });

@@ -152,6 +152,9 @@ module.exports.getDocuments = function (resource, filter, user, query, state, so
           if (query?.with?.includes('creator')) {
             returnData.creator = doc.creator;
           }
+
+          this.addVirtualProperties(resource, returnData.data);
+
           return returnData;
         });
         return embedDocs.many(resource, query.embed, user, result.docs, resources);
@@ -166,6 +169,7 @@ module.exports.getDocuments = function (resource, filter, user, query, state, so
 };
 
 module.exports.createDocument = function (resource, data, state, user, parentId, groups) {
+  this.removeVirtualProperties(resource, data);
   return new Promise((resolve, reject) => {
     builder
       .create({
@@ -205,6 +209,7 @@ module.exports.createDocument = function (resource, data, state, user, parentId,
 };
 
 module.exports.setDocument = function (resource, filter, data, state, user) {
+  this.removeVirtualProperties(resource, data);
   return new Promise((resolve, reject) => {
     builder
       .update({
@@ -237,6 +242,7 @@ module.exports.setDocument = function (resource, filter, data, state, user) {
 };
 
 module.exports.patchDocument = async (resource, filter, data, state, user) => {
+  this.removeVirtualProperties(resource, data);
   const update = await builder.patch({ resource, data, state, user });
 
   const updateDoc = await resource.collection.findOneAndUpdate(filter, update, {
@@ -580,6 +586,8 @@ const prepareGetDocument = settings => {
   const currentState = doc.states[state] || {};
   const allowedStates = permissions.getAllowedStatesFromDocForUser(user, resource, 'GET', doc);
 
+  this.addVirtualProperties(resource, currentState.data);
+
   return {
     id: doc._id,
     state,
@@ -591,4 +599,16 @@ const prepareGetDocument = settings => {
     groups: doc.groups || [],
     states: permissions.filterDocumentStates(doc, allowedStates, requestedStates)
   };
+};
+
+module.exports.removeVirtualProperties = (resource, data) => {
+  if (resource.virtualProperties) {
+    Object.keys(resource.virtualProperties).map(prop => delete data[prop]);
+  }
+};
+
+module.exports.addVirtualProperties = (resource, data) => {
+  if (resource.virtualProperties && data) {
+    Object.entries(resource.virtualProperties).map(([prop, compute]) => (data[prop] = compute(data)));
+  }
 };

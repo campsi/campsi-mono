@@ -234,6 +234,9 @@ module.exports.create = function createDoc(options) {
   const state = getStateFromOptions(options);
 
   return new Promise((resolve, reject) => {
+    if (options.resource.virtualProperties) {
+      Object.keys(options.resource.virtualProperties).map(prop => delete options.data[prop]);
+    }
     return validate(options.resource, options.data, state.validate)
       .catch(reject)
       .then(() => {

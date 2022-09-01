@@ -218,312 +218,312 @@ describe('Document links', () => {
   /*
    * Test the /GET docs/pizzas route
    */
-    it('it should get all the pizzas', done => {
-      chai
-        .request(campsi.app)
-        .get('/docs/pizzas/')
-        .end((err, res) => {
-          if (err) debug(`received an error from chai: ${err.message}`);
-          res.should.have.status(200);
-          res.should.not.have.header('link');
-          res.should.be.json;
-          res.body.should.be.a('array');
-          firstPizza = res.body[0].id;
-          secondPizza = res.body[1].id;
-          thirdPizza = res.body[2].id;
-          fourthPizza = res.body[3].id;
-          fifthPizza = res.body[4].id;
+  it('it should get all the pizzas', done => {
+    chai
+      .request(campsi.app)
+      .get('/docs/pizzas/')
+      .end((err, res) => {
+        if (err) debug(`received an error from chai: ${err.message}`);
+        res.should.have.status(200);
+        res.should.not.have.header('link');
+        res.should.be.json;
+        res.body.should.be.a('array');
+        firstPizza = res.body[0].id;
+        secondPizza = res.body[1].id;
+        thirdPizza = res.body[2].id;
+        fourthPizza = res.body[3].id;
+        fifthPizza = res.body[4].id;
 
-          done();
-        });
-    });
- 
-    it('it should get all the pizzas that are in working draft state', done => {
-      chai
-        .request(campsi.app)
-        .get('/docs/pizzas/?state=working_draft')
-        .end((err, res) => {
-          if (err) debug(`received an error from chai: ${err.message}`);
-          res.should.have.status(200);
-          res.should.not.have.header('link');
-          res.should.be.json;
-          res.body.should.be.a('array');
-          firstPizzaWD = res.body[0].id;
-          secondPizzaWD = res.body[1].id;
-          thirdPizzaWD = res.body[2].id;
-          fourthPizzaWD = res.body[3].id;
-          fifthPizzaWD = res.body[4].id;
+        done();
+      });
+  });
 
-          done();
-        });
-    });
-  
-    it('gets first pizza with state working_draft with correct links', done => {
-      getPizzaWithLinksInHeaderByState(firstPizzaWD, 'working_draft').then(res => {
-        const headerLinks = res.headers.link;
-        expect(headerLinks).to.not.be.undefined;
-        const parsedHeaderLinks = extractNavigationLinks(headerLinks);
-        const nextId = parsedHeaderLinks.next.split('/')[5];
-        nextId.should.eq(secondPizzaWD);
-        expect(parsedHeaderLinks.previous).to.undefined;
-        done();
-      });
-    });
-    it('gets 2nd pizza  with state working_draft with correct links', done => {
-      getPizzaWithLinksInHeaderByState(secondPizzaWD, 'working_draft').then(res => {
-        const headerLinks = res.headers.link;
-        expect(headerLinks).to.not.be.undefined;
-        const parsedHeaderLinks = extractNavigationLinks(headerLinks);
-        const nextId = parsedHeaderLinks.next.split('/')[5];
-        nextId.should.eq(thirdPizzaWD);
-        const previousID = parsedHeaderLinks.previous.split('/')[5];
-        previousID.should.eq(firstPizzaWD);
-        done();
-      });
-    });
-    it('gets 3rd pizza  with state working_draft with correct links', done => {
-      getPizzaWithLinksInHeaderByState(thirdPizzaWD, 'working_draft').then(res => {
-        const headerLinks = res.headers.link;
-        expect(headerLinks).to.not.be.undefined;
-        const parsedHeaderLinks = extractNavigationLinks(headerLinks);
-        const nextId = parsedHeaderLinks.next.split('/')[5];
-        nextId.should.eq(fourthPizzaWD);
-        const previousID = parsedHeaderLinks.previous.split('/')[5];
-        previousID.should.eq(secondPizzaWD);
-        done();
-      });
-    });
-    it('gets 4th pizza  with state working_draft with correct links', done => {
-      getPizzaWithLinksInHeaderByState(fourthPizzaWD, 'working_draft').then(res => {
-        const headerLinks = res.headers.link;
-        expect(headerLinks).to.not.be.undefined;
-        const parsedHeaderLinks = extractNavigationLinks(headerLinks);
-        const nextId = parsedHeaderLinks.next.split('/')[5];
-        nextId.should.eq(fifthPizzaWD);
-        const previousID = parsedHeaderLinks.previous.split('/')[5];
-        previousID.should.eq(thirdPizzaWD);
-        done();
-      });
-    });
-    it('gets 5th pizza  with state working_draft with correct links', done => {
-      getPizzaWithLinksInHeaderByState(fifthPizzaWD, 'working_draft').then(res => {
-        const headerLinks = res.headers.link;
-        expect(headerLinks).to.not.be.undefined;
-        const parsedHeaderLinks = extractNavigationLinks(headerLinks);
-        expect(parsedHeaderLinks.next).to.undefined;
-        const previousID = parsedHeaderLinks.previous.split('/')[5];
-        previousID.should.eq(fourthPizzaWD);
-        done();
-      });
-    });
-    it('gets first pizza with correct links', done => {
-      getPizzaWithLinksInHeader(firstPizza).then(res => {
-        const headerLinks = res.headers.link;
-        expect(headerLinks).to.not.be.undefined;
-        const parsedHeaderLinks = extractNavigationLinks(headerLinks);
-        parsedHeaderLinks.next.substring(parsedHeaderLinks.next.lastIndexOf('/') + 1).should.eq(secondPizza);
-        expect(parsedHeaderLinks.previous).to.undefined;
-        done();
-      });
-    });
-    it('gets 2nd pizza with correct links', done => {
-      getPizzaWithLinksInHeader(secondPizza).then(res => {
-        const headerLinks = res.headers.link;
-        expect(headerLinks).to.not.be.undefined;
-        const parsedHeaderLinks = extractNavigationLinks(headerLinks);
-        parsedHeaderLinks.next.substring(parsedHeaderLinks.next.lastIndexOf('/') + 1).should.eq(thirdPizza);
-        parsedHeaderLinks.previous.substring(parsedHeaderLinks.previous.lastIndexOf('/') + 1).should.eq(firstPizza);
-        done();
-      });
-    });
-    it('gets third pizza with correct links', done => {
-      getPizzaWithLinksInHeader(thirdPizza).then(res => {
-        const headerLinks = res.headers.link;
-        expect(headerLinks).to.not.be.undefined;
-        const parsedHeaderLinks = extractNavigationLinks(headerLinks);
-        parsedHeaderLinks.previous.substring(parsedHeaderLinks.previous.lastIndexOf('/') + 1).should.eq(secondPizza);
-        parsedHeaderLinks.next.substring(parsedHeaderLinks.next.lastIndexOf('/') + 1).should.eq(fourthPizza);
-        done();
-      });
-    });
-    it('gets fourth pizza with correct links', done => {
-      getPizzaWithLinksInHeader(fourthPizza).then(res => {
-        const headerLinks = res.headers.link;
-        expect(headerLinks).to.not.be.undefined;
-        const parsedHeaderLinks = extractNavigationLinks(headerLinks);
-        parsedHeaderLinks.previous.substring(parsedHeaderLinks.previous.lastIndexOf('/') + 1).should.eq(thirdPizza);
-        parsedHeaderLinks.next.substring(parsedHeaderLinks.next.lastIndexOf('/') + 1).should.eq(fifthPizza);
-        done();
-      });
-    });
-    it('gets fifth pizza with correct links', done => {
-      getPizzaWithLinksInHeader(fifthPizza).then(res => {
-        const headerLinks = res.headers.link;
-        expect(headerLinks).to.not.be.undefined;
-        const parsedHeaderLinks = extractNavigationLinks(headerLinks);
-        parsedHeaderLinks.previous.substring(parsedHeaderLinks.previous.lastIndexOf('/') + 1).should.eq(fourthPizza);
-        expect(parsedHeaderLinks.next).to.undefined;
-        done();
-      });
-    });
-    it('gets first pizza and nvaigates to the 2nd pizza via next URL', done => {
-      getPizzaWithLinksInHeader(firstPizza).then(res => {
-        const headerLinks = res.headers.link;
+  it('it should get all the pizzas that are in working draft state', done => {
+    chai
+      .request(campsi.app)
+      .get('/docs/pizzas/?state=working_draft')
+      .end((err, res) => {
+        if (err) debug(`received an error from chai: ${err.message}`);
+        res.should.have.status(200);
+        res.should.not.have.header('link');
+        res.should.be.json;
+        res.body.should.be.a('array');
+        firstPizzaWD = res.body[0].id;
+        secondPizzaWD = res.body[1].id;
+        thirdPizzaWD = res.body[2].id;
+        fourthPizzaWD = res.body[3].id;
+        fifthPizzaWD = res.body[4].id;
 
-        expect(headerLinks).to.not.be.undefined;
-        res.body.id.should.eq(firstPizza);
-        const parsedHeaderLinks = extractNavigationLinks(headerLinks);
-        parsedHeaderLinks.next.substring(parsedHeaderLinks.next.lastIndexOf('/') + 1).should.eq(secondPizza);
-        expect(parsedHeaderLinks.previous).to.undefined;
-        nextPizzaURL = parsedHeaderLinks.next;
         done();
       });
-    });
-    it('gets 2nd pizza from next url and navigates to the 3rd pizza via next URL', done => {
-      getPizzaWithLinksInHeaderFromURL(nextPizzaURL).then(res => {
-        const headerLinks = res.headers.link;
+  });
 
-        expect(headerLinks).to.not.be.undefined;
-        res.body.id.should.eq(secondPizza);
-        const parsedHeaderLinks = extractNavigationLinks(headerLinks);
-        parsedHeaderLinks.next.substring(parsedHeaderLinks.next.lastIndexOf('/') + 1).should.eq(thirdPizza);
-        parsedHeaderLinks.previous.substring(parsedHeaderLinks.previous.lastIndexOf('/') + 1).should.eq(firstPizza);
-        nextPizzaURL = parsedHeaderLinks.next;
-        done();
-      });
+  it('gets first pizza with state working_draft with correct links', done => {
+    getPizzaWithLinksInHeaderByState(firstPizzaWD, 'working_draft').then(res => {
+      const headerLinks = res.headers.link;
+      expect(headerLinks).to.not.be.undefined;
+      const parsedHeaderLinks = extractNavigationLinks(headerLinks);
+      const nextId = parsedHeaderLinks.next.split('/')[5];
+      nextId.should.eq(secondPizzaWD);
+      expect(parsedHeaderLinks.previous).to.undefined;
+      done();
     });
-    it('gets 3rd pizza from next url and navigates to the 4th pizza via next URL', done => {
-      getPizzaWithLinksInHeaderFromURL(nextPizzaURL).then(res => {
-        const headerLinks = res.headers.link;
+  });
+  it('gets 2nd pizza  with state working_draft with correct links', done => {
+    getPizzaWithLinksInHeaderByState(secondPizzaWD, 'working_draft').then(res => {
+      const headerLinks = res.headers.link;
+      expect(headerLinks).to.not.be.undefined;
+      const parsedHeaderLinks = extractNavigationLinks(headerLinks);
+      const nextId = parsedHeaderLinks.next.split('/')[5];
+      nextId.should.eq(thirdPizzaWD);
+      const previousID = parsedHeaderLinks.previous.split('/')[5];
+      previousID.should.eq(firstPizzaWD);
+      done();
+    });
+  });
+  it('gets 3rd pizza  with state working_draft with correct links', done => {
+    getPizzaWithLinksInHeaderByState(thirdPizzaWD, 'working_draft').then(res => {
+      const headerLinks = res.headers.link;
+      expect(headerLinks).to.not.be.undefined;
+      const parsedHeaderLinks = extractNavigationLinks(headerLinks);
+      const nextId = parsedHeaderLinks.next.split('/')[5];
+      nextId.should.eq(fourthPizzaWD);
+      const previousID = parsedHeaderLinks.previous.split('/')[5];
+      previousID.should.eq(secondPizzaWD);
+      done();
+    });
+  });
+  it('gets 4th pizza  with state working_draft with correct links', done => {
+    getPizzaWithLinksInHeaderByState(fourthPizzaWD, 'working_draft').then(res => {
+      const headerLinks = res.headers.link;
+      expect(headerLinks).to.not.be.undefined;
+      const parsedHeaderLinks = extractNavigationLinks(headerLinks);
+      const nextId = parsedHeaderLinks.next.split('/')[5];
+      nextId.should.eq(fifthPizzaWD);
+      const previousID = parsedHeaderLinks.previous.split('/')[5];
+      previousID.should.eq(thirdPizzaWD);
+      done();
+    });
+  });
+  it('gets 5th pizza  with state working_draft with correct links', done => {
+    getPizzaWithLinksInHeaderByState(fifthPizzaWD, 'working_draft').then(res => {
+      const headerLinks = res.headers.link;
+      expect(headerLinks).to.not.be.undefined;
+      const parsedHeaderLinks = extractNavigationLinks(headerLinks);
+      expect(parsedHeaderLinks.next).to.undefined;
+      const previousID = parsedHeaderLinks.previous.split('/')[5];
+      previousID.should.eq(fourthPizzaWD);
+      done();
+    });
+  });
+  it('gets first pizza with correct links', done => {
+    getPizzaWithLinksInHeader(firstPizza).then(res => {
+      const headerLinks = res.headers.link;
+      expect(headerLinks).to.not.be.undefined;
+      const parsedHeaderLinks = extractNavigationLinks(headerLinks);
+      parsedHeaderLinks.next.substring(parsedHeaderLinks.next.lastIndexOf('/') + 1).should.eq(secondPizza);
+      expect(parsedHeaderLinks.previous).to.undefined;
+      done();
+    });
+  });
+  it('gets 2nd pizza with correct links', done => {
+    getPizzaWithLinksInHeader(secondPizza).then(res => {
+      const headerLinks = res.headers.link;
+      expect(headerLinks).to.not.be.undefined;
+      const parsedHeaderLinks = extractNavigationLinks(headerLinks);
+      parsedHeaderLinks.next.substring(parsedHeaderLinks.next.lastIndexOf('/') + 1).should.eq(thirdPizza);
+      parsedHeaderLinks.previous.substring(parsedHeaderLinks.previous.lastIndexOf('/') + 1).should.eq(firstPizza);
+      done();
+    });
+  });
+  it('gets third pizza with correct links', done => {
+    getPizzaWithLinksInHeader(thirdPizza).then(res => {
+      const headerLinks = res.headers.link;
+      expect(headerLinks).to.not.be.undefined;
+      const parsedHeaderLinks = extractNavigationLinks(headerLinks);
+      parsedHeaderLinks.previous.substring(parsedHeaderLinks.previous.lastIndexOf('/') + 1).should.eq(secondPizza);
+      parsedHeaderLinks.next.substring(parsedHeaderLinks.next.lastIndexOf('/') + 1).should.eq(fourthPizza);
+      done();
+    });
+  });
+  it('gets fourth pizza with correct links', done => {
+    getPizzaWithLinksInHeader(fourthPizza).then(res => {
+      const headerLinks = res.headers.link;
+      expect(headerLinks).to.not.be.undefined;
+      const parsedHeaderLinks = extractNavigationLinks(headerLinks);
+      parsedHeaderLinks.previous.substring(parsedHeaderLinks.previous.lastIndexOf('/') + 1).should.eq(thirdPizza);
+      parsedHeaderLinks.next.substring(parsedHeaderLinks.next.lastIndexOf('/') + 1).should.eq(fifthPizza);
+      done();
+    });
+  });
+  it('gets fifth pizza with correct links', done => {
+    getPizzaWithLinksInHeader(fifthPizza).then(res => {
+      const headerLinks = res.headers.link;
+      expect(headerLinks).to.not.be.undefined;
+      const parsedHeaderLinks = extractNavigationLinks(headerLinks);
+      parsedHeaderLinks.previous.substring(parsedHeaderLinks.previous.lastIndexOf('/') + 1).should.eq(fourthPizza);
+      expect(parsedHeaderLinks.next).to.undefined;
+      done();
+    });
+  });
+  it('gets first pizza and nvaigates to the 2nd pizza via next URL', done => {
+    getPizzaWithLinksInHeader(firstPizza).then(res => {
+      const headerLinks = res.headers.link;
 
-        expect(headerLinks).to.not.be.undefined;
-        res.body.id.should.eq(thirdPizza);
-        const parsedHeaderLinks = extractNavigationLinks(headerLinks);
-        parsedHeaderLinks.next.substring(parsedHeaderLinks.next.lastIndexOf('/') + 1).should.eq(fourthPizza);
-        parsedHeaderLinks.previous.substring(parsedHeaderLinks.previous.lastIndexOf('/') + 1).should.eq(secondPizza);
-        nextPizzaURL = parsedHeaderLinks.next;
-        done();
-      });
+      expect(headerLinks).to.not.be.undefined;
+      res.body.id.should.eq(firstPizza);
+      const parsedHeaderLinks = extractNavigationLinks(headerLinks);
+      parsedHeaderLinks.next.substring(parsedHeaderLinks.next.lastIndexOf('/') + 1).should.eq(secondPizza);
+      expect(parsedHeaderLinks.previous).to.undefined;
+      nextPizzaURL = parsedHeaderLinks.next;
+      done();
     });
-    it('gets 4th pizza from next url and navigates to the 5th pizza via next URL', done => {
-      getPizzaWithLinksInHeaderFromURL(nextPizzaURL).then(res => {
-        const headerLinks = res.headers.link;
+  });
+  it('gets 2nd pizza from next url and navigates to the 3rd pizza via next URL', done => {
+    getPizzaWithLinksInHeaderFromURL(nextPizzaURL).then(res => {
+      const headerLinks = res.headers.link;
 
-        expect(headerLinks).to.not.be.undefined;
-        res.body.id.should.eq(fourthPizza);
-        const parsedHeaderLinks = extractNavigationLinks(headerLinks);
-        parsedHeaderLinks.next.substring(parsedHeaderLinks.next.lastIndexOf('/') + 1).should.eq(fifthPizza);
-        parsedHeaderLinks.previous.substring(parsedHeaderLinks.previous.lastIndexOf('/') + 1).should.eq(thirdPizza);
-        nextPizzaURL = parsedHeaderLinks.next;
-        done();
-      });
+      expect(headerLinks).to.not.be.undefined;
+      res.body.id.should.eq(secondPizza);
+      const parsedHeaderLinks = extractNavigationLinks(headerLinks);
+      parsedHeaderLinks.next.substring(parsedHeaderLinks.next.lastIndexOf('/') + 1).should.eq(thirdPizza);
+      parsedHeaderLinks.previous.substring(parsedHeaderLinks.previous.lastIndexOf('/') + 1).should.eq(firstPizza);
+      nextPizzaURL = parsedHeaderLinks.next;
+      done();
     });
-    it('gets 5th pizza from next url and can not navigate any further forward', done => {
-      getPizzaWithLinksInHeaderFromURL(nextPizzaURL).then(res => {
-        const headerLinks = res.headers.link;
+  });
+  it('gets 3rd pizza from next url and navigates to the 4th pizza via next URL', done => {
+    getPizzaWithLinksInHeaderFromURL(nextPizzaURL).then(res => {
+      const headerLinks = res.headers.link;
 
-        expect(headerLinks).to.not.be.undefined;
-        expect(headerLinks.next).to.be.undefined;
-        res.body.id.should.eq(fifthPizza);
-        const parsedHeaderLinks = extractNavigationLinks(headerLinks);
-        parsedHeaderLinks.previous.substring(parsedHeaderLinks.previous.lastIndexOf('/') + 1).should.eq(fourthPizza);
-        previousPizzaUrl = parsedHeaderLinks.previous;
-        done();
-      });
+      expect(headerLinks).to.not.be.undefined;
+      res.body.id.should.eq(thirdPizza);
+      const parsedHeaderLinks = extractNavigationLinks(headerLinks);
+      parsedHeaderLinks.next.substring(parsedHeaderLinks.next.lastIndexOf('/') + 1).should.eq(fourthPizza);
+      parsedHeaderLinks.previous.substring(parsedHeaderLinks.previous.lastIndexOf('/') + 1).should.eq(secondPizza);
+      nextPizzaURL = parsedHeaderLinks.next;
+      done();
     });
-    it('gets 4th pizza from previous url and navigates to 3rd', done => {
-      getPizzaWithLinksInHeaderFromURL(previousPizzaUrl).then(res => {
-        const headerLinks = res.headers.link;
+  });
+  it('gets 4th pizza from next url and navigates to the 5th pizza via next URL', done => {
+    getPizzaWithLinksInHeaderFromURL(nextPizzaURL).then(res => {
+      const headerLinks = res.headers.link;
 
-        expect(headerLinks).to.not.be.undefined;
-        res.body.id.should.eq(fourthPizza);
-        const parsedHeaderLinks = extractNavigationLinks(headerLinks);
-        parsedHeaderLinks.next.substring(parsedHeaderLinks.next.lastIndexOf('/') + 1).should.eq(fifthPizza);
-        parsedHeaderLinks.previous.substring(parsedHeaderLinks.previous.lastIndexOf('/') + 1).should.eq(thirdPizza);
-        previousPizzaUrl = parsedHeaderLinks.previous;
-        done();
-      });
+      expect(headerLinks).to.not.be.undefined;
+      res.body.id.should.eq(fourthPizza);
+      const parsedHeaderLinks = extractNavigationLinks(headerLinks);
+      parsedHeaderLinks.next.substring(parsedHeaderLinks.next.lastIndexOf('/') + 1).should.eq(fifthPizza);
+      parsedHeaderLinks.previous.substring(parsedHeaderLinks.previous.lastIndexOf('/') + 1).should.eq(thirdPizza);
+      nextPizzaURL = parsedHeaderLinks.next;
+      done();
     });
-    it('gets 3rd pizza from previous url and navigates to 2nd', done => {
-      getPizzaWithLinksInHeaderFromURL(previousPizzaUrl).then(res => {
-        const headerLinks = res.headers.link;
+  });
+  it('gets 5th pizza from next url and can not navigate any further forward', done => {
+    getPizzaWithLinksInHeaderFromURL(nextPizzaURL).then(res => {
+      const headerLinks = res.headers.link;
 
-        expect(headerLinks).to.not.be.undefined;
-        res.body.id.should.eq(thirdPizza);
-        const parsedHeaderLinks = extractNavigationLinks(headerLinks);
-        parsedHeaderLinks.next.substring(parsedHeaderLinks.next.lastIndexOf('/') + 1).should.eq(fourthPizza);
-        parsedHeaderLinks.previous.substring(parsedHeaderLinks.previous.lastIndexOf('/') + 1).should.eq(secondPizza);
-        previousPizzaUrl = parsedHeaderLinks.previous;
-        done();
-      });
+      expect(headerLinks).to.not.be.undefined;
+      expect(headerLinks.next).to.be.undefined;
+      res.body.id.should.eq(fifthPizza);
+      const parsedHeaderLinks = extractNavigationLinks(headerLinks);
+      parsedHeaderLinks.previous.substring(parsedHeaderLinks.previous.lastIndexOf('/') + 1).should.eq(fourthPizza);
+      previousPizzaUrl = parsedHeaderLinks.previous;
+      done();
     });
-    it('gets 2nd pizza from previous url and navigates to 1st', done => {
-      getPizzaWithLinksInHeaderFromURL(previousPizzaUrl).then(res => {
-        const headerLinks = res.headers.link;
+  });
+  it('gets 4th pizza from previous url and navigates to 3rd', done => {
+    getPizzaWithLinksInHeaderFromURL(previousPizzaUrl).then(res => {
+      const headerLinks = res.headers.link;
 
-        expect(headerLinks).to.not.be.undefined;
-        res.body.id.should.eq(secondPizza);
-        const parsedHeaderLinks = extractNavigationLinks(headerLinks);
-        parsedHeaderLinks.next.substring(parsedHeaderLinks.next.lastIndexOf('/') + 1).should.eq(thirdPizza);
-        parsedHeaderLinks.previous.substring(parsedHeaderLinks.previous.lastIndexOf('/') + 1).should.eq(firstPizza);
-        previousPizzaUrl = parsedHeaderLinks.previous;
-        done();
-      });
+      expect(headerLinks).to.not.be.undefined;
+      res.body.id.should.eq(fourthPizza);
+      const parsedHeaderLinks = extractNavigationLinks(headerLinks);
+      parsedHeaderLinks.next.substring(parsedHeaderLinks.next.lastIndexOf('/') + 1).should.eq(fifthPizza);
+      parsedHeaderLinks.previous.substring(parsedHeaderLinks.previous.lastIndexOf('/') + 1).should.eq(thirdPizza);
+      previousPizzaUrl = parsedHeaderLinks.previous;
+      done();
     });
-    it('gets 1st pizza from previous url and navigates to 1st', done => {
-      getPizzaWithLinksInHeaderFromURL(previousPizzaUrl).then(res => {
-        const headerLinks = res.headers.link;
+  });
+  it('gets 3rd pizza from previous url and navigates to 2nd', done => {
+    getPizzaWithLinksInHeaderFromURL(previousPizzaUrl).then(res => {
+      const headerLinks = res.headers.link;
 
-        expect(headerLinks).to.not.be.undefined;
-        expect(headerLinks.previous).to.be.undefined;
-        res.body.id.should.eq(firstPizza);
-        const parsedHeaderLinks = extractNavigationLinks(headerLinks);
-        parsedHeaderLinks.next.substring(parsedHeaderLinks.next.lastIndexOf('/') + 1).should.eq(secondPizza);
-        done();
-      });
+      expect(headerLinks).to.not.be.undefined;
+      res.body.id.should.eq(thirdPizza);
+      const parsedHeaderLinks = extractNavigationLinks(headerLinks);
+      parsedHeaderLinks.next.substring(parsedHeaderLinks.next.lastIndexOf('/') + 1).should.eq(fourthPizza);
+      parsedHeaderLinks.previous.substring(parsedHeaderLinks.previous.lastIndexOf('/') + 1).should.eq(secondPizza);
+      previousPizzaUrl = parsedHeaderLinks.previous;
+      done();
     });
-    it('it should get first pizza with no links returned', done => {
-      getPizzaWithLinkOptionSetToFalse(firstPizza).then(res => {
-        res.body.id.should.eq(firstPizza);
+  });
+  it('gets 2nd pizza from previous url and navigates to 1st', done => {
+    getPizzaWithLinksInHeaderFromURL(previousPizzaUrl).then(res => {
+      const headerLinks = res.headers.link;
+
+      expect(headerLinks).to.not.be.undefined;
+      res.body.id.should.eq(secondPizza);
+      const parsedHeaderLinks = extractNavigationLinks(headerLinks);
+      parsedHeaderLinks.next.substring(parsedHeaderLinks.next.lastIndexOf('/') + 1).should.eq(thirdPizza);
+      parsedHeaderLinks.previous.substring(parsedHeaderLinks.previous.lastIndexOf('/') + 1).should.eq(firstPizza);
+      previousPizzaUrl = parsedHeaderLinks.previous;
+      done();
+    });
+  });
+  it('gets 1st pizza from previous url and navigates to 1st', done => {
+    getPizzaWithLinksInHeaderFromURL(previousPizzaUrl).then(res => {
+      const headerLinks = res.headers.link;
+
+      expect(headerLinks).to.not.be.undefined;
+      expect(headerLinks.previous).to.be.undefined;
+      res.body.id.should.eq(firstPizza);
+      const parsedHeaderLinks = extractNavigationLinks(headerLinks);
+      parsedHeaderLinks.next.substring(parsedHeaderLinks.next.lastIndexOf('/') + 1).should.eq(secondPizza);
+      done();
+    });
+  });
+  it('it should get first pizza with no links returned', done => {
+    getPizzaWithLinkOptionSetToFalse(firstPizza).then(res => {
+      res.body.id.should.eq(firstPizza);
+      expect(res.headers.link).to.be.undefined;
+      done();
+    });
+  });
+  it('it should get 2nd pizza with no links returned', done => {
+    getPizzaWithoutLinks(secondPizza).then(res => {
+      res.body.id.should.eq(secondPizza);
+      expect(res.headers.link).to.be.undefined;
+      done();
+    });
+  });
+  it('it should get 3rd pizza with no links returned', done => {
+    getPizzaWithoutLinksInHeader(thirdPizza).then(res => {
+      res.body.id.should.eq(thirdPizza);
+      expect(res.headers.link).to.be.undefined;
+      done();
+    });
+  });
+  it('it should get 4th pizza with no links returned', done => {
+    getPizzaWithoutLinks(fourthPizza).then(res => {
+      res.body.id.should.eq(fourthPizza);
+      expect(res.headers.link).to.be.undefined;
+      done();
+    });
+  });
+  it('it should get 5th pizza with no links returned', done => {
+    getPizzaWithoutLinksInHeader(fifthPizza).then(res => {
+      expect(res.headers.link).to.be.undefined;
+      res.body.id.should.eq(fifthPizza);
+      done();
+    });
+  });
+  it('should fail if I delete a document and ask for it', done => {
+    deletePizza(fourthPizza).then(() => {
+      getPizzaWithoutLinksInHeader(fourthPizza).then(res => {
         expect(res.headers.link).to.be.undefined;
+        res.status.should.eq(404);
         done();
-      });
-    });
-    it('it should get 2nd pizza with no links returned', done => {
-      getPizzaWithoutLinks(secondPizza).then(res => {
-        res.body.id.should.eq(secondPizza);
-        expect(res.headers.link).to.be.undefined;
-        done();
-      });
-    });
-    it('it should get 3rd pizza with no links returned', done => {
-      getPizzaWithoutLinksInHeader(thirdPizza).then(res => {
-        res.body.id.should.eq(thirdPizza);
-        expect(res.headers.link).to.be.undefined;
-        done();
-      });
-    });
-    it('it should get 4th pizza with no links returned', done => {
-      getPizzaWithoutLinks(fourthPizza).then(res => {
-        res.body.id.should.eq(fourthPizza);
-        expect(res.headers.link).to.be.undefined;
-        done();
-      });
-    });
-    it('it should get 5th pizza with no links returned', done => {
-      getPizzaWithoutLinksInHeader(fifthPizza).then(res => {
-        expect(res.headers.link).to.be.undefined;
-        res.body.id.should.eq(fifthPizza);
-        done();
-      });
-    });
-    it('should fail if I delete a document and ask for it', done => {
-      deletePizza(fourthPizza).then(() => {
-        getPizzaWithoutLinksInHeader(fourthPizza).then(res => {
-          expect(res.headers.link).to.be.undefined;
-          res.status.should.eq(404);
-          done();
-        });
       });
     });
   });
+});

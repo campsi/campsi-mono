@@ -197,8 +197,6 @@ describe('Document links', () => {
 
         campsi.on('campsi/ready', () => {
           server = campsi.listen(config.port);
-
-          createPizzas('published').then(() => createPizzas('working_draft').then(() => done()));
         });
 
         campsi.start().catch(err => {
@@ -213,10 +211,13 @@ describe('Document links', () => {
     done();
   });
 
+  it('should create the pizzas', done => {
+    createPizzas('published').then(() => createPizzas('working_draft').then(() => done()));
+  });
+
   /*
    * Test the /GET docs/pizzas route
    */
-  describe('/GET docs/docs/pizzas', () => {
     it('it should get all the pizzas', done => {
       chai
         .request(campsi.app)
@@ -236,12 +237,7 @@ describe('Document links', () => {
           done();
         });
     });
-  });
-
-  /*
-   * Test the /GET docs/pizzas route
-   */
-  describe('/GET docs/docs/pizzas/working_draft', () => {
+ 
     it('it should get all the pizzas that are in working draft state', done => {
       chai
         .request(campsi.app)
@@ -261,9 +257,7 @@ describe('Document links', () => {
           done();
         });
     });
-  });
-
-  describe('/GET pizzas starting from the first all the way to last following the links', () => {
+  
     it('gets first pizza with state working_draft with correct links', done => {
       getPizzaWithLinksInHeaderByState(firstPizzaWD, 'working_draft').then(res => {
         const headerLinks = res.headers.link;
@@ -533,4 +527,3 @@ describe('Document links', () => {
       });
     });
   });
-});

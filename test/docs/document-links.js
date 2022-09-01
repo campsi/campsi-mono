@@ -197,6 +197,7 @@ describe('Document links', () => {
 
         campsi.on('campsi/ready', () => {
           server = campsi.listen(config.port);
+          done();
         });
 
         campsi.start().catch(err => {

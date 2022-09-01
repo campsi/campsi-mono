@@ -322,12 +322,6 @@ describe('Document links', () => {
         done();
       });
     });
-  });
-
-  /*
-   * Test the /GET docs/pizzas route
-   */
-  describe('/GET pizzas starting from the first all the way to last following the links', () => {
     it('gets first pizza with correct links', done => {
       getPizzaWithLinksInHeader(firstPizza).then(res => {
         const headerLinks = res.headers.link;

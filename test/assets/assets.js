@@ -135,6 +135,7 @@ describe('Assets API', () => {
    */
   describe('/POST /copy', () => {
     it('it should copy a file from remote URL', done => {
+      
       chai
         .request(context.campsi.app)
         .post('/assets/copy')
@@ -147,7 +148,7 @@ describe('Assets API', () => {
           res.should.be.json;
           done();
         });
-    });
+    }).timeout(10000);
   });
 
   /*
@@ -186,7 +187,7 @@ describe('Assets API', () => {
           res.should.be.json;
           done();
         });
-    });
+    }).timeout(10000);
   });
   /*
    * Test the /GET /local route

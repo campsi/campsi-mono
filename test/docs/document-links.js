@@ -86,24 +86,20 @@ function extractNavigationLinks(link) {
   return links;
 }
 
-function createPizzas(state) {
-  return new Promise(function (resolve, reject) {
-    const resource = campsi.services.get('docs').options.resources.pizzas;
-    const pizzas = [];
-    const promises = [];
+async function createPizzas(state) {
+  const resource = campsi.services.get('docs').options.resources.pizzas;
+  const pizzas = [];
+  const promises = [];
 
-    for (let i = 0; i < 5; i++) {
-      pizzas.push({ data: { name: `margherita_${i}` }, resource, state });
-    }
+  for (let i = 0; i < 5; i++) {
+    pizzas.push({ data: { name: `margherita_${i}` }, resource, state });
+  }
 
-    pizzas.forEach(item => {
-      promises.push(buildPizzaDoc(item.data, item.resource, item.state));
-    });
-
-    Promise.all(promises).then(() => {
-      resolve();
-    });
+  pizzas.forEach(item => {
+    promises.push(buildPizzaDoc(item.data, item.resource, item.state));
   });
+
+  await Promise.all(promises);
 }
 
 function getPizzaWithLinksInHeaderByState(id, state) {
@@ -224,7 +220,7 @@ describe('Document links', () => {
    * Test the /GET docs/pizzas route
    */
   it('it should get all the pizzas', async () => {
-    const res = await chai.request(campsi.app).get('/docs/pizzas/');
+    const res = await chai.request(campsi.app).get('/docs/pizzas/?sort=id');
 
     res.should.have.status(200);
     res.should.not.have.header('link');
@@ -238,7 +234,7 @@ describe('Document links', () => {
   });
 
   it('it should get all the pizzas that are in working draft state', async () => {
-    const res = await chai.request(campsi.app).get('/docs/pizzas/?state=working_draft');
+    const res = await chai.request(campsi.app).get('/docs/pizzas/?state=working_draft&sort=id');
 
     res.should.have.status(200);
     res.should.not.have.header('link');

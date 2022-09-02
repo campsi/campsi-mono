@@ -387,7 +387,7 @@ describe('Auth API', () => {
             });
         });
     });
-    it('should allow someone else to use the invitation', async() => {
+    it('should allow someone else to use the invitation', async () => {
       const campsi = context.campsi;
       const robert = {
         displayName: 'Robert Bennett',
@@ -397,19 +397,19 @@ describe('Auth API', () => {
       };
       const robertToken = await createUser(chai, campsi, robert);
       const glendaToken = await createUser(chai, campsi, glenda);
-          
+
       debug(glendaToken);
 
-      try{
-      const res = await chai
-        .request(campsi.app)
-        .post('/auth/invitations')
-        .set('content-type', 'application/json')
-        .set('Authorization', 'Bearer ' + glendaToken)
-        .send({
-          email: 'odile@agilitation.fr',
-          data: { projectId: 'testProjectId' }
-        });
+      try {
+        const res = await chai
+          .request(campsi.app)
+          .post('/auth/invitations')
+          .set('content-type', 'application/json')
+          .set('Authorization', 'Bearer ' + glendaToken)
+          .send({
+            email: 'odile@agilitation.fr',
+            data: { projectId: 'testProjectId' }
+          });
 
         const invitationToken = res.body.invitationToken;
         debug(res.status);
@@ -420,29 +420,30 @@ describe('Auth API', () => {
             payload.should.have.property('invitedUserId');
             payload.should.have.property('data');
             payload.data.projectId.should.eq('testProjectId');
-  
+
             chai
               .request(campsi.app)
               .post(`/auth/invitations/${invitationToken.value}`)
               .set('Authorization', 'Bearer ' + glendaToken)
               .end((err, res) => {
-                if (err) reject( debug(`received an error from chai: ${err.message}`));
+                if (err) reject(debug(`received an error from chai: ${err.message}`));
                 res.should.have.status(404);
                 resolve();
               });
           });
-        })
-        
+        });
+
         const inviteAcceptRes = await chai
           .request(campsi.app)
           .post(`/auth/invitations/${invitationToken.value}`)
           .set('Authorization', 'Bearer ' + robertToken);
 
+        debug(inviteAcceptRes);
+
         await inviteAcceptedPromise;
-      } catch(error) {
-        console.log(error);
+      } catch (error) {
+        debug(error);
       }
-        
-      }).timeout(10000);
-    });
+    }).timeout(10000);
+  });
 });

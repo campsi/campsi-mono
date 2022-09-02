@@ -318,7 +318,9 @@ function inviteUser(req, res) {
           id: result.insertedId,
           email: profile.email,
           invitedBy: req.user._id,
-          token: invitationToken
+          token: invitationToken,
+          requestBody: req.body,
+          requestHeaders: req.headers
         });
       });
     }

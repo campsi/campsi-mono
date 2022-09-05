@@ -179,7 +179,7 @@ function getPizzaWithoutLinksInHeader(id) {
 }
 
 // Our parent block
-describe('Document links', () => {
+describe('Document links', async () => {
   before(done => {
     // Empty the database
     const mongoUri = mongoUriBuilder(config.campsi.mongo);
@@ -220,7 +220,7 @@ describe('Document links', () => {
    * Test the /GET docs/pizzas route
    */
   it('it should get all the pizzas', async () => {
-    const res = await chai.request(campsi.app).get('/docs/pizzas/?sort=id');
+    const res = await chai.request(campsi.app).get('/docs/pizzas/?sort=_id');
 
     res.should.have.status(200);
     res.should.not.have.header('link');

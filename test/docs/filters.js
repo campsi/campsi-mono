@@ -266,7 +266,7 @@ describe('Filter Documents', () => {
       return new Promise(resolve => {
         chai
           .request(campsi.app)
-          .get('/docs/categories?data.price[gte]=20')
+          .get('/docs/categories?data.price[gte]=20&sort=_id')
           .end((err, res) => {
             if (err) debug(`received an error from chai: ${err.message}`);
             testResponse(res, 2);

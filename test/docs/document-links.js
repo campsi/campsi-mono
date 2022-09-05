@@ -89,17 +89,14 @@ function extractNavigationLinks(link) {
 async function createPizzas(state) {
   const resource = campsi.services.get('docs').options.resources.pizzas;
   const pizzas = [];
-  const promises = [];
 
   for (let i = 0; i < 5; i++) {
     pizzas.push({ data: { name: `margherita_${i}` }, resource, state });
   }
 
-  pizzas.forEach(item => {
-    promises.push(buildPizzaDoc(item.data, item.resource, item.state));
-  });
-
-  await Promise.all(promises);
+  for await (const item of pizzas) {
+    await buildPizzaDoc(item.data, item.resource, item.state);
+  }
 }
 
 function getPizzaWithLinksInHeaderByState(id, state) {

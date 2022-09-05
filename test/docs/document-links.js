@@ -217,7 +217,7 @@ describe('Document links', async () => {
    * Test the /GET docs/pizzas route
    */
   it('it should get all the pizzas', async () => {
-    const res = await chai.request(campsi.app).get('/docs/pizzas/?sort=_id');
+    const res = await chai.request(campsi.app).get('/docs/pizzas/');
 
     res.should.have.status(200);
     res.should.not.have.header('link');
@@ -231,7 +231,7 @@ describe('Document links', async () => {
   });
 
   it('it should get all the pizzas that are in working draft state', async () => {
-    const res = await chai.request(campsi.app).get('/docs/pizzas/?state=working_draft&sort=id');
+    const res = await chai.request(campsi.app).get('/docs/pizzas/?state=working_draft');
 
     res.should.have.status(200);
     res.should.not.have.header('link');

@@ -6,6 +6,7 @@ const editURL = require('edit-url');
 const state = require('./state');
 const debug = require('debug')('campsi:service:auth');
 const { ObjectId } = require('mongodb');
+const { getUsersCollectionName } = require('./modules/collectionNames');
 
 function logout(req, res) {
   if (!req.user) {
@@ -14,7 +15,7 @@ function logout(req, res) {
 
   const update = { $set: { token: 'null' } };
   req.db
-    .collection('__users__')
+    .collection(getUsersCollectionName())
     .findOneAndUpdate({ _id: req.user._id }, update)
     .then(() => {
       return res.json({ message: 'signed out' });
@@ -33,7 +34,7 @@ function me(req, res) {
   res.json(req.user);
 
   req.db
-    .collection('__users__')
+    .collection(getUsersCollectionName())
     .findOneAndUpdate({ _id: req.user._id }, { $set: { lastSeenAt: new Date() } }, {})
     .then(_result => {})
     .catch(error => helpers.error(res, error));
@@ -54,7 +55,7 @@ function updateMe(req, res) {
   });
 
   req.db
-    .collection('__users__')
+    .collection(getUsersCollectionName())
     .findOneAndUpdate({ _id: req.user._id }, update, {
       returnDocument: 'after',
       projection: { 'identities.local.encryptedPassword': 0 }
@@ -78,7 +79,7 @@ function patchMe(req, res) {
   }
 
   req.db
-    .collection('__users__')
+    .collection(getUsersCollectionName())
     .findOneAndUpdate({ _id: req.user._id }, update, {
       returnDocument: 'after'
     })
@@ -101,7 +102,7 @@ function createAnonymousUser(req, res) {
     createdAt: new Date()
   };
   req.db
-    .collection('__users__')
+    .collection(getUsersCollectionName())
     .insertOne(insert)
     .then(insertResult => {
       res.json({ _id: insertResult.insertedId, ...insert });
@@ -190,7 +191,7 @@ async function getUsers(req, res) {
   if (req.user && req.user.isAdmin) {
     try {
       const users = await req.db
-        .collection('__users__')
+        .collection(getUsersCollectionName())
         .find(getUserFilterFromQuery(req.query), {
           projection: { 'identities.local.encryptedPassword': 0 }
         })
@@ -214,7 +215,7 @@ function getAccessTokenForUser(req, res) {
     }
     const { update, updateToken } = builder.genUpdate({ name: 'impersonatingByAdmin' }, {});
     req.db
-      .collection('__users__')
+      .collection(getUsersCollectionName())
       .findOneAndUpdate({ _id: userId }, update, {
         returnDocument: 'after'
       })
@@ -274,7 +275,7 @@ function inviteUser(req, res) {
     update.$addToSet = { groups: { $each: groups } };
   }
   // if user exists with the given email, we return the id
-  req.db.collection('__users__').findOneAndUpdate(filter, update, { returnDocument: 'after' }, (err, result) => {
+  req.db.collection(getUsersCollectionName()).findOneAndUpdate(filter, update, { returnDocument: 'after' }, (err, result) => {
     if (err) {
       return helpers.error(res, err);
     }
@@ -309,7 +310,7 @@ function inviteUser(req, res) {
       if (groups.length) {
         insert.groups = groups;
       }
-      req.db.collection('__users__').insertOne(insert, (err, result) => {
+      req.db.collection(getUsersCollectionName()).insertOne(insert, (err, result) => {
         if (err) {
           return helpers.error(res, err);
         }
@@ -336,7 +337,7 @@ function acceptInvitation(req, res) {
       $gt: new Date()
     }
   };
-  req.db.collection('__users__').findOneAndUpdate(
+  req.db.collection(getUsersCollectionName()).findOneAndUpdate(
     query,
     {
       $unset: { [`identities.invitation-${req.params.invitationToken}`]: true }
@@ -384,7 +385,7 @@ function addGroupsToUser(req, res) {
   const update = { $addToSet: { groups: { $each: groups } } };
 
   req.db
-    .collection('__users__')
+    .collection(getUsersCollectionName())
     .findOneAndUpdate({ _id: req.user._id }, update, {
       returnDocument: 'after'
     })

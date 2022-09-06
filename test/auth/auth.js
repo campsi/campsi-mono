@@ -387,7 +387,7 @@ describe('Auth API', () => {
             });
         });
     });
-    it('should allow someone else to use the invitation', done => {
+    it('should allow someone else to use the invitation', async () => {
       const campsi = context.campsi;
       const robert = {
         displayName: 'Robert Bennett',
@@ -395,49 +395,55 @@ describe('Auth API', () => {
         username: 'robert',
         password: 'signup!'
       };
-      createUser(chai, campsi, robert)
-        .then(robertToken => {
-          robert.token = robertToken;
-          return createUser(chai, campsi, glenda);
-        })
-        .then(glendaToken => {
-          debug(glendaToken);
-          chai
-            .request(campsi.app)
-            .post('/auth/invitations')
-            .set('content-type', 'application/json')
-            .set('Authorization', 'Bearer ' + glendaToken)
-            .send({
-              email: 'odile@agilitation.fr',
-              data: { projectId: 'testProjectId' }
-            })
-            .end((err, res) => {
-              if (err) return debug(`received an error from chai: ${err.message}`);
-              const invitationToken = res.body.invitationToken;
-              chai
-                .request(campsi.app)
-                .post(`/auth/invitations/${invitationToken.value}`)
-                .set('Authorization', 'Bearer ' + robert.token)
-                .end();
+      const robertToken = await createUser(chai, campsi, robert);
+      const glendaToken = await createUser(chai, campsi, glenda);
 
-              campsi.on('auth/invitation/accepted', payload => {
-                payload.should.have.property('invitedBy');
-                payload.should.have.property('invitedUserId');
-                payload.should.have.property('data');
-                payload.data.projectId.should.eq('testProjectId');
+      debug(glendaToken);
 
-                chai
-                  .request(campsi.app)
-                  .post(`/auth/invitations/${invitationToken.value}`)
-                  .set('Authorization', 'Bearer ' + glendaToken)
-                  .end((err, res) => {
-                    if (err) return debug(`received an error from chai: ${err.message}`);
-                    res.should.have.status(404);
-                    done();
-                  });
+      try {
+        const res = await chai
+          .request(campsi.app)
+          .post('/auth/invitations')
+          .set('content-type', 'application/json')
+          .set('Authorization', 'Bearer ' + glendaToken)
+          .send({
+            email: 'odile@agilitation.fr',
+            data: { projectId: 'testProjectId' }
+          });
+
+        const invitationToken = res.body.invitationToken;
+        debug(res.status);
+        debug(invitationToken);
+        const inviteAcceptedPromise = new Promise((resolve, reject) => {
+          campsi.on('auth/invitation/accepted', payload => {
+            payload.should.have.property('invitedBy');
+            payload.should.have.property('invitedUserId');
+            payload.should.have.property('data');
+            payload.data.projectId.should.eq('testProjectId');
+
+            chai
+              .request(campsi.app)
+              .post(`/auth/invitations/${invitationToken.value}`)
+              .set('Authorization', 'Bearer ' + glendaToken)
+              .end((err, res) => {
+                if (err) reject(debug(`received an error from chai: ${err.message}`));
+                res.should.have.status(404);
+                resolve();
               });
-            });
+          });
         });
-    });
+
+        const inviteAcceptRes = await chai
+          .request(campsi.app)
+          .post(`/auth/invitations/${invitationToken.value}`)
+          .set('Authorization', 'Bearer ' + robertToken);
+
+        debug(inviteAcceptRes);
+
+        await inviteAcceptedPromise;
+      } catch (error) {
+        debug(error);
+      }
+    }).timeout(10000);
   });
 });

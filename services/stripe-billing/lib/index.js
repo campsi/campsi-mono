@@ -28,7 +28,7 @@ const bodyToCustomer = (body, sourcePropertyName, user) => {
     address: body.address,
     metadata: Object.assign(body.metadata || {}, user ? { user: user._id.toString() } : {}),
     shipping: body.shipping,
-    preferred_locales: [...new Set(['fr-FR', ...(body.preferred_locales ?? [])])],
+    preferred_locales: [...new Set([...(body.preferred_locales ?? []), 'fr-FR'])],
     expand: buildExpandFromBody(body, customerExpand)
   };
 };

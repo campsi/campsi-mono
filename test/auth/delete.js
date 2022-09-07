@@ -120,7 +120,7 @@ describe('Auth API', () => {
                           body.email.should.be.empty;
                           body.displayName.should.be.empty;
                           body.picture.should.be.empty;
-                          expect(new Date(body.deletedOn).getTime()).to.be.closeTo(Date.now(), 1000);
+                          expect(new Date(body.deletedAt).getTime()).to.be.closeTo(Date.now(), 1000);
                           Object.keys(body.data).length.should.be.equal(0);
                           Object.keys(body.identities).length.should.be.equal(0);
 

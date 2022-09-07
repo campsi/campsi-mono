@@ -397,11 +397,11 @@ function softDelete(req, res) {
       userId = new ObjectId(req.params.userId);
 
       // set email, displayName, picture, data, identities to empty
-      // add deletedOn date
-      const update = { $set: { email: '', displayName: '', picture: '', data: {}, identities: {}, deletedOn: new Date() } };
+      // add deletedAt date
+      const update = { $set: { email: '', displayName: '', picture: '', data: {}, identities: {}, deletedAt: new Date() } };
       req.db
         .collection('__users__')
-        .findOneAndUpdate({ _id: userId, deletedOn: { $exists: false } }, update, { returnDocument: 'after' })
+        .findOneAndUpdate({ _id: userId, deletedAt: { $exists: false } }, update, { returnDocument: 'after' })
         .then(result => {
           // also anonymize additional field if passed in
           if (result && result.value) {

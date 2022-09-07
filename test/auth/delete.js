@@ -100,7 +100,7 @@ describe('Auth API', () => {
       // sepcify a field that needs to be anonymized in addition to the existing user data
       res = await chai
         .request(campsi.app)
-        .patch(`/auth/users/soft-delete/${userId}`)
+        .delete(`/auth/users/${userId}:soft-delete`)
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
           additionalFieldName: `users.${userId}.displayName`,
@@ -125,10 +125,11 @@ describe('Auth API', () => {
       // try and delete it again - should fail
       res = await chai
         .request(campsi.app)
-        .patch(`/auth/users/soft-delete/:${userId}`)
-        .set('Authorization', `Bearer ${adminToken}`);
+        .delete(`/auth/users/${userId}:soft-delete`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .set('content-type', 'application/json');
 
-      res.should.have.status(400);
+      res.should.have.status(404);
     });
   });
 
@@ -149,11 +150,12 @@ describe('Auth API', () => {
     let res = await chai
       .request(campsi.app)
       .get('/auth/users')
-      .set('Authorization', 'Bearer ' + adminToken);
+      .set('Authorization', 'Bearer ' + adminToken)
+      .set('content-type', 'application/json');
 
     // delete with glenda's profile (not admin)
     const userId = res.body.filter(u => u.email === glenda.email)[0]._id;
-    res = await chai.request(campsi.app).patch(`/auth/users/soft-delete/${userId}`).set('Authorization', `Bearer ${userToken}`);
+    res = await chai.request(campsi.app).delete(`/auth/users/${userId}:soft-delete`).set('Authorization', `Bearer ${userToken}`);
 
     res.should.have.status(401);
   });

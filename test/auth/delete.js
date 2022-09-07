@@ -16,7 +16,7 @@ format.extend(String.prototype);
 chai.use(chaiHttp);
 chai.should();
 
-const createProject = function(id) {
+const createProject = function (id) {
   return {
     _id: new ObjectID(),
     users: {
@@ -68,7 +68,7 @@ describe('Auth API', () => {
   });
 
   describe('delete a user', () => {
-    it('should delete an existing user', done => {
+    it('should delete an existing user', async () => {
       const campsi = context.campsi;
       const admin = {
         email: 'admin@campsi.io',
@@ -77,122 +77,84 @@ describe('Auth API', () => {
         password: 'password'
       };
 
-      createUser(chai, campsi, admin, true).then(adminToken => {
-        campsi.db
-          .collection('__users__')
-          .findOneAndUpdate({ email: admin.email }, { $set: { isAdmin: true } }, { returnDocument: 'after' })
-          .then(updateResult => {
-            createUser(chai, campsi, glenda).then(userToken => {
-              chai
-                .request(campsi.app)
-                .get('/auth/users')
-                .set('Authorization', 'Bearer ' + adminToken)
-                .end((err, res) => {
-                  if (err) {
-                    debug(err);
-                    return done();
-                  }
-                  res.should.have.status(200);
+      const adminToken = await createUser(chai, campsi, admin, true);
+      await campsi.db
+        .collection('__users__')
+        .findOneAndUpdate({ email: admin.email }, { $set: { isAdmin: true } }, { returnDocument: 'after' });
 
-                  // glenda
-                  const userId = res.body.filter(u => u.email === glenda.email)[0]._id;
+      await createUser(chai, campsi, glenda);
+      let res = await chai
+        .request(campsi.app)
+        .get('/auth/users')
+        .set('Authorization', 'Bearer ' + adminToken);
 
-                  const project = createProject(userId);
+      res.should.have.status(200);
 
-                  // insert fake __users__.user project with userId.displayName contaiting a filled in name
-                  campsi.db
-                    .collection('__users__')
-                    .insertOne(project)
-                    .then(result => {
-                      // sepcify a field that needs to be anonymized in addition to the existing user data
-                      chai
-                        .request(campsi.app)
-                        .patch(`/auth/users/soft-delete/${userId}`)
-                        .set('Authorization', `Bearer ${adminToken}`)
-                        .send({
-                          additionalFieldName: `users.${userId}.displayName`,
-                          additionalFieldCollectionName: '__users__'
-                        })
-                        .end((err, res) => {
-                          debug(err);
-                          const body = res.body;
-                          res.should.have.status(200);
-                          body.email.should.be.empty;
-                          body.displayName.should.be.empty;
-                          body.picture.should.be.empty;
-                          expect(new Date(body.deletedAt).getTime()).to.be.closeTo(Date.now(), 1000);
-                          Object.keys(body.data).length.should.be.equal(0);
-                          Object.keys(body.identities).length.should.be.equal(0);
+      // glenda
+      const userId = res.body.filter(u => u.email === glenda.email)[0]._id;
+      const project = createProject(userId);
 
-                          // make sure the extra field has been cleared out
-                          campsi.db
-                            .collection('__users__')
-                            .findOne(project._id)
-                            .then(result => {
-                              // test that the displayName has been anonymized
-                              expect(result.users[`${userId}`].displayName).to.be.empty;
+      // insert fake __users__.user project with userId.displayName contaiting a filled in name
+      let result = await campsi.db.collection('__users__').insertOne(project);
 
-                              // try and delete it again - should fail
-                              chai
-                                .request(campsi.app)
-                                .patch(`/auth/users/soft-delete/:${userId}`)
-                                .set('Authorization', `Bearer ${adminToken}`)
-                                .end((err, res) => {
-                                  debug(err);
-                                  debug(res.body);
-                                  res.should.have.status(400);
-                                  done();
-                                });
-                            });
-                        });
-                    })
-                    .catch(err => {
-                      console.log(err);
-                    });
-                });
-            });
-          });
-      });
+      // sepcify a field that needs to be anonymized in addition to the existing user data
+      res = await chai
+        .request(campsi.app)
+        .patch(`/auth/users/soft-delete/${userId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          additionalFieldName: `users.${userId}.displayName`,
+          additionalFieldCollectionName: '__users__'
+        });
+
+      const body = res.body;
+      res.should.have.status(200);
+      body.email.should.be.empty;
+      body.displayName.should.be.empty;
+      body.picture.should.be.empty;
+      expect(new Date(body.deletedAt).getTime()).to.be.closeTo(Date.now(), 1000);
+      Object.keys(body.data).length.should.be.equal(0);
+      Object.keys(body.identities).length.should.be.equal(0);
+
+      // make sure the extra field has been cleared out
+      result = await campsi.db.collection('__users__').findOne(project._id);
+
+      // test that the displayName has been anonymized
+      expect(result.users[`${userId}`].displayName).to.be.empty;
+
+      // try and delete it again - should fail
+      res = await chai
+        .request(campsi.app)
+        .patch(`/auth/users/soft-delete/:${userId}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      res.should.have.status(400);
     });
+  });
 
-    it('should not allow us to delete an existing user if we are not admin', done => {
-      const campsi = context.campsi;
-      const admin = {
-        email: 'admin@campsi.io',
-        username: 'admin@campsi.io',
-        displayName: 'admin',
-        password: 'password'
-      };
-      createUser(chai, campsi, admin, true).then(adminToken => {
-        campsi.db
-          .collection('__users__')
-          .findOneAndUpdate({ email: admin.email }, { $set: { isAdmin: true } }, { returnDocument: 'after' })
-          .then(updateResult => {
-            createUser(chai, campsi, glenda).then(userToken => {
-              chai
-                .request(campsi.app)
-                .get('/auth/users')
-                .set('Authorization', 'Bearer ' + adminToken)
-                .end((err, res) => {
-                  if (err) {
-                    debug(err);
-                    return done();
-                  }
+  it('should not allow us to delete an existing user if we are not admin', async () => {
+    const campsi = context.campsi;
+    const admin = {
+      email: 'admin@campsi.io',
+      username: 'admin@campsi.io',
+      displayName: 'admin',
+      password: 'password'
+    };
+    const adminToken = await createUser(chai, campsi, admin, true);
+    await campsi.db
+      .collection('__users__')
+      .findOneAndUpdate({ email: admin.email }, { $set: { isAdmin: true } }, { returnDocument: 'after' });
 
-                  // delete with glenda's profile (not admin)
-                  const userId = res.body.filter(u => u.email === glenda.email)[0]._id;
-                  chai
-                    .request(campsi.app)
-                    .patch(`/auth/users/soft-delete/${userId}`)
-                    .set('Authorization', `Bearer ${userToken}`)
-                    .end((_err, res) => {
-                      res.should.have.status(401);
-                      done();
-                    });
-                });
-            });
-          });
-      });
-    });
+    const userToken = await createUser(chai, campsi, glenda);
+    let res = await chai
+      .request(campsi.app)
+      .get('/auth/users')
+      .set('Authorization', 'Bearer ' + adminToken);
+
+    // delete with glenda's profile (not admin)
+    const userId = res.body.filter(u => u.email === glenda.email)[0]._id;
+    res = await chai.request(campsi.app).patch(`/auth/users/soft-delete/${userId}`).set('Authorization', `Bearer ${userToken}`);
+
+    res.should.have.status(401);
   });
 });

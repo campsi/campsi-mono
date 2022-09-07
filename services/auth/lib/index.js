@@ -46,6 +46,7 @@ module.exports = class AuthService extends CampsiService {
       return !req.authProvider ? helpers.notFound(res) : next();
     });
     router.get('/users', handlers.getUsers);
+    router.get('/users/:userId/extract_personal_data', handlers.extractUserPersonalData);
     router.get('/users/:userId/access_token', handlers.getAccessTokenForUser);
     router.get('/providers', handlers.getProviders);
     router.get('/me', handlers.me);

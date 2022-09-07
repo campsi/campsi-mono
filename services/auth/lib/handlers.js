@@ -392,6 +392,39 @@ function addGroupsToUser(req, res) {
     .catch(error => helpers.error(res, error));
 }
 
+function extractUserPersonalData(req, res) {
+  if (req.user && req.user?.isAdmin) {
+    let userId;
+    try {
+      userId = new ObjectId(req.params.userId);
+    } catch (e) {
+      return redirectWithError(req, res, new Error('Erroneous userId'));
+    }
+
+    req.db.collection('__users__').findOne(
+      { _id: userId },
+      {
+        projection: {
+          email: 1,
+          displayname: 1,
+          picture: 1,
+          identities: {
+            local: { id: 1, username: 1 },
+            google: { id: 1, sub: 1, name: 1, given_name: 1, familly_name: 1, picture: 1, email: 1 },
+            facebook: { id: 1, name: 1, email: 1 }
+          }
+        }
+      },
+      (_err, user) => {
+        if (!user) return helpers.notFound(res);
+        res.json(user);
+      }
+    );
+  } else {
+    return helpers.unauthorized(res, new Error('Only admin users can extract personal data for users'));
+  }
+}
+
 module.exports = {
   initAuth,
   redirectWithError,
@@ -406,5 +439,6 @@ module.exports = {
   logout,
   inviteUser,
   acceptInvitation,
-  addGroupsToUser
+  addGroupsToUser,
+  extractUserPersonalData
 };

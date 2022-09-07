@@ -8,7 +8,6 @@ const chaiHttp = require('chai-http');
 const format = require('string-format');
 const config = require('config');
 const createUser = require('../helpers/createUser');
-const debug = require('debug')('campsi:test');
 const setupBeforeEach = require('../helpers/setupBeforeEach');
 const { ObjectId, ObjectID } = require('mongodb');
 const expect = chai.expect;

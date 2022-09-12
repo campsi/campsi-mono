@@ -53,7 +53,7 @@ const defaultHandler = res => (err, obj) => {
 module.exports = class StripeBillingService extends CampsiService {
   initialize() {
     this.stripe = require('stripe')(this.options.secret_key, {
-      maxNetworkRetries: 2
+      maxNetworkRetries: 3
     });
     const stripe = this.stripe;
 

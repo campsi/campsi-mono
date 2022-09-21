@@ -11,6 +11,9 @@ const { btoa } = require('../../services/auth/lib/modules/base64');
 const createUser = require('../helpers/createUser');
 const debug = require('debug')('campsi:test');
 const setupBeforeEach = require('../helpers/setupBeforeEach');
+const { ObjectId } = require('mongodb');
+const { forEach } = require('async');
+
 const expect = chai.expect;
 format.extend(String.prototype);
 chai.use(chaiHttp);
@@ -25,27 +28,27 @@ const glenda = {
 
 const expiredTokens = {
   '8c40a79c-8b39-4c20-be05-f0d38ee39d51': {
-    expiration: { $date: { $numberLong: '1583157928241' } },
+    expiration: new Date(1583157928241),
     grantedByProvider: 'invitation-6705d8e2-b851-4887-aef8-536ddd4f5295'
   },
   'ce641beb-d513-4bbd-9df8-961a8b97d40c': {
-    expiration: { $date: { $numberLong: '1656854831400' } },
+    expiration: new Date(1656854831400),
     grantedByProvider: 'local'
   },
   'be94ac61-5248-455c-8935-1d0dfec83a3c': {
-    expiration: { $date: { $numberLong: '1656854846950' } },
+    expiration: new Date(1656854846950),
     grantedByProvider: 'local'
   },
   'd356d80b-cdf9-477d-bd41-73433dc25eb8': {
-    expiration: { $date: { $numberLong: '1659028858376' } },
+    expiration: new Date(1659028858376),
     grantedByProvider: 'local'
   },
   'c272f4ee-244a-482a-808f-858881dc511b': {
-    expiration: { $date: { $numberLong: '1659028878861' } },
+    expiration: new Date(1659028878861),
     grantedByProvider: 'local'
   },
   '894aba89-7e72-4441-99c0-3095dbb3e3e4': {
-    expiration: { $date: { $numberLong: '1659028966800' } },
+    expiration: new Date(1659028966800),
     grantedByProvider: 'local'
   }
 };
@@ -508,5 +511,12 @@ describe('Auth API', () => {
     robertUser = await campsi.db.collection('__users__').findOne({ email: robert.email });
 
     Object.entries(robertUser.tokens).length.should.be.eq(2);
+
+    const expiredUserTokens = await campsi.db
+      .collection('__users__.tokens_log')
+      .find({ userId: new ObjectId(robertUser._id) })
+      .toArray();
+
+    expiredUserTokens.length.should.be.eq(6);
   });
 });

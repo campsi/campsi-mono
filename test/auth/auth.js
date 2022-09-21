@@ -23,6 +23,33 @@ const glenda = {
   password: 'signup!'
 };
 
+const expiredTokens = {
+  '8c40a79c-8b39-4c20-be05-f0d38ee39d51': {
+    expiration: { $date: { $numberLong: '1583157928241' } },
+    grantedByProvider: 'invitation-6705d8e2-b851-4887-aef8-536ddd4f5295'
+  },
+  'ce641beb-d513-4bbd-9df8-961a8b97d40c': {
+    expiration: { $date: { $numberLong: '1656854831400' } },
+    grantedByProvider: 'local'
+  },
+  'be94ac61-5248-455c-8935-1d0dfec83a3c': {
+    expiration: { $date: { $numberLong: '1656854846950' } },
+    grantedByProvider: 'local'
+  },
+  'd356d80b-cdf9-477d-bd41-73433dc25eb8': {
+    expiration: { $date: { $numberLong: '1659028858376' } },
+    grantedByProvider: 'local'
+  },
+  'c272f4ee-244a-482a-808f-858881dc511b': {
+    expiration: { $date: { $numberLong: '1659028878861' } },
+    grantedByProvider: 'local'
+  },
+  '894aba89-7e72-4441-99c0-3095dbb3e3e4': {
+    expiration: { $date: { $numberLong: '1659028966800' } },
+    grantedByProvider: 'local'
+  }
+};
+
 const services = {
   Auth: require('../../services/auth/lib'),
   Trace: require('../../services/trace/lib'),
@@ -445,5 +472,41 @@ describe('Auth API', () => {
         debug(error);
       }
     }).timeout(10000);
+  });
+
+  it('should remove expired tokens', async () => {
+    const campsi = context.campsi;
+    const robert = {
+      displayName: 'Robert Bennett',
+      email: 'robert@agilitation.fr',
+      username: 'robert',
+      password: 'signup!'
+    };
+
+    await createUser(chai, campsi, robert);
+
+    let robertUser = await campsi.db.collection('__users__').findOne({ email: robert.email });
+
+    Object.entries(robertUser.tokens).length.should.be.eq(1);
+
+    const user = await campsi.db
+      .collection('__users__')
+      .findOneAndUpdate(
+        { email: robert.email },
+        { $set: { tokens: { ...robertUser.tokens, ...expiredTokens } } },
+        { returnDocument: 'after' }
+      );
+
+    Object.entries(user.value.tokens).length.should.be.eq(7);
+
+    await chai
+      .request(campsi.app)
+      .post('/auth/local/signin')
+      .set('content-type', 'application/json')
+      .send({ username: robert.email, password: robert.password });
+
+    robertUser = await campsi.db.collection('__users__').findOne({ email: robert.email });
+
+    Object.entries(robertUser.tokens).length.should.be.eq(2);
   });
 });

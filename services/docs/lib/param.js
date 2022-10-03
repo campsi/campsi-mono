@@ -43,7 +43,7 @@ module.exports.attach = (req, res, next, options) => {
 
     // check if the document is locked by someone else if we are trying to modify it
     const lockChek = new Promise((resolve, reject) => {
-      if (req.method === 'PUT' || req.method === 'POST' || req.method === 'PATCH' || req.method === 'DELETE') {
+      if (['PUT', 'POST', 'PATCH', 'DELETE'].some(method => req.method.includes(method))) {
         documentService
           .isDocumentLockedByOtherUser(
             req.state,

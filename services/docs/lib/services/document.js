@@ -14,35 +14,34 @@ const getRequestedStatesFromQuery = (resource, query) => {
   return query.states ? query.states.split(',') : Object.keys(resource.states);
 };
 
-const getDocumentLock = function (state, filter, lockCollection) {
-  return new Promise((resolve, reject) => {
-    if (!filter._id) {
-      return resolve(undefined);
-    }
+const getDocumentLock = async function (state, filter, lockCollection) {
+  if (!filter._id) {
+    return undefined;
+  }
 
-    const match = { documentId: filter._id, [`${state}`]: { $exists: true } };
-    lockCollection.findOne(match, (err, doc) => {
-      if (err) reject(err);
-      resolve(doc);
-    });
-  });
+  const match = { documentId: filter._id, [`${state}`]: { $exists: true } };
+
+  try {
+    const doc = await lockCollection.findOne(match);
+    return doc;
+  } catch (ex) {
+    return ex;
+  }
 };
 
-module.exports.isDocumentLockedByOtherUser = function (state, filter, user, editLock, db) {
-  return new Promise((resolve, reject) => {
-    getDocumentLock(state, filter, db.collection(editLock.collectionName)).then(lock => {
-      if (!lock) return resolve(false);
+module.exports.isDocumentLockedByOtherUser = async function (state, filter, user, editLock, db) {
+  const lock = await getDocumentLock(state, filter, db.collection(editLock.collectionName));
 
-      const lockedBy = lock?.[`${state}`];
+  if (!lock) return false;
 
-      if (!lockedBy) return resolve(false);
+  const lockedBy = lock?.[`${state}`];
 
-      const lockExpired = new Date().getTime() > new Date(lockedBy.timeout).getTime();
-      const sameUser = new ObjectId(user?._id).equals(lockedBy.userId);
+  if (!lockedBy) return false;
 
-      resolve(!sameUser && !lockExpired);
-    });
-  });
+  const lockExpired = new Date().getTime() > new Date(lockedBy.timeout).getTime();
+  const sameUser = new ObjectId(user?._id).equals(lockedBy.userId);
+
+  return !sameUser && !lockExpired;
 };
 
 module.exports.lockDocument = async function (resource, state, filter, tokenTimeout, user, req) {

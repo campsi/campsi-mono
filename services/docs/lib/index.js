@@ -30,11 +30,11 @@ module.exports = class DocsService extends CampsiService {
     this.router.param('resource', param.attachResource(service.options));
     this.router.get('/', handlers.getResources);
     this.router.get('/:resource', handlers.getDocuments);
-    this.router.post('/:resource/:id/locks/lock', handlers.lockDocument);
+    this.router.post('/:resource/:id/locks', handlers.lockDocument);
     this.router.get('/:resource/:id/users', handlers.getDocUsers);
     this.router.post('/:resource/:id/users', handlers.postDocUser);
     this.router.delete('/:resource/:id/users/:user', handlers.delDocUser);
-    this.router.post('/:resource/:id/:state/locks/lock', handlers.lockDocument);
+    this.router.post('/:resource/:id/:state/locks', handlers.lockDocument);
     this.router.get('/:resource/:id/:state', handlers.getDoc);
     this.router.get('/:resource/:id', handlers.getDoc);
     this.router.post('/:resource/:state', handlers.postDoc);

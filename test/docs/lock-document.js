@@ -62,7 +62,7 @@ describe('locks', () => {
       docId = res.body.id;
       res = await chai
         .request(campsi.app)
-        .post(`/docs/pizzas/${res.body.id}/locks/lock`)
+        .post(`/docs/pizzas/${res.body.id}/locks`)
         .set('Authorization', 'Bearer ' + token);
 
       res.should.have.status(200);
@@ -73,7 +73,7 @@ describe('locks', () => {
 
       const res = await chai
         .request(campsi.app)
-        .post(`/docs/pizzas/${docId}/locks/lock`)
+        .post(`/docs/pizzas/${docId}/locks`)
         .set('Authorization', 'Bearer ' + userToken);
 
       res.should.have.status(200);
@@ -85,7 +85,7 @@ describe('locks', () => {
 
       const res = await chai
         .request(campsi.app)
-        .post(`/docs/pizzas/${docId}/locks/lock?lockTimeout=1`)
+        .post(`/docs/pizzas/${docId}/locks?lockTimeout=1`)
         .set('Authorization', 'Bearer ' + userToken);
 
       res.should.have.status(200);
@@ -114,7 +114,7 @@ describe('locks', () => {
 
       const res = await chai
         .request(campsi.app)
-        .post(`/docs/pizzas/${docId}/locks/lock`)
+        .post(`/docs/pizzas/${docId}/locks`)
         .set('Authorization', 'Bearer ' + userToken);
 
       res.should.have.status(200);
@@ -163,7 +163,7 @@ describe('locks', () => {
 
       const res = await chai
         .request(campsi.app)
-        .post(`/docs/pizzas/${privateDocId}/working_draft/locks/lock`)
+        .post(`/docs/pizzas/${privateDocId}/working_draft/locks`)
         .set('Authorization', 'Bearer ' + nownerToken);
 
       res.should.have.status(200);
@@ -210,7 +210,7 @@ describe('locks', () => {
 
       const res = await chai
         .request(campsi.app)
-        .post(`/docs/pizzas/${privateDocId}/locks/lock`)
+        .post(`/docs/pizzas/${privateDocId}/locks`)
         .set('Authorization', 'Bearer ' + userToken)
         .send({ name: '9 cheeses' });
 

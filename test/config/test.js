@@ -65,7 +65,6 @@ module.exports = {
     auth: {
       title: 'Authentification',
       options: {
-        collectionName: '__users__',
         session: {
           secret: 'sqkerhgtkusyd'
         },
@@ -135,6 +134,23 @@ module.exports = {
         channel: 'webhooks',
         requireAuth: true
       }
+    },
+    notifications: {
+      title: 'Notifications',
+      description: 'Notifications Center',
+      options: {
+        usersFetcher: () => {},
+        roles: {},
+        classes: {},
+        resources: {
+          notifications: {
+            label: 'notifications',
+            class: 'publicEntry',
+            schema: require('../schemas/notification.schema')
+          }
+        }
+      },
+      optionsBasePath: path.dirname(path.join(__dirname, '../'))
     }
   }
 };

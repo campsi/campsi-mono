@@ -1,0 +1,7 @@
+{
+    "title": "notification",
+    "description": "Represent a notification that can be received by a user",
+    "type": "object",
+    "additionalProperties": true
+  }
+  

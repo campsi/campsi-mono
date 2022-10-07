@@ -4,6 +4,9 @@ const paginateCursor = require('../../../../lib/modules/paginateCursor');
 const sortCursor = require('../../../../lib/modules/sortCursor');
 const createObjectId = require('../../../../lib/modules/createObjectId');
 const permissions = require('../modules/permissions');
+const { ObjectId } = require('mongodb');
+
+const createError = require('http-errors');
 
 // Helper functions
 const getDocUsersList = doc => Object.keys(doc ? doc.users : []).map(k => doc.users[k]);
@@ -11,7 +14,7 @@ const getRequestedStatesFromQuery = (resource, query) => {
   return query.states ? query.states.split(',') : Object.keys(resource.states);
 };
 
-module.exports.getDocuments = function(resource, filter, user, query, state, sort, pagination, resources) {
+module.exports.getDocuments = function (resource, filter, user, query, state, sort, pagination, resources) {
   const queryBuilderOptions = {
     resource,
     user,
@@ -149,6 +152,9 @@ module.exports.getDocuments = function(resource, filter, user, query, state, sor
           if (query?.with?.includes('creator')) {
             returnData.creator = doc.creator;
           }
+
+          addVirtualProperties(resource, returnData.data);
+
           return returnData;
         });
         return embedDocs.many(resource, query.embed, user, result.docs, resources);
@@ -162,7 +168,8 @@ module.exports.getDocuments = function(resource, filter, user, query, state, sor
   });
 };
 
-module.exports.createDocument = function(resource, data, state, user, parentId, groups) {
+module.exports.createDocument = function (resource, data, state, user, parentId, groups) {
+  removeVirtualProperties(resource, data);
   return new Promise((resolve, reject) => {
     builder
       .create({
@@ -201,7 +208,8 @@ module.exports.createDocument = function(resource, data, state, user, parentId, 
   });
 };
 
-module.exports.setDocument = function(resource, filter, data, state, user) {
+module.exports.setDocument = function (resource, filter, data, state, user) {
+  removeVirtualProperties(resource, data);
   return new Promise((resolve, reject) => {
     builder
       .update({
@@ -214,14 +222,19 @@ module.exports.setDocument = function(resource, filter, data, state, user) {
         resource.collection.updateOne(filter, update, (err, result) => {
           if (err) return reject(err);
 
+          // if document not found, must be a permissions issue
           if (result.modifiedCount !== 1) {
-            return reject(new Error('Not Found'));
+            resource.collection.findOne({ _id: ObjectId(filter._id) }, {}, (_err, doc) => {
+              if (!doc) return reject(new createError.NotFound('Not Found'));
+              return reject(new createError.Unauthorized('Unauthorized'));
+            });
+          } else {
+            resolve({
+              id: filter._id,
+              state,
+              data
+            });
           }
-          resolve({
-            id: filter._id,
-            state,
-            data
-          });
         });
       })
       .catch(reject);
@@ -229,6 +242,7 @@ module.exports.setDocument = function(resource, filter, data, state, user) {
 };
 
 module.exports.patchDocument = async (resource, filter, data, state, user) => {
+  removeVirtualProperties(resource, data);
   const update = await builder.patch({ resource, data, state, user });
 
   const updateDoc = await resource.collection.findOneAndUpdate(filter, update, {
@@ -243,7 +257,73 @@ module.exports.patchDocument = async (resource, filter, data, state, user) => {
   };
 };
 
-module.exports.getDocument = function(resource, filter, query, user, state, resources) {
+module.exports.getDocumentLinks = function (resource, filter, query, _user, state, _resources, headers, result) {
+  const nav = {};
+
+  return new Promise((resolve, reject) => {
+    if (
+      (headers &&
+        (!headers['with-links'] || headers['with-links'] === 'false') &&
+        (!query.withLinks || query.withLinks === 'false')) ||
+      resource.isInheritable
+    ) {
+      return resolve({ nav, result });
+    }
+
+    const projection = { _id: 1, states: 1, users: 1, groups: 1 };
+
+    let previous;
+    let next;
+    const match = { ...filter };
+    match[`states.${state}`] = { $exists: true };
+
+    // get item before
+    match._id = { $lt: createObjectId(filter._id) };
+
+    resource.collection
+      .find(match, { projection })
+      .sort({ _id: -1 })
+      .limit(1)
+      .toArray()
+      .then((doc, err) => {
+        // if there is an error don't build the links
+        if (err) return resolve({ nav, result });
+
+        if (doc && doc.length > 0) {
+          previous = doc[0];
+        }
+
+        // find next
+        match._id = { $gt: createObjectId(filter._id) };
+
+        resource.collection
+          .find(match, { projection })
+          .sort({ _id: 1 })
+          .limit(1)
+          .toArray()
+          .then((doc, err) => {
+            if (!err && doc && doc.length === 1) {
+              next = doc[0];
+            }
+
+            if (next && next._id) nav.next = next._id;
+            if (previous && previous._id) nav.previous = previous._id;
+
+            return resolve({ nav, result });
+          })
+          .catch(err => {
+            console.log(err);
+            return reject(err);
+          });
+      })
+      .catch(err => {
+        console.log(err);
+        return reject(err);
+      });
+  });
+};
+
+module.exports.getDocument = function (resource, filter, query, user, state, resources) {
   const requestedStates = getRequestedStatesFromQuery(resource, query);
   const projection = { _id: 1, states: 1, users: 1, groups: 1 };
   const match = { ...filter };
@@ -267,7 +347,7 @@ module.exports.getDocument = function(resource, filter, query, user, state, reso
           resource,
           user
         });
-        embedDocs.one(resource, query.embed, user, returnValue.data, resources).then(doc => {
+        embedDocs.one(resource, query.embed, user, returnValue.data, resources).then(_doc => {
           resolve(returnValue);
         });
       });
@@ -328,7 +408,7 @@ module.exports.getDocument = function(resource, filter, query, user, state, reso
             resource,
             user
           });
-          embedDocs.one(resource, query.embed, user, returnValue.data, resources).then(doc => resolve(returnValue));
+          embedDocs.one(resource, query.embed, user, returnValue.data, resources).then(_doc => resolve(returnValue));
         })
         .catch(err => {
           reject(err);
@@ -337,7 +417,7 @@ module.exports.getDocument = function(resource, filter, query, user, state, reso
   }
 };
 
-module.exports.getDocumentUsers = function(resource, filter) {
+module.exports.getDocumentUsers = function (resource, filter) {
   return new Promise((resolve, reject) => {
     resource.collection.findOne(filter, { projection: { users: 1 } }, (err, doc) => {
       if (err) {
@@ -348,7 +428,7 @@ module.exports.getDocumentUsers = function(resource, filter) {
   });
 };
 
-module.exports.addUserToDocument = function(resource, filter, userDetails) {
+module.exports.addUserToDocument = function (resource, filter, userDetails) {
   return new Promise((resolve, reject) => {
     resource.collection.findOne(filter, (err, document) => {
       if (err || !document) return reject(err || 'Document is null');
@@ -374,7 +454,7 @@ module.exports.addUserToDocument = function(resource, filter, userDetails) {
   });
 };
 
-module.exports.removeUserFromDocument = function(resource, filter, userId, db) {
+module.exports.removeUserFromDocument = function (resource, filter, userId, db) {
   const removeUserFromDoc = new Promise((resolve, reject) => {
     const ops = { $unset: { [`users.${userId}`]: 1 } };
     const options = { returnDocument: 'after', projection: { users: 1 } };
@@ -390,7 +470,7 @@ module.exports.removeUserFromDocument = function(resource, filter, userId, db) {
   const removeGroupFromUser = new Promise((resolve, reject) => {
     const filter = { _id: createObjectId(userId) };
     const update = { $pull: { groups: { $in: groups } } };
-    db.collection('__users__').updateOne(filter, update, (err, result) => {
+    db.collection('__users__').updateOne(filter, update, (err, _result) => {
       if (err) return reject(err);
       return resolve(null);
     });
@@ -399,9 +479,9 @@ module.exports.removeUserFromDocument = function(resource, filter, userId, db) {
   return Promise.all([removeUserFromDoc, removeGroupFromUser]).then(values => values[0]);
 };
 
-module.exports.setDocumentState = function(resource, filter, fromState, toState, user) {
+module.exports.setDocumentState = function (resource, filter, fromState, toState, user) {
   return new Promise((resolve, reject) => {
-    const doSetState = function(document) {
+    const doSetState = function (document) {
       builder
         .setState({
           doc: document,
@@ -454,7 +534,7 @@ module.exports.setDocumentState = function(resource, filter, fromState, toState,
   });
 };
 
-module.exports.deleteDocument = function(resource, filter) {
+module.exports.deleteDocument = function (resource, filter) {
   if (!resource.isInheritable) {
     return resource.collection.deleteOne(filter);
   } else {
@@ -466,7 +546,7 @@ module.exports.deleteDocument = function(resource, filter) {
           await resource.collection.deleteOne(filter);
           return {};
         }
-        Object.keys(docToDelete.states).forEach((stateName, index) => {
+        Object.keys(docToDelete.states).forEach((stateName, _index) => {
           children.forEach(child => {
             if (!child.states[stateName]) {
               child.states[stateName] = docToDelete.states[stateName];
@@ -506,6 +586,8 @@ const prepareGetDocument = settings => {
   const currentState = doc.states[state] || {};
   const allowedStates = permissions.getAllowedStatesFromDocForUser(user, resource, 'GET', doc);
 
+  addVirtualProperties(resource, currentState.data);
+
   return {
     id: doc._id,
     state,
@@ -517,4 +599,16 @@ const prepareGetDocument = settings => {
     groups: doc.groups || [],
     states: permissions.filterDocumentStates(doc, allowedStates, requestedStates)
   };
+};
+
+const removeVirtualProperties = (resource, data) => {
+  if (resource.virtualProperties) {
+    Object.keys(resource.virtualProperties).map(prop => delete data[prop]);
+  }
+};
+
+const addVirtualProperties = (resource, data) => {
+  if (resource.virtualProperties && data) {
+    Object.entries(resource.virtualProperties).map(([prop, compute]) => (data[prop] = compute(data)));
+  }
 };

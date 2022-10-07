@@ -2,6 +2,19 @@
 const CampsiService = require('../../../lib/service');
 const helpers = require('../../../lib/modules/responseHelpers');
 
+const subscriptionExpand = ['latest_invoice', 'latest_invoice.payment_intent', 'pending_setup_intent'];
+const customerExpand = ['tax_ids'];
+
+const buildExpandFromBody = (body, defaultExpand) => {
+  return body.expand && typeof body.expand === 'string'
+    ? [...new Set([...defaultExpand, ...body.expand.split('|')])]
+    : defaultExpand;
+};
+
+const buildExpandFromQuery = (query, defaultExpand) => {
+  return [...new Set([...defaultExpand, ...(query?.expand?.split('|') || [])])].join('|');
+};
+
 const bodyToCustomer = (body, sourcePropertyName, user) => {
   return {
     name: String(body.name),
@@ -15,12 +28,10 @@ const bodyToCustomer = (body, sourcePropertyName, user) => {
     address: body.address,
     metadata: Object.assign(body.metadata || {}, user ? { user: user._id.toString() } : {}),
     shipping: body.shipping,
-    preferred_locales: [...new Set(['fr-FR', ...(body.preferred_locales ?? [])])],
-    expand: ['tax_ids']
+    preferred_locales: [...new Set([...(body.preferred_locales ?? []), 'fr-FR'])],
+    expand: buildExpandFromBody(body, customerExpand)
   };
 };
-
-const subscriptionExpand = ['latest_invoice', 'latest_invoice.payment_intent', 'pending_setup_intent'];
 
 const optionsFromQuery = query => {
   const options = {};
@@ -41,7 +52,9 @@ const defaultHandler = res => (err, obj) => {
 
 module.exports = class StripeBillingService extends CampsiService {
   initialize() {
-    this.stripe = require('stripe')(this.options.secret_key);
+    this.stripe = require('stripe')(this.options.secret_key, {
+      maxNetworkRetries: 3
+    });
     const stripe = this.stripe;
 
     this.router.use((req, res, next) => {
@@ -59,7 +72,7 @@ module.exports = class StripeBillingService extends CampsiService {
     });
 
     this.router.get('/customers/:id', (req, res) => {
-      req.query.expand = [...new Set([...(req.query?.expand?.split('|') || []), 'tax_ids'])].join('|');
+      req.query.expand = buildExpandFromQuery(req.query, customerExpand);
       stripe.customers.retrieve(req.params.id, optionsFromQuery(req.query), defaultHandler(res));
     });
 
@@ -68,11 +81,8 @@ module.exports = class StripeBillingService extends CampsiService {
     });
 
     this.router.patch('/customers/:id', (req, res) => {
-      const payload = req.body;
-      if (payload.expand && typeof payload.expand === 'string') {
-        payload.expand = payload.expand.split('|');
-      }
-      stripe.customers.update(req.params.id, payload, defaultHandler(res));
+      req.body.expand = buildExpandFromBody(req.body, customerExpand);
+      stripe.customers.update(req.params.id, req.body, defaultHandler(res));
     });
 
     this.router.delete('/customers/:id', (req, res) => {
@@ -108,7 +118,7 @@ module.exports = class StripeBillingService extends CampsiService {
           metadata: req.body.metadata,
           coupon: req.body.coupon,
           promotion_code: req.body.promotion_code,
-          expand: subscriptionExpand,
+          expand: buildExpandFromBody(req.body, subscriptionExpand),
           default_tax_rates: req.body.default_tax_rates,
           default_source: req.body.default_source
         },
@@ -117,11 +127,16 @@ module.exports = class StripeBillingService extends CampsiService {
     });
 
     this.router.get('/subscriptions/:id', (req, res) => {
+      req.query.expand = buildExpandFromQuery(req.query, subscriptionExpand);
       stripe.subscriptions.retrieve(req.params.id, optionsFromQuery(req.query), defaultHandler(res));
     });
 
     this.router.delete('/subscriptions/:id', (req, res) => {
-      stripe.subscriptions.del(req.params.id, defaultHandler(res));
+      const params = {};
+      if (req.body.invoice_now) {
+        params.invoice_now = req.body.invoice_now;
+      }
+      stripe.subscriptions.del(req.params.id, params, defaultHandler(res));
     });
 
     this.router.put('/subscriptions/:id', (req, res) => {
@@ -133,7 +148,7 @@ module.exports = class StripeBillingService extends CampsiService {
           metadata: req.body.metadata,
           coupon: req.body.coupon,
           promotion_code: req.body.promotion_code,
-          expand: subscriptionExpand,
+          expand: buildExpandFromBody(req.body, subscriptionExpand),
           default_tax_rates: req.body.default_tax_rates,
           default_source: req.body.default_source
         },
@@ -142,11 +157,8 @@ module.exports = class StripeBillingService extends CampsiService {
     });
 
     this.router.patch('/subscriptions/:id', (req, res) => {
-      const payload = req.body;
-      if (payload.expand && typeof payload.expand === 'string') {
-        payload.expand = payload.expand.split('|');
-      }
-      stripe.subscriptions.update(req.params.id, payload, defaultHandler(res));
+      req.body.expand = buildExpandFromBody(req.body, subscriptionExpand);
+      stripe.subscriptions.update(req.params.id, req.body, defaultHandler(res));
     });
 
     this.router.get('/sources/:id', (req, res) => {
@@ -216,30 +228,33 @@ module.exports = class StripeBillingService extends CampsiService {
    * @param {Object} parameters can be customer, subscription, status... ex: { customer: 'cus_abc123' }
    * @return {Object}
    */
-  async fetchInvoices(parameters) {
+  // eslint-disable-next-line
+  fetchInvoices = async parameters => {
     const invoices = [];
     parameters = { ...parameters, limit: 100 };
     for await (const invoice of this.stripe.invoices.list(parameters)) {
       invoices.push(invoice);
     }
     return invoices;
-  }
+  };
 
   /**
    * @see https://stripe.com/docs/api/credit_notes/list
    * @param {Object} parameters can be customer, invoice... ex: { customer: 'cus_abc123' }
    * @return {Object}
    */
-  async fetchCreditNotes(parameters) {
+  // eslint-disable-next-line
+  fetchCreditNotes = async parameters => {
     const creditNotes = [];
     parameters = { ...parameters, limit: 100 };
     for await (const creditNote of this.stripe.creditNotes.list(parameters)) {
       creditNotes.push(creditNote);
     }
     return creditNotes;
-  }
+  };
 
-  async checkCouponCodeValidity(req, res) {
+  // eslint-disable-next-line
+  checkCouponCodeValidity = async (req, res) => {
     const code = req.params.code;
     if (!code) {
       return helpers.missingParameters(res, new Error('code must be specified'));
@@ -264,7 +279,7 @@ module.exports = class StripeBillingService extends CampsiService {
     } catch (err) {
       return res.status(err.statusCode || 500).json({ message: err.raw?.message || `invalid code ${code}` });
     }
-  }
+  };
 
   /**
    * @see https://stripe.com/docs/api/usage_records/create
@@ -282,5 +297,22 @@ module.exports = class StripeBillingService extends CampsiService {
     params.action = params.action ?? 'set';
     params.quantity = parseInt(params.quantity);
     return await this.stripe.subscriptionItems.createUsageRecord(subscriptionItemId, params);
+  }
+
+  /**
+   * @see https://stripe.com/docs/api/usage_records/subscription_item_summary_list
+   * @param {string} subscriptionItemId
+   * @param {Object} params
+   * @return {array}
+   */
+  async listUsageRecordSummaries(subscriptionItemId, params = {}) {
+    const usageSummary = [];
+    for await (const usage of this.stripe.subscriptionItems.listUsageRecordSummaries(subscriptionItemId, {
+      limit: 100,
+      ...params
+    })) {
+      usageSummary.push(usage);
+    }
+    return usageSummary;
   }
 };

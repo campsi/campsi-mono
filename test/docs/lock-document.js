@@ -274,5 +274,16 @@ describe('locks', () => {
         err.should.be.null();
       }
     });
+
+    it('it should not let me list the locks because I am not authorized', async () => {
+      const campsi = context.campsi;
+
+      const res = await chai
+        .request(campsi.app)
+        .get(`/docs/pizzas/${privateDocId}/locks`)
+        .set('Authorization', 'Bearer ' + userToken);
+
+      res.should.have.status(401);
+    });
   });
 });

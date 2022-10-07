@@ -229,7 +229,9 @@ module.exports.getLocks = async function (req, res) {
       req.db
     );
     helpers.json(res, locks);
-  } catch (ex) {}
+  } catch (ex) {
+    dispatchError(res, ex);
+  }
 };
 
 module.exports.lockDocument = function (req, res) {

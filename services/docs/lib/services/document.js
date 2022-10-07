@@ -16,7 +16,7 @@ const getRequestedStatesFromQuery = (resource, query) => {
 
 module.exports.getLocks = async function (state, filter, user, editLock, db) {
   if (!user?.isAdmin) {
-    return new createError.Unauthorized('Unauthorized');
+    throw new createError.Unauthorized();
   }
 
   if (!filter._id) {

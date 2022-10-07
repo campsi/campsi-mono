@@ -79,7 +79,6 @@ module.exports.lockDocument = async function (resource, state, filter, tokenTime
       }
     };
 
-    // const update = { [`${state}.timeout`]: timeout, [`${state}.userId`]: user._id };
     const result = await lockCollection.findOneAndUpdate(find, update);
     return result;
   } else {

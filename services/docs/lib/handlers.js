@@ -218,3 +218,17 @@ module.exports.delDocUser = function (req, res) {
     .then(() => req.service.emit('document/users/removed', getEmitPayload(req, { removedUserId: req.params.user })))
     .catch(err => helpers.notFound(res, err));
 };
+
+module.exports.lockDocument = function (req, res) {
+  try {
+    documentService.lockDocument(req.resource, req.state, req.filter, req.query?.lockTimeout, req.user, req).then(lock => {
+      if (lock) {
+        helpers.json(res, lock);
+      } else {
+        helpers.conflict(res);
+      }
+    });
+  } catch (err) {
+    helpers.badRequest(res, err);
+  }
+};

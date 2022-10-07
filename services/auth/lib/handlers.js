@@ -14,11 +14,45 @@ function logout(req, res) {
   }
 
   const update = { $set: { token: 'null' } };
-  req.db
-    .collection(getUsersCollectionName())
-    .findOneAndUpdate({ _id: req.user._id }, update)
-    .then(() => {
-      return res.json({ message: 'signed out' });
+
+  const usersCollection = req.db.collection(getUsersCollectionName());
+  const token = req.authBearerToken;
+  const user = req.user;
+
+  usersCollection
+    .findOneAndUpdate({ _id: user._id }, update)
+    .then(result => {
+      // move current token from tokens and archive it
+      // except if marked "doNotDelete".
+      usersCollection
+        .findOneAndUpdate(
+          { _id: user._id, [`tokens.${token}.doNotDelete`]: { $exists: false } },
+          { $unset: { [`tokens.${token}`]: '' } },
+          { returnDocument: 'before' }
+        )
+        .then(result => {
+          // move old token to __users__.tokens_log
+          if (result && result.value) {
+            const tokenToArchive = {
+              [`${token}`]: {
+                userId: user._id,
+                ...result.value.tokens[token]
+              }
+            };
+
+            req.db
+              .collection(`${getUsersCollectionName()}.tokens_log`)
+              .insertOne(tokenToArchive)
+              .then(() => {
+                return res.json({ message: 'signed out' });
+              })
+              .catch(err => {
+                return res.status(500).json({ message: err });
+              });
+          } else {
+            return res.json({ message: 'user not signed out' });
+          }
+        });
     })
     .catch(error => {
       return helpers.error(res, error);
@@ -402,7 +436,7 @@ function extractUserPersonalData(req, res) {
       return redirectWithError(req, res, new Error('Erroneous userId'));
     }
 
-    req.db.collection('__users__').findOne(
+    req.db.collection(getUsersCollectionName()).findOne(
       { _id: userId },
       {
         projection: {

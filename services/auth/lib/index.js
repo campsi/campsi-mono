@@ -8,6 +8,7 @@ const debug = require('debug')('campsi');
 const authUser = require('./middleware/authUser');
 const session = require('./middleware/session');
 const createObjectId = require('../../../lib/modules/createObjectId');
+const { getUsersCollectionName } = require('./modules/collectionNames');
 
 module.exports = class AuthService extends CampsiService {
   initialize() {
@@ -77,7 +78,7 @@ module.exports = class AuthService extends CampsiService {
 
   install() {
     this.db
-      .collection('__users__')
+      .collection(getUsersCollectionName())
       .createIndex({ email: 1 }, { unique: true })
       .catch(err => {
         debug("Can't apply unique index on users collection");
@@ -87,7 +88,7 @@ module.exports = class AuthService extends CampsiService {
 
   async fetchUsers(userIds) {
     const filter = { _id: { $in: userIds.map(id => createObjectId(id)) } };
-    const users = await this.db.collection('__users__').find(filter).toArray();
+    const users = await this.db.collection(getUsersCollectionName()).find(filter).toArray();
     const map = users.reduce((map, user) => {
       map[user._id.toString()] = user;
       return map;

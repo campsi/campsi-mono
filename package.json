@@ -8,14 +8,16 @@
     "lint": "eslint --no-error-on-unmatched-pattern lib/** test/**",
     "test-campsi": "mocha \"./test/campsi/*.js\" --exit",
     "test-assets": "mocha \"./test/assets/*.js\" --exit",
-    "test-auth": "mocha \"./test/auth/*.js\" --exit",
+    "test-auth": "mocha \"./test/auth/*.js\" --ignore './test/auth/collection-name*.js' --exit",
+    "test-auth-collection-name-override": "mocha \"./test/auth/collection-name.js\" --exit",
+    "test-auth-collection-name-default": "mocha \"./test/auth/collection-name-default.js\" --exit",
     "test-docs": "mocha  \"./test/docs/*.js\" --exit",
     "test-webhooks": "mocha \"./test/webhooks/*.js\" --exit",
     "test-trace": "mocha \"./test/trace/*.js\" --exit",
     "test-versioned-docs": "mocha  \"./test/versioned-docs/*.js\" --exit",
     "test-stripe-billing": "mocha \"./test/stripe-billing/*.js\" --exit",
     "test-notifications": "mocha \"./test/notifications/*.js\" --exit",
-    "test": "mocha -R dot './test/{,!(launchers)/**/}/*.js' --exit",
+    "test": "mocha -R dot './test/{,!(launchers)/**/}/*.js' --ignore './test/auth/collection-name*.js' --exit && mocha -R dot './test/auth/collection-name.js' --exit",
     "prepare": "husky install"
   },
   "eslintIgnore": [

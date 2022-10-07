@@ -11,6 +11,7 @@ const { btoa } = require('../../services/auth/lib/modules/base64');
 const createUser = require('../helpers/createUser');
 const debug = require('debug')('campsi:test');
 const setupBeforeEach = require('../helpers/setupBeforeEach');
+const { getUsersCollectionName } = require('../../services/auth/lib/modules/collectionNames');
 const expect = chai.expect;
 format.extend(String.prototype);
 chai.use(chaiHttp);
@@ -171,7 +172,7 @@ describe('Auth API', () => {
             const filter = {};
             filter['token.value'] = token;
             campsi.db
-              .collection('__users__')
+              .collection(getUsersCollectionName())
               .findOne(filter)
               .then(user => {
                 expect(user).to.be.null;
@@ -310,7 +311,7 @@ describe('Auth API', () => {
       };
       createUser(chai, campsi, admin, true).then(adminToken => {
         campsi.db
-          .collection('__users__')
+          .collection(getUsersCollectionName())
           .findOneAndUpdate({ email: admin.email }, { $set: { isAdmin: true } }, { returnDocument: 'after' })
           .then(updateResult => {
             createUser(chai, campsi, glenda).then(userToken => {
@@ -397,7 +398,7 @@ describe('Auth API', () => {
               res.should.be.a('object');
               res.body.should.have.property('id');
               debug(res.body);
-              campsi.db.collection('__users__').findOne({ email: robert.email }, (err, doc) => {
+              campsi.db.collection(getUsersCollectionName()).findOne({ email: robert.email }, (err, doc) => {
                 if (err) return debug(`received an error from chai: ${err.message}`);
                 doc.should.be.a('object');
                 res.body.id.should.be.eq(doc._id.toString());

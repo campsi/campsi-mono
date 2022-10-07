@@ -219,6 +219,19 @@ module.exports.delDocUser = function (req, res) {
     .catch(err => helpers.notFound(res, err));
 };
 
+module.exports.getLocks = async function (req, res) {
+  try {
+    const locks = await documentService.getLocks(
+      req.state,
+      req.filter,
+      req.user,
+      req.service.options?.editLock || { collectionName: 'doc-lock', lockTimeoutSeconds: 3600 },
+      req.db
+    );
+    helpers.json(res, locks);
+  } catch (ex) {}
+};
+
 module.exports.lockDocument = function (req, res) {
   try {
     documentService.lockDocument(req.resource, req.state, req.filter, req.query?.lockTimeout, req.user, req).then(lock => {

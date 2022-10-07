@@ -49,7 +49,7 @@ module.exports.attach = (req, res, next, options) => {
             req.state,
             req.filter,
             req.user,
-            req.service.options?.editLock || { collectionName: 'dock-lock', lockTimeoutSeconds: 3600 },
+            req.service.options?.editLock || { collectionName: 'doc-lock', lockTimeoutSeconds: 3600 },
             req.db
           )
           .then(lock => {

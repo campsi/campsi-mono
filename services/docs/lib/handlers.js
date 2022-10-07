@@ -6,6 +6,7 @@ const buildLink = require('../../../lib/modules/buildLink');
 const buildSingleDocumentLink = require('../../../lib/modules/buildSingleDocumentLink');
 const { ObjectId } = require('mongodb');
 const ValidationError = require('../../../lib/errors/ValidationError');
+const { getDocumentLockServiceOptions } = require('./modules/serviceOptions');
 
 const getEmitPayload = (req, additionalProps) => {
   return Object.assign(
@@ -225,7 +226,7 @@ module.exports.getLocks = async function (req, res) {
       req.state,
       req.filter,
       req.user,
-      req.service.options?.editLock || { collectionName: 'doc-lock', lockTimeoutSeconds: 3600 },
+      getDocumentLockServiceOptions(req),
       req.db
     );
     helpers.json(res, locks);

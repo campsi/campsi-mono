@@ -7,6 +7,7 @@ const permissions = require('../modules/permissions');
 const { ObjectId } = require('mongodb');
 
 const createError = require('http-errors');
+const { getDocumentLockServiceOptions } = require('../modules/serviceOptions');
 
 // Helper functions
 const getDocUsersList = doc => Object.keys(doc ? doc.users : []).map(k => doc.users[k]);
@@ -68,7 +69,7 @@ module.exports.isDocumentLockedByOtherUser = async function (state, filter, user
 };
 
 module.exports.lockDocument = async function (resource, state, filter, tokenTimeout, user, req) {
-  const editLock = req.service.options?.editLock || { collectionName: 'doc-lock', lockTimeoutSeconds: 3600 };
+  const editLock = getDocumentLockServiceOptions(req);
   const lockCollection = req.db.collection(editLock.collectionName);
   const timeout = new Date();
 

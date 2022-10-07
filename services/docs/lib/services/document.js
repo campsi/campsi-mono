@@ -14,14 +14,38 @@ const getRequestedStatesFromQuery = (resource, query) => {
   return query.states ? query.states.split(',') : Object.keys(resource.states);
 };
 
+module.exports.getLocks = async function (state, filter, user, editLock, db) {
+  if (!user?.isAdmin) {
+    return new createError.Unauthorized('Unauthorized');
+  }
+
+  if (!filter._id) {
+    return undefined;
+  }
+
+  const match = { documentId: filter._id };
+
+  try {
+    const locks = await db.collection(editLock.collectionName).find(match).toArray();
+    return locks;
+  } catch (ex) {
+    return ex;
+  }
+};
+
 const getDocumentLock = async function (state, filter, lockCollection) {
   if (!filter._id) {
     return undefined;
   }
 
-  const match = { documentId: filter._id, [`${state}`]: { $exists: true } };
+  let match = { documentId: filter._id };
+
+  if (state) {
+    match = { ...match, ...{ [`${state}`]: { $exists: true } } };
+  }
 
   try {
+    console.log(match);
     const doc = await lockCollection.findOne(match);
     return doc;
   } catch (ex) {
@@ -45,7 +69,7 @@ module.exports.isDocumentLockedByOtherUser = async function (state, filter, user
 };
 
 module.exports.lockDocument = async function (resource, state, filter, tokenTimeout, user, req) {
-  const editLock = req.service.options?.editLock || { collectionName: 'dock-lock', lockTimeoutSeconds: 3600 };
+  const editLock = req.service.options?.editLock || { collectionName: 'doc-lock', lockTimeoutSeconds: 3600 };
   const lockCollection = req.db.collection(editLock.collectionName);
   const timeout = new Date();
 

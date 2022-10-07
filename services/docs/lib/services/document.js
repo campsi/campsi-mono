@@ -45,7 +45,6 @@ const getDocumentLock = async function (state, filter, lockCollection) {
   }
 
   try {
-    console.log(match);
     const doc = await lockCollection.findOne(match);
     return doc;
   } catch (ex) {

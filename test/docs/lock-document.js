@@ -254,7 +254,7 @@ describe('locks', () => {
         const campsi = context.campsi;
 
         let match = { [`tokens.${nownerToken}`]: { $exists: true } };
-        let noOwnerUser = await campsi.db.collection('__users__').findOne(match);
+        const noOwnerUser = await campsi.db.collection('__users__').findOne(match);
 
         match = { [`tokens.${userToken}`]: { $exists: true } };
         const user = await campsi.db.collection('__users__').findOne(match);
@@ -267,7 +267,8 @@ describe('locks', () => {
         res.should.have.status(200);
 
         const userId = ObjectId(user._id).toString();
-        res.body[0].working_draft.userId.should.eq(userId);
+        const noOwnerUserId = ObjectId(noOwnerUser._id).toString();
+        res.body[0].working_draft.userId.should.eq(noOwnerUserId);
         res.body[1].published.userId.should.eq(userId);
       } catch (err) {
         err.should.be.null();

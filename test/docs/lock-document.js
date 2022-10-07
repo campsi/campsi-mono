@@ -62,7 +62,7 @@ describe('locks', () => {
       docId = res.body.id;
       res = await chai
         .request(campsi.app)
-        .post(`/docs/pizzas/${res.body.id}/locks`)
+        .post(`/docs/pizzas/${docId}/locks`)
         .set('Authorization', 'Bearer ' + token);
 
       res.should.have.status(200);

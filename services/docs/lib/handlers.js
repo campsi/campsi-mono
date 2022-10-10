@@ -33,6 +33,15 @@ function dispatchError(res, error) {
   }
 }
 
+module.exports.deleteLock = async function (req, res) {
+  try {
+    await documentService.deleteLock(req?.params?.lock, req.user, getDocumentLockServiceOptions(req), req.db);
+    return helpers.json(res);
+  } catch (ex) {
+    dispatchError(res, ex);
+  }
+};
+
 module.exports.getDocuments = function (req, res) {
   const pagination = {};
   const perPage = req.query.perPage || req.resource.perPage;
@@ -222,13 +231,7 @@ module.exports.delDocUser = function (req, res) {
 
 module.exports.getLocks = async function (req, res) {
   try {
-    const locks = await documentService.getLocks(
-      req.state,
-      req.filter,
-      req.user,
-      getDocumentLockServiceOptions(req),
-      req.db
-    );
+    const locks = await documentService.getLocks(req.state, req.filter, req.user, getDocumentLockServiceOptions(req), req.db);
     helpers.json(res, locks);
   } catch (ex) {
     dispatchError(res, ex);

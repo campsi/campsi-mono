@@ -15,6 +15,35 @@ const getRequestedStatesFromQuery = (resource, query) => {
   return query.states ? query.states.split(',') : Object.keys(resource.states);
 };
 
+module.exports.deleteLock = async function deleteLocks(id, user, editLock, db) {
+  if (!id) {
+    return undefined;
+  }
+
+  const match = { _id: ObjectId(id) };
+  const lock = await db.collection(editLock.collectionName).findOne(match);
+
+  if (!lock) {
+    throw new createError.NotFound();
+  }
+
+  // loop over the objects in the returned lock, as we don't know the state of the lock, the lock matches if the
+  // userId property of lock[state] is the same as ours
+  for (const [, value] of Object.entries(lock)) {
+    if (value?.userId) {
+      if (ObjectId(value.userId).equals(user._id)) {
+        await db.collection(editLock.collectionName).deleteOne(match);
+        return;
+      } else {
+        throw new createError.Unauthorized();
+      }
+    }
+  }
+
+  // shouldn't get here
+  throw new createError.NotFound();
+};
+
 module.exports.getLocks = async function (state, filter, user, editLock, db) {
   if (!user?.isAdmin) {
     throw new createError.Unauthorized();

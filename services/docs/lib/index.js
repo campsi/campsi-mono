@@ -46,6 +46,7 @@ module.exports = class DocsService extends CampsiService {
     this.router.patch('/:resource/:id', handlers.patchDoc);
     this.router.delete('/:resource/:id', handlers.delDoc);
     this.router.delete('/:resource/:id/:state', handlers.delDoc);
+    this.router.delete('/:resource/:id/locks/:lock', handlers.deleteLock);
     return new Promise(resolve => {
       const ajvWriter = new Ajv({ useAssign: true });
       csdAssign(ajvWriter);

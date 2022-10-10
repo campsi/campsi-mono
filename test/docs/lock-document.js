@@ -48,6 +48,7 @@ describe('locks', () => {
     let docId;
     let privateDocId;
     let adminToken;
+    let lockId;
 
     it(' doc locks - create admin user', async () => {
       const campsi = context.campsi;
@@ -281,6 +282,54 @@ describe('locks', () => {
       const res = await chai
         .request(campsi.app)
         .get(`/docs/pizzas/${privateDocId}/locks`)
+        .set('Authorization', 'Bearer ' + userToken);
+
+      res.should.have.status(401);
+    });
+
+    it('it should let me delete a lock', async () => {
+      const campsi = context.campsi;
+
+      let res = await chai
+        .request(campsi.app)
+        .get(`/docs/pizzas/${docId}/locks`)
+        .set('Authorization', 'Bearer ' + adminToken);
+
+      lockId = res.body[0]._id;
+
+      res = await chai
+        .request(campsi.app)
+        .delete(`/docs/pizzas/${docId}/locks/${lockId}`)
+        .set('Authorization', 'Bearer ' + userToken);
+
+      res.should.have.status(200);
+    });
+
+    it('it should return not found when deleteing a deleted lock', async () => {
+      const campsi = context.campsi;
+
+      const res = await chai
+        .request(campsi.app)
+        .delete(`/docs/pizzas/${docId}/locks/${lockId}`)
+        .set('Authorization', 'Bearer ' + userToken);
+
+      res.should.have.status(404);
+    });
+
+    it('it should return not authorised when I try to delete a lock belonging to someone else', async () => {
+      // this test works because the user that owns the first lock on this document is noOwnerUser
+      const campsi = context.campsi;
+
+      let res = await chai
+        .request(campsi.app)
+        .get(`/docs/pizzas/${privateDocId}/locks`)
+        .set('Authorization', 'Bearer ' + adminToken);
+
+      lockId = res.body[0]._id;
+
+      res = await chai
+        .request(campsi.app)
+        .delete(`/docs/pizzas/${privateDocId}/locks/${lockId}`)
         .set('Authorization', 'Bearer ' + userToken);
 
       res.should.have.status(401);

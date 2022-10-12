@@ -9,6 +9,7 @@ const format = require('string-format');
 const createUser = require('../helpers/createUser');
 const setupBeforeEach = require('../helpers/setupBeforeEach');
 const config = require('config');
+const { ObjectId } = require('mongodb');
 let nownerToken;
 
 chai.should();
@@ -46,6 +47,23 @@ describe('locks', () => {
     let userToken;
     let docId;
     let privateDocId;
+    let adminToken;
+
+    it(' doc locks - create admin user', async () => {
+      const campsi = context.campsi;
+      const admin = {
+        email: 'admin@campsi.io',
+        username: 'admin@campsi.io',
+        displayName: 'admin',
+        password: 'password'
+      };
+
+      adminToken = await createUser(chai, campsi, admin, true);
+
+      await campsi.db
+        .collection('__users__')
+        .findOneAndUpdate({ email: admin.email }, { $set: { isAdmin: true } }, { returnDocument: 'after' });
+    });
 
     it('it should return the created object', async () => {
       const campsi = context.campsi;
@@ -211,10 +229,61 @@ describe('locks', () => {
       const res = await chai
         .request(campsi.app)
         .post(`/docs/pizzas/${privateDocId}/locks`)
-        .set('Authorization', 'Bearer ' + userToken)
-        .send({ name: '9 cheeses' });
+        .set('Authorization', 'Bearer ' + userToken);
 
       res.should.have.status(200);
+    });
+
+    it('it should list the locks on the doc with published state', async () => {
+      const campsi = context.campsi;
+
+      const match = { [`tokens.${userToken}`]: { $exists: true } };
+      const user = await campsi.db.collection('__users__').findOne(match);
+
+      const res = await chai
+        .request(campsi.app)
+        .get(`/docs/pizzas/${docId}/locks`)
+        .set('Authorization', 'Bearer ' + adminToken);
+
+      const userId = ObjectId(user._id).toString();
+      res.body[0].published.userId.should.eq(userId);
+    });
+
+    it('it should list the locks on doc with working_draft state', async () => {
+      try {
+        const campsi = context.campsi;
+
+        let match = { [`tokens.${nownerToken}`]: { $exists: true } };
+        const noOwnerUser = await campsi.db.collection('__users__').findOne(match);
+
+        match = { [`tokens.${userToken}`]: { $exists: true } };
+        const user = await campsi.db.collection('__users__').findOne(match);
+
+        const res = await chai
+          .request(campsi.app)
+          .get(`/docs/pizzas/${privateDocId}/locks`)
+          .set('Authorization', 'Bearer ' + adminToken);
+
+        res.should.have.status(200);
+
+        const userId = ObjectId(user._id).toString();
+        const noOwnerUserId = ObjectId(noOwnerUser._id).toString();
+        res.body[0].working_draft.userId.should.eq(noOwnerUserId);
+        res.body[1].published.userId.should.eq(userId);
+      } catch (err) {
+        err.should.be.null();
+      }
+    });
+
+    it('it should not let me list the locks because I am not authorized', async () => {
+      const campsi = context.campsi;
+
+      const res = await chai
+        .request(campsi.app)
+        .get(`/docs/pizzas/${privateDocId}/locks`)
+        .set('Authorization', 'Bearer ' + userToken);
+
+      res.should.have.status(401);
     });
   });
 });

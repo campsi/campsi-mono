@@ -32,9 +32,9 @@ module.exports = class NotificationsService extends CampsiService {
     this.router.deleteAsync('/:resource/:id', handlers.deleteNotification);
 
     return new Promise(resolve => {
-      const ajvWriter = new Ajv({ useAssign: true });
+      const ajvWriter = new Ajv({ useAssign: true, strict: false });
       csdAssign(ajvWriter);
-      const ajvReader = new Ajv({ useVisibility: true });
+      const ajvReader = new Ajv({ useVisibility: true, strict: false });
       csdVisibility(ajvReader);
 
       async.eachOf(

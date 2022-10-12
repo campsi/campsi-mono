@@ -225,7 +225,7 @@ module.exports = {
     }
   },
   editLock: {
-    collectionName: 'dock-lock',
+    collectionName: 'doc-lock',
     lockTimeoutSeconds: 3600
   }
 };

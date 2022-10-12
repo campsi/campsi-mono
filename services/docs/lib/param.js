@@ -4,6 +4,7 @@ const { can } = require('./modules/permissions');
 const documentService = require('./services/document');
 const { getValidGroupsFromString } = require('../../../lib/modules/groupsHelpers');
 const createError = require('http-errors');
+const { getDocumentLockServiceOptions } = require('./modules/serviceOptions');
 
 module.exports.attachResource = function (options) {
   return (req, res, next) => {
@@ -45,13 +46,7 @@ module.exports.attach = (req, res, next, options) => {
     const lockChek = new Promise((resolve, reject) => {
       if (['PUT', 'POST', 'PATCH', 'DELETE'].some(method => req.method.includes(method))) {
         documentService
-          .isDocumentLockedByOtherUser(
-            req.state,
-            req.filter,
-            req.user,
-            req.service.options?.editLock || { collectionName: 'dock-lock', lockTimeoutSeconds: 3600 },
-            req.db
-          )
+          .isDocumentLockedByOtherUser(req.state, req.filter, req.user, getDocumentLockServiceOptions(req), req.db)
           .then(lock => {
             if (lock) {
               reject(helpers.unauthorized(res));

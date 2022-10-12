@@ -7,6 +7,7 @@ const permissions = require('../modules/permissions');
 const { ObjectId } = require('mongodb');
 
 const createError = require('http-errors');
+const { getDocumentLockServiceOptions } = require('../modules/serviceOptions');
 
 // Helper functions
 const getDocUsersList = doc => Object.keys(doc ? doc.users : []).map(k => doc.users[k]);
@@ -14,12 +15,35 @@ const getRequestedStatesFromQuery = (resource, query) => {
   return query.states ? query.states.split(',') : Object.keys(resource.states);
 };
 
+module.exports.getLocks = async function (state, filter, user, editLock, db) {
+  if (!user?.isAdmin) {
+    throw new createError.Unauthorized();
+  }
+
+  if (!filter._id) {
+    return undefined;
+  }
+
+  const match = { documentId: filter._id };
+
+  try {
+    const locks = await db.collection(editLock.collectionName).find(match).toArray();
+    return locks;
+  } catch (ex) {
+    return ex;
+  }
+};
+
 const getDocumentLock = async function (state, filter, lockCollection) {
   if (!filter._id) {
     return undefined;
   }
 
-  const match = { documentId: filter._id, [`${state}`]: { $exists: true } };
+  let match = { documentId: filter._id };
+
+  if (state) {
+    match = { ...match, ...{ [`${state}`]: { $exists: true } } };
+  }
 
   try {
     const doc = await lockCollection.findOne(match);
@@ -45,7 +69,7 @@ module.exports.isDocumentLockedByOtherUser = async function (state, filter, user
 };
 
 module.exports.lockDocument = async function (resource, state, filter, tokenTimeout, user, req) {
-  const editLock = req.service.options?.editLock || { collectionName: 'dock-lock', lockTimeoutSeconds: 3600 };
+  const editLock = getDocumentLockServiceOptions(req);
   const lockCollection = req.db.collection(editLock.collectionName);
   const timeout = new Date();
 

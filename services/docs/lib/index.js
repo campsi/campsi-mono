@@ -47,10 +47,10 @@ module.exports = class DocsService extends CampsiService {
     this.router.delete('/:resource/:id', handlers.delDoc);
     this.router.delete('/:resource/:id/:state', handlers.delDoc);
     return new Promise(resolve => {
-      const ajvWriter = new Ajv({ useAssign: true, strict: false });
+      const ajvWriter = new Ajv({ useAssign: true, strictTuples: false });
       addFormats(ajvWriter);
       csdAssign(ajvWriter);
-      const ajvReader = new Ajv({ useVisibility: true, strict: false });
+      const ajvReader = new Ajv({ useVisibility: true, strictTuples: false });
       addFormats(ajvReader);
       csdVisibility(ajvReader);
       async.eachOf(

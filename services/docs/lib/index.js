@@ -4,6 +4,7 @@ const param = require('./param');
 const handlers = require('./handlers');
 const async = require('async');
 const Ajv = require('ajv');
+const addFormats = require('ajv-formats');
 const $RefParser = require('json-schema-ref-parser');
 const debug = require('debug')('campsi:docs');
 const format = require('string-format');
@@ -47,9 +48,11 @@ module.exports = class DocsService extends CampsiService {
     this.router.delete('/:resource/:id', handlers.delDoc);
     this.router.delete('/:resource/:id/:state', handlers.delDoc);
     return new Promise(resolve => {
-      const ajvWriter = new Ajv({ useAssign: true });
+      const ajvWriter = new Ajv({ useAssign: true, strictTuples: false });
+      addFormats(ajvWriter);
       csdAssign(ajvWriter);
-      const ajvReader = new Ajv({ useVisibility: true });
+      const ajvReader = new Ajv({ useVisibility: true, strictTuples: false });
+      addFormats(ajvReader);
       csdVisibility(ajvReader);
       async.eachOf(
         service.options.resources,

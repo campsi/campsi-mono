@@ -1,7 +1,5 @@
 const findCallback = require('./modules/findCallback');
 const builder = require('./modules/queryBuilder');
-const { deleteExpiredTokens } = require('./tokens');
-const debug = require('debug')('campsi:auth:passport');
 /**
  * Intercepts passport callback
  * @param fn
@@ -48,12 +46,8 @@ module.exports = function passportMiddleware(req) {
         req.authBearerToken = insertToken.value;
         return users.insertOne(insert).then(insertResult => {
           const payload = { _id: insertResult.insertedId, ...insert };
-          deleteExpiredTokens
-            .then(() => passportCallback(null, payload))
-            .catch(err => {
-              debug(err);
-              passportCallback(null, payload);
-            });
+          passportCallback(null, payload);
+
           // We dispatch an event here to be able to execute side effects
           // i.e. create a lead in a 3rd party CRM
           req.service.emit('signup', payload);

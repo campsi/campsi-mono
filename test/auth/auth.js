@@ -26,6 +26,20 @@ const glenda = {
   password: 'signup!'
 };
 
+const robert = {
+  displayName: 'Robert Bennett',
+  email: 'robert@agilitation.fr',
+  username: 'robert',
+  password: 'signup!'
+};
+
+const admin = {
+  email: 'admin@campsi.io',
+  username: 'admin@campsi.io',
+  displayName: 'admin',
+  password: 'password'
+};
+
 const expiredTokens = {
   '8c40a79c-8b39-4c20-be05-f0d38ee39d51': {
     expiration: new Date(1583157928241),
@@ -477,40 +491,59 @@ describe('Auth API', () => {
     }).timeout(10000);
   });
 
+  it('it should not let me remove expired tokens', async () => {
+    const campsi = context.campsi;
+    const res = await chai
+      .request(campsi.app)
+      .put('/auth/tokens?action=deleteExpiredTokens')
+      .set('content-type', 'application/json');
+
+    res.status.should.eq(401);
+  });
+
   it('should remove expired tokens', async () => {
     const campsi = context.campsi;
-    const robert = {
-      displayName: 'Robert Bennett',
-      email: 'robert@agilitation.fr',
-      username: 'robert',
-      password: 'signup!'
-    };
-
+    const adminToken = await createUser(chai, campsi, admin, true);
     await createUser(chai, campsi, robert);
+    await createUser(chai, campsi, glenda);
 
     let robertUser = await campsi.db.collection('__users__').findOne({ email: robert.email });
 
     Object.entries(robertUser.tokens).length.should.be.eq(1);
 
-    const user = await campsi.db
-      .collection('__users__')
-      .findOneAndUpdate(
-        { email: robert.email },
-        { $set: { tokens: { ...robertUser.tokens, ...expiredTokens } } },
-        { returnDocument: 'after' }
-      );
+    const user = await campsi.db.collection('__users__').findOneAndUpdate(
+      { email: robert.email },
+      {
+        $set: {
+          tokens: { ...robertUser.tokens, ...expiredTokens },
+          isAdmin: true
+        }
+      },
+      { returnDocument: 'after' }
+    );
 
-    Object.entries(user.value.tokens).length.should.be.eq(7);
+    await campsi.db.collection('__users__').findOneAndUpdate(
+      { email: admin.email },
+      {
+        $set: {
+          isAdmin: true
+        }
+      }
+    );
+
+    const oldTokens = Object.entries(user.value.tokens);
+    oldTokens.length.should.be.eq(7);
 
     await chai
       .request(campsi.app)
-      .post('/auth/local/signin')
+      .put('/auth/tokens?action=deleteExpiredTokens')
       .set('content-type', 'application/json')
-      .send({ username: robert.email, password: robert.password });
+      .set('Authorization', `Bearer ${adminToken}`);
 
     robertUser = await campsi.db.collection('__users__').findOne({ email: robert.email });
 
-    Object.entries(robertUser.tokens).length.should.be.eq(2);
+    const validTokens = Object.entries(robertUser.tokens);
+    validTokens.length.should.be.eq(1);
 
     const expiredUserTokens = await campsi.db
       .collection('__users__.tokens_log')

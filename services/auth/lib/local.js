@@ -3,7 +3,6 @@ const handlers = require('./handlers');
 const helpers = require('../../../lib/modules/responseHelpers');
 const state = require('./state');
 const bcrypt = require('bcryptjs');
-const { deleteExpiredTokens } = require('./tokens');
 const debug = require('debug')('campsi:auth:local');
 
 function getMissingParameters(payload, parameters) {
@@ -71,15 +70,7 @@ module.exports.callback = function localCallback(req, username, password, done) 
         if (isMatch) {
           user.identity = user.identities.local;
 
-          // delete expired tokens
-          deleteExpiredTokens(user, req.db)
-            .then(() => {
-              return done(null, user);
-            })
-            .catch(err => {
-              debug(err);
-              return done(null, user);
-            });
+          return done(null, user);
         } else {
           done(null, null);
         }

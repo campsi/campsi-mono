@@ -100,11 +100,7 @@ describe('Auth API', () => {
       res = await chai
         .request(campsi.app)
         .delete(`/auth/users/${userId}:soft-delete`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({
-          additionalFieldName: `users.${userId}.displayName`,
-          additionalFieldCollectionName: '__users__'
-        });
+        .set('Authorization', `Bearer ${adminToken}`);
 
       const body = res.body;
       res.should.have.status(200);
@@ -114,12 +110,6 @@ describe('Auth API', () => {
       expect(new Date(body.deletedAt).getTime()).to.be.closeTo(Date.now(), 1000);
       Object.keys(body.data).length.should.be.equal(0);
       Object.keys(body.identities).length.should.be.equal(0);
-
-      // make sure the extra field has been cleared out
-      result = await campsi.db.collection('__users__').findOne(project._id);
-
-      // test that the displayName has been anonymized
-      expect(result.users[`${userId}`].displayName).to.be.empty;
 
       // try and delete it again - should fail
       res = await chai

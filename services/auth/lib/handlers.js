@@ -260,7 +260,7 @@ function inviteUser(req, res) {
     return helpers.unauthorized(res, new Error('You must be authentified to send an invitation'));
   }
   const invitationToken = builder.genBearerToken(100);
-  const dispatchInvitationEvent = function(payload) {
+  const dispatchInvitationEvent = function (payload) {
     req.service.emit('invitation/created', payload);
   };
   const filter = {
@@ -405,22 +405,7 @@ function softDelete(req, res) {
         .then(result => {
           // also anonymize additional field if passed in
           if (result && result.value) {
-            const additionalFieldName = req.body.additionalFieldName;
-            const additionalFieldCollectionName = req.body.additionalFieldCollectionName;
-
-            if (additionalFieldName && additionalFieldCollectionName) {
-              req.db
-                .collection(additionalFieldCollectionName)
-                .findOneAndUpdate({ [additionalFieldName]: { $exists: true } }, { $set: { [additionalFieldName]: '' } })
-                .then(udpated => {
-                  res.json(result.value);
-                })
-                .catch(err => {
-                  console.log(err);
-                });
-            } else {
-              res.json(result.value);
-            }
+            res.json(result.value);
           } else {
             helpers.notFound(res, new Error('User not found or already soft deleted'));
           }

@@ -12,7 +12,6 @@ const createUser = require('../helpers/createUser');
 const debug = require('debug')('campsi:test');
 const setupBeforeEach = require('../helpers/setupBeforeEach');
 const { ObjectId } = require('mongodb');
-const { forEach } = require('async');
 
 const expect = chai.expect;
 format.extend(String.prototype);
@@ -66,6 +65,34 @@ const expiredTokens = {
     grantedByProvider: 'local'
   }
 };
+
+const expiredTokens2 = {
+  '8c40a79c-8b39-4c20-be05-f0d38ee39d52': {
+    expiration: new Date(1583157928241),
+    grantedByProvider: 'invitation-6705d8e2-b851-4887-aef8-536ddd4f5295'
+  },
+  'ce641beb-d513-4bbd-9df8-961a8b97d402': {
+    expiration: new Date(1656854831400),
+    grantedByProvider: 'local'
+  },
+  'be94ac61-5248-455c-8935-1d0dfec83a32': {
+    expiration: new Date(1656854846950),
+    grantedByProvider: 'local'
+  },
+  'd356d80b-cdf9-477d-bd41-73433dc25eb2': {
+    expiration: new Date(1659028858376),
+    grantedByProvider: 'local'
+  },
+  'c272f4ee-244a-482a-808f-858881dc5112': {
+    expiration: new Date(1659028878861),
+    grantedByProvider: 'local'
+  },
+  '894aba89-7e72-4441-99c0-3095dbb3e3e2': {
+    expiration: new Date(1659028966800),
+    grantedByProvider: 'local'
+  }
+};
+
 
 const services = {
   Auth: require('../../services/auth/lib'),
@@ -501,7 +528,7 @@ describe('Auth API', () => {
     res.status.should.eq(401);
   });
 
-  it('should remove expired tokens', async () => {
+  it.skip('should remove expired tokens', async () => {
     const campsi = context.campsi;
     const adminToken = await createUser(chai, campsi, admin, true);
     await createUser(chai, campsi, robert);
@@ -548,6 +575,80 @@ describe('Auth API', () => {
     const expiredUserTokens = await campsi.db
       .collection('__users__.tokens_log')
       .find({ userId: new ObjectId(robertUser._id) })
+      .toArray();
+
+    expiredUserTokens.length.should.be.eq(6);
+  });
+
+  it('should remove expired tokens for 2 users', async () => {
+    const campsi = context.campsi;
+    const adminToken = await createUser(chai, campsi, admin, true);
+    await createUser(chai, campsi, robert);
+    await createUser(chai, campsi, glenda);
+
+    let robertUser = await campsi.db.collection('__users__').findOne({ email: robert.email });
+    let glendaUser = await campsi.db.collection('__users__').findOne({ email: glenda.email });
+
+    Object.entries(robertUser.tokens).length.should.be.eq(1);
+
+    await campsi.db.collection('__users__').findOneAndUpdate(
+      { email: robert.email },
+      {
+        $set: {
+          tokens: { ...robertUser.tokens, ...expiredTokens },
+          isAdmin: true
+        }
+      },
+      { returnDocument: 'after' }
+    );
+
+    await campsi.db.collection('__users__').findOneAndUpdate(
+      { email: glenda.email },
+      {
+        $set: {
+          tokens: { ...glendaUser.tokens, ...expiredTokens2 },
+          isAdmin: true
+        }
+      },
+      { returnDocument: 'after' }
+    );
+
+    await campsi.db.collection('__users__').findOneAndUpdate(
+      { email: admin.email },
+      {
+        $set: {
+          isAdmin: true
+        }
+      }
+    );
+
+    await chai
+      .request(campsi.app)
+      .put('/auth/tokens?action=deleteExpiredTokens')
+      .set('content-type', 'application/json')
+      .set('Authorization', `Bearer ${adminToken}`);
+
+    robertUser = await campsi.db.collection('__users__').findOne({ email: robert.email });
+
+    let validTokens = Object.entries(robertUser.tokens);
+    validTokens.length.should.be.eq(1);
+
+    let expiredUserTokens = await campsi.db
+      .collection('__users__.tokens_log')
+      .find({ userId: new ObjectId(robertUser._id) })
+      .toArray();
+
+    expiredUserTokens.length.should.be.eq(6);
+
+    glendaUser = await campsi.db.collection('__users__').findOne({ email: glenda.email });
+
+    validTokens = Object.entries(glendaUser.tokens);
+
+    validTokens.length.should.be.eq(1);
+
+    expiredUserTokens = await campsi.db
+      .collection('__users__.tokens_log')
+      .find({ userId: new ObjectId(glendaUser._id) })
       .toArray();
 
     expiredUserTokens.length.should.be.eq(6);

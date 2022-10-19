@@ -20,7 +20,14 @@ module.exports.deleteLock = async function deleteLocks(id, user, editLock, db) {
     return undefined;
   }
 
-  const match = { _id: ObjectId(id) };
+  // check id validity
+  const objectID = createObjectId(id);
+
+  if (!objectID) {
+    throw new createError.InternalServerError();
+  }
+
+  const match = { _id: objectID };
   const lock = await db.collection(editLock.collectionName).findOne(match);
 
   if (!lock) {

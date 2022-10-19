@@ -36,7 +36,7 @@ module.exports.deleteLock = async function deleteLocks(id, user, editLock, db) {
 
   // loop over the objects in the returned lock, as we don't know the state of the lock, the lock matches if the
   // userId property of lock[state] is the same as ours
-  for (const [, value] of Object.entries(lock)) {
+  for (const value of Object.values(lock)) {
     if (value?.userId) {
       if (ObjectId(value.userId).equals(user._id)) {
         await db.collection(editLock.collectionName).deleteOne(match);

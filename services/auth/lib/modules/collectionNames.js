@@ -3,11 +3,11 @@
 const config = require('config');
 
 function getUsersCollectionName() {
-  return config.services.auth.options.collectionName || '__users__';
+  return config?.services?.auth?.options?.collectionName || '__users__';
 }
 
 function getSessionCollectionName() {
-  return config.services.auth.options.session.collectionName || '__sessions__';
+  return config?.services?.auth?.options?.session?.collectionName || '__sessions__';
 }
 
 module.exports = {

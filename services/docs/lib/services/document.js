@@ -24,7 +24,7 @@ module.exports.deleteLock = async function deleteLocks(id, user, editLock, db) {
   const objectID = createObjectId(id);
 
   if (!objectID) {
-    throw new createError.InternalServerError();
+    throw new createError.BadRequest('Invalid user id');
   }
 
   const match = { _id: objectID };

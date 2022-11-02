@@ -126,11 +126,6 @@ module.exports = class StripeBillingService extends CampsiService {
       );
     });
 
-    this.router.get('/subscriptions/:id', (req, res) => {
-      req.query.expand = buildExpandFromQuery(req.query, subscriptionExpand);
-      stripe.subscriptions.retrieve(req.params.id, optionsFromQuery(req.query), defaultHandler(res));
-    });
-
     this.router.getAsync('/subscriptions/:id[:]get-next-invoice', async (req, res) => {
       const subscriptionId = req.params.id;
       const subscription = await stripe.subscriptions.retrieve(subscriptionId);
@@ -139,6 +134,11 @@ module.exports = class StripeBillingService extends CampsiService {
         subscription: subscription.id
       });
       res.json(nextInvoice);
+    });
+
+    this.router.get('/subscriptions/:id', (req, res) => {
+      req.query.expand = buildExpandFromQuery(req.query, subscriptionExpand);
+      stripe.subscriptions.retrieve(req.params.id, optionsFromQuery(req.query), defaultHandler(res));
     });
 
     this.router.delete('/subscriptions/:id', (req, res) => {

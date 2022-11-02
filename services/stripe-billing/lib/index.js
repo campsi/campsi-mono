@@ -131,6 +131,16 @@ module.exports = class StripeBillingService extends CampsiService {
       stripe.subscriptions.retrieve(req.params.id, optionsFromQuery(req.query), defaultHandler(res));
     });
 
+    this.router.getAsync('/subscriptions/:id[:]get-next-invoice', async (req, res) => {
+      const subscriptionId = req.params.id;
+      const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+      const nextInvoice = await stripe.invoices.retrieveUpcoming({
+        customer: subscription.customer,
+        subscription: subscription.id
+      });
+      res.json(nextInvoice);
+    });
+
     this.router.delete('/subscriptions/:id', (req, res) => {
       const params = {};
       if (req.body.invoice_now) {

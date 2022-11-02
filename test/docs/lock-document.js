@@ -50,14 +50,15 @@ describe('locks', () => {
     let adminToken;
     let lockId;
 
+    const admin = {
+      email: 'admin@campsi.io',
+      username: 'admin@campsi.io',
+      displayName: 'admin',
+      password: 'password'
+    };
+
     it(' doc locks - create admin user', async () => {
       const campsi = context.campsi;
-      const admin = {
-        email: 'admin@campsi.io',
-        username: 'admin@campsi.io',
-        displayName: 'admin',
-        password: 'password'
-      };
 
       adminToken = await createUser(chai, campsi, admin, true);
 
@@ -333,6 +334,78 @@ describe('locks', () => {
         .set('Authorization', 'Bearer ' + userToken);
 
       res.should.have.status(401);
+    });
+
+    it('it should let me delete a lock belonging to someone else if I am an admin user', async () => {
+      // this test works because the user that owns the first lock on this document is noOwnerUser
+      const campsi = context.campsi;
+
+      let res = await chai
+        .request(campsi.app)
+        .get(`/docs/pizzas/${privateDocId}/locks`)
+        .set('Authorization', 'Bearer ' + adminToken);
+
+      let lockOwner;
+
+      for (const value of Object.values(res.body[0])) {
+        if (value?.userId) {
+          lockOwner = value.userId;
+          break;
+        }
+      }
+
+      lockId = res.body[0]._id;
+
+      await campsi.db
+        .collection('__users__')
+        .findOneAndUpdate({ email: admin.email }, { $set: { isAdmin: true } }, { returnDocument: 'after' });
+
+      try {
+        res = await chai
+          .request(campsi.app)
+          .delete(`/docs/pizzas/${privateDocId}/locks/${lockId}?surrogateId=${lockOwner}`)
+          .set('Authorization', 'Bearer ' + userToken);
+      } catch (ex) {
+        console.log(ex);
+      }
+
+      res.should.have.status(401);
+    });
+
+    it('it should let me delete a lock belonging to someone else if I am an admin user', async () => {
+      // this test works because the user that owns the first lock on this document is noOwnerUser
+      const campsi = context.campsi;
+
+      let res = await chai
+        .request(campsi.app)
+        .get(`/docs/pizzas/${privateDocId}/locks`)
+        .set('Authorization', 'Bearer ' + adminToken);
+
+      let lockOwner;
+
+      for (const value of Object.values(res.body[0])) {
+        if (value?.userId) {
+          lockOwner = value.userId;
+          break;
+        }
+      }
+
+      lockId = res.body[0]._id;
+
+      await campsi.db
+        .collection('__users__')
+        .findOneAndUpdate({ email: admin.email }, { $set: { isAdmin: true } }, { returnDocument: 'after' });
+
+      try {
+        res = await chai
+          .request(campsi.app)
+          .delete(`/docs/pizzas/${privateDocId}/locks/${lockId}?surrogateId=${lockOwner}`)
+          .set('Authorization', 'Bearer ' + adminToken);
+      } catch (ex) {
+        console.log(ex);
+      }
+
+      res.should.have.status(200);
     });
   });
 });

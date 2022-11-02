@@ -35,7 +35,13 @@ function dispatchError(res, error) {
 
 module.exports.deleteLock = async function (req, res) {
   try {
-    await documentService.deleteLock(req?.params?.lock, req.user, getDocumentLockServiceOptions(req), req.db);
+    await documentService.deleteLock(
+      req?.params?.lock,
+      req.user,
+      getDocumentLockServiceOptions(req),
+      req.db,
+      req?.query?.surrogateId
+    );
     return helpers.json(res);
   } catch (ex) {
     dispatchError(res, ex);

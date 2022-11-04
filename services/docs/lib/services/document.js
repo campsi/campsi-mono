@@ -15,16 +15,26 @@ const getRequestedStatesFromQuery = (resource, query) => {
   return query.states ? query.states.split(',') : Object.keys(resource.states);
 };
 
-module.exports.deleteLock = async function deleteLocks(id, user, editLock, db) {
+module.exports.deleteLock = async function deleteLocks(id, user, editLock, db, surrogateId) {
+  let ownerId;
+
   if (!id) {
     return undefined;
+  }
+
+  // the logic here is that an admin can specify a surrogate id otherwise
+  // we consider that the owner is the user who makes the call
+  if (surrogateId && user?.isAdmin) {
+    ownerId = surrogateId;
+  } else {
+    ownerId = user._id;
   }
 
   // check id validity
   const objectID = createObjectId(id);
 
   if (!objectID) {
-    throw new createError.BadRequest('Invalid user id');
+    throw new createError.BadRequest('Invalid lock id');
   }
 
   const match = { _id: objectID };
@@ -38,7 +48,7 @@ module.exports.deleteLock = async function deleteLocks(id, user, editLock, db) {
   // userId property of lock[state] is the same as ours
   for (const value of Object.values(lock)) {
     if (value?.userId) {
-      if (ObjectId(value.userId).equals(user._id)) {
+      if (ObjectId(value.userId).equals(ownerId)) {
         await db.collection(editLock.collectionName).deleteOne(match);
         return;
       } else {

@@ -14,6 +14,27 @@ const getRequestedStatesFromQuery = (resource, query) => {
   return query.states ? query.states.split(',') : Object.keys(resource.states);
 };
 
+module.exports.anonymizePersonalData = async function (user, resource, filter, update) {
+  if (user && user?.isAdmin) {
+    try {
+      const result = await resource.collection.findOneAndUpdate({ filter, deletedAt: { $exists: false } }, update, {
+        returnDocument: 'after'
+      });
+
+      // also anonymize additional field if passed in
+      if (result && result.value) {
+        return result.value;
+      } else {
+        throw new createError.NotFound('resource not found or already soft deleted');
+      }
+    } catch (e) {
+      return createError.BadRequest(e);
+    }
+  } else {
+    throw new createError.Unauthorized('Need to be admin to call this route');
+  }
+};
+
 module.exports.getDocuments = function (resource, filter, user, query, state, sort, pagination, resources) {
   const queryBuilderOptions = {
     resource,

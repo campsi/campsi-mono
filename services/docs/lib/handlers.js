@@ -218,3 +218,10 @@ module.exports.delDocUser = function (req, res) {
     .then(() => req.service.emit('document/users/removed', getEmitPayload(req, { removedUserId: req.params.user })))
     .catch(err => helpers.notFound(res, err));
 };
+
+module.exports.softDelete = function (req, res) {
+  documentService
+    .anonymizePersonalData(req.user, req.resource, req.filter, req.update)
+    .then(helpers.json(res))
+    .catch(err => helpers.notFound(res, err));
+};

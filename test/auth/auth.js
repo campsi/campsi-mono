@@ -25,7 +25,6 @@ const glenda = {
   password: 'signup!'
 };
 
-
 const bob = {
   displayName: 'Bobby baton',
   email: 'b.baton@donuts.fr',

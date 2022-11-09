@@ -54,6 +54,7 @@ module.exports = class AuthService extends CampsiService {
     router.put('/me', handlers.updateMe);
     router.patch('/me', handlers.patchMe);
     router.post('/me/groups/:groups', handlers.addGroupsToUser);
+    router.delete('/me/groups/:groups', handlers.removeGroupsFromUser);
     router.get('/anonymous', handlers.createAnonymousUser);
     router.get('/logout', handlers.logout);
     router.post('/invitations', handlers.inviteUser);
@@ -94,5 +95,9 @@ module.exports = class AuthService extends CampsiService {
       return map;
     }, {});
     return userIds.map(userId => map[userId] || userId);
+  }
+
+  async removeGroupsFromUser(filter, update, db) {
+    return handlers.removeGroupsFromUser(filter, update, db);
   }
 };

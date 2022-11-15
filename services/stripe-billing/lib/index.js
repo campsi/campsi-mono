@@ -241,9 +241,23 @@ module.exports = class StripeBillingService extends CampsiService {
         ) {
           continue;
         }
+        if (req.body.status && schedule.status !== req.body.status) {
+          continue;
+        }
         schedules.push(schedule);
       }
       res.json(schedules);
+    });
+
+    this.router.deleteAsync('/subscription-schedules/:id', (req, res) => {
+      stripe.subscriptionSchedules.cancel(
+        req.params.id,
+        {
+          invoice_now: req.body.invoice_now,
+          prorate: req.body.prorate
+        },
+        defaultHandler(res)
+      );
     });
 
     this.router.post('/setup_intents', (req, res) => {

@@ -5,10 +5,16 @@ const helpers = require('../../../lib/modules/responseHelpers');
 const subscriptionExpand = ['latest_invoice', 'latest_invoice.payment_intent', 'pending_setup_intent'];
 const customerExpand = ['tax_ids'];
 
-const buildExpandFromBody = (body, defaultExpand) => {
-  return body.expand && typeof body.expand === 'string'
-    ? [...new Set([...defaultExpand, ...body.expand.split('|')])]
-    : defaultExpand;
+const buildExpandFromBody = (body, defaultExpand = []) => {
+  let expand = defaultExpand;
+  if (body.expand) {
+    if (typeof body.expand === 'string') {
+      expand = [...new Set([...defaultExpand, ...body.expand.split('|')])];
+    } else if (Array.isArray(body.expand)) {
+      expand = [...new Set([...defaultExpand, ...body.expand])];
+    }
+  }
+  return expand;
 };
 
 const buildExpandFromQuery = (query, defaultExpand) => {
@@ -177,6 +183,67 @@ module.exports = class StripeBillingService extends CampsiService {
 
     this.router.get('/invoices/:id', (req, res) => {
       stripe.invoices.retrieve(req.params.id, optionsFromQuery(req.query), defaultHandler(res));
+    });
+
+    this.router.getAsync('/subscription-schedules/:id', (req, res) => {
+      stripe.subscriptionSchedules.retrieve(req.params.id, optionsFromQuery(req.query), defaultHandler(res));
+    });
+
+    this.router.postAsync('/subscription-schedules', (req, res) => {
+      stripe.subscriptionSchedules.create(
+        {
+          customer: req.body.customer,
+          metadata: req.body.metadata,
+          phases: req.body.phases,
+          start_date: req.body.start_date,
+          default_settings: req.body.default_settings,
+          end_behavior: req.body.end_behavior,
+          from_subscription: req.body.from_subscription,
+          expand: buildExpandFromBody(req.body)
+        },
+        defaultHandler(res)
+      );
+    });
+
+    this.router.putAsync('/subscription-schedules/:id', (req, res) => {
+      stripe.subscriptionSchedules.update(
+        req.params.id,
+        {
+          metadata: req.body.metadata,
+          phases: req.body.phases,
+          proration_behavior: req.body.proration_behavior,
+          default_settings: req.body.default_settings,
+          end_behavior: req.body.end_behavior,
+          expand: buildExpandFromBody(req.body)
+        },
+        defaultHandler(res)
+      );
+    });
+
+    this.router.postAsync('/subscription-schedules[:]list-all', async (req, res) => {
+      const schedules = [];
+      const params = {
+        customer: req.body.customer,
+        limit: req.body.limit || 100,
+        canceled_at: req.body.canceled_at,
+        completed_at: req.body.completed_at,
+        created: req.body.created,
+        ending_before: req.body.ending_before,
+        released_at: req.body.released_at,
+        scheduled: req.body.scheduled,
+        starting_after: req.body.starting_after,
+        expand: buildExpandFromBody(req.body)
+      };
+      for await (const schedule of stripe.subscriptionSchedules.list(params)) {
+        if (
+          req.body.subscription &&
+          !(schedule.subscription === req.body.subscription || schedule.subscription?.id === req.body.subscription)
+        ) {
+          continue;
+        }
+        schedules.push(schedule);
+      }
+      res.json(schedules);
     });
 
     this.router.post('/setup_intents', (req, res) => {

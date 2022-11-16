@@ -55,7 +55,6 @@ describe('Auth Local Password Regex', () => {
     it('it should validate the user', done => {
       const campsi = context.campsi;
       campsi.on('auth/local/passwordResetTokenCreated', ({ user }) => {
-        console.log(user);
         const passwordResetToken = user.identities.local.passwordResetToken.value;
         resetUserPassword(chai, campsi, glenda.username, passwordResetToken, 'ilyes').end((err, res) => {
           if (err) debug(`received an error from chai: ${err.message}`);

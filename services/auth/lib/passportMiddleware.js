@@ -1,3 +1,4 @@
+const { getUsersCollectionName } = require('./modules/collectionNames');
 const findCallback = require('./modules/findCallback');
 const builder = require('./modules/queryBuilder');
 /**
@@ -21,7 +22,7 @@ function proxyVerifyCallback(fn, args, done) {
  * @param req
  */
 module.exports = function passportMiddleware(req) {
-  const users = req.db.collection('__users__');
+  const users = req.db.collection(getUsersCollectionName());
   const provider = req.authProvider;
   proxyVerifyCallback(provider.callback, arguments, function (err, profile, passportCallback) {
     if (!profile || err) {

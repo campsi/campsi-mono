@@ -3,6 +3,7 @@ const handlers = require('./handlers');
 const helpers = require('../../../lib/modules/responseHelpers');
 const state = require('./state');
 const bcrypt = require('bcryptjs');
+const { getUsersCollectionName } = require('./modules/collectionNames');
 const debug = require('debug')('campsi:auth:local');
 
 function getMissingParameters(payload, parameters) {
@@ -55,7 +56,7 @@ module.exports.callback = function localCallback(req, username, password, done) 
     ]
   };
   req.db
-    .collection('__users__')
+    .collection(getUsersCollectionName())
     .findOne(filter)
     .then(user => {
       if (!user) {
@@ -112,7 +113,7 @@ module.exports.createRandomToken = function (username, salt) {
 
 module.exports.signup = function (req, res) {
   const salt = req.authProvider.options.salt;
-  const users = req.db.collection('__users__');
+  const users = req.db.collection(getUsersCollectionName());
   const missingParameters = ['password', 'displayName', 'username'].filter(prop => {
     return typeof req.body[prop] === 'undefined' || req.body.prop === '';
   });
@@ -231,7 +232,7 @@ module.exports.validate = function (req, res) {
   }
 
   req.db
-    .collection('__users__')
+    .collection(getUsersCollectionName())
     .findOneAndUpdate(
       { 'identities.local.validationToken': req.query.token },
       {
@@ -289,7 +290,7 @@ module.exports.createResetPasswordToken = function (req, res) {
   const token = module.exports.createRandomToken(req.body.email, opts.salt);
 
   req.db
-    .collection('__users__')
+    .collection(getUsersCollectionName())
     .findOneAndUpdate(
       {
         email: new RegExp('^' + req.body.email.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$', 'i')
@@ -349,7 +350,7 @@ module.exports.resetPassword = function (req, res) {
         }
       };
       req.db
-        .collection('__users__')
+        .collection(getUsersCollectionName())
         .findOneAndUpdate(filter, update)
         .then(result => {
           if (!result.value) {
@@ -403,7 +404,7 @@ module.exports.updatePassword = function (req, res) {
       };
 
       req.db
-        .collection('__users__')
+        .collection(getUsersCollectionName())
         .findOneAndUpdate(filter, update)
         .then(() => {
           return res.json({ success: true });

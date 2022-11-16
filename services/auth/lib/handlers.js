@@ -7,6 +7,7 @@ const state = require('./state');
 const debug = require('debug')('campsi:service:auth');
 const { ObjectId } = require('mongodb');
 const { deleteExpiredTokens } = require('./tokens');
+const { getUsersCollectionName } = require('./modules/collectionNames');
 
 async function tokenMaintenance(req, res) {
   if (!req?.user?.isAdmin) {
@@ -72,17 +73,52 @@ async function tokenMaintenance(req, res) {
   }
 }
 
+
 function logout(req, res) {
   if (!req.user) {
     return helpers.unauthorized(res);
   }
 
   const update = { $set: { token: 'null' } };
-  req.db
-    .collection('__users__')
-    .findOneAndUpdate({ _id: req.user._id }, update)
-    .then(() => {
-      return res.json({ message: 'signed out' });
+
+  const usersCollection = req.db.collection(getUsersCollectionName());
+  const token = req.authBearerToken;
+  const user = req.user;
+
+  usersCollection
+    .findOneAndUpdate({ _id: user._id }, update)
+    .then(result => {
+      // move current token from tokens and archive it
+      // except if marked "doNotDelete".
+      usersCollection
+        .findOneAndUpdate(
+          { _id: user._id, [`tokens.${token}.doNotDelete`]: { $exists: false } },
+          { $unset: { [`tokens.${token}`]: '' } },
+          { returnDocument: 'before' }
+        )
+        .then(result => {
+          // move old token to __users__.tokens_log
+          if (result && result.value) {
+            const tokenToArchive = {
+              [`${token}`]: {
+                userId: user._id,
+                ...result.value.tokens[token]
+              }
+            };
+
+            req.db
+              .collection(`${getUsersCollectionName()}.tokens_log`)
+              .insertOne(tokenToArchive)
+              .then(() => {
+                return res.json({ message: 'signed out' });
+              })
+              .catch(err => {
+                return res.status(500).json({ message: err });
+              });
+          } else {
+            return res.json({ message: 'user not signed out' });
+          }
+        });
     })
     .catch(error => {
       return helpers.error(res, error);
@@ -98,7 +134,7 @@ function me(req, res) {
   res.json(req.user);
 
   req.db
-    .collection('__users__')
+    .collection(getUsersCollectionName())
     .findOneAndUpdate({ _id: req.user._id }, { $set: { lastSeenAt: new Date() } }, {})
     .then(_result => {})
     .catch(error => helpers.error(res, error));
@@ -119,7 +155,7 @@ function updateMe(req, res) {
   });
 
   req.db
-    .collection('__users__')
+    .collection(getUsersCollectionName())
     .findOneAndUpdate({ _id: req.user._id }, update, {
       returnDocument: 'after',
       projection: { 'identities.local.encryptedPassword': 0 }
@@ -143,7 +179,7 @@ function patchMe(req, res) {
   }
 
   req.db
-    .collection('__users__')
+    .collection(getUsersCollectionName())
     .findOneAndUpdate({ _id: req.user._id }, update, {
       returnDocument: 'after'
     })
@@ -166,7 +202,7 @@ function createAnonymousUser(req, res) {
     createdAt: new Date()
   };
   req.db
-    .collection('__users__')
+    .collection(getUsersCollectionName())
     .insertOne(insert)
     .then(insertResult => {
       res.json({ _id: insertResult.insertedId, ...insert });
@@ -255,7 +291,7 @@ async function getUsers(req, res) {
   if (req.user && req.user.isAdmin) {
     try {
       const users = await req.db
-        .collection('__users__')
+        .collection(getUsersCollectionName())
         .find(getUserFilterFromQuery(req.query), {
           projection: { 'identities.local.encryptedPassword': 0 }
         })
@@ -279,7 +315,7 @@ function getAccessTokenForUser(req, res) {
     }
     const { update, updateToken } = builder.genUpdate({ name: 'impersonatingByAdmin' }, {});
     req.db
-      .collection('__users__')
+      .collection(getUsersCollectionName())
       .findOneAndUpdate({ _id: userId }, update, {
         returnDocument: 'after'
       })
@@ -339,7 +375,7 @@ function inviteUser(req, res) {
     update.$addToSet = { groups: { $each: groups } };
   }
   // if user exists with the given email, we return the id
-  req.db.collection('__users__').findOneAndUpdate(filter, update, { returnDocument: 'after' }, (err, result) => {
+  req.db.collection(getUsersCollectionName()).findOneAndUpdate(filter, update, { returnDocument: 'after' }, (err, result) => {
     if (err) {
       return helpers.error(res, err);
     }
@@ -374,7 +410,7 @@ function inviteUser(req, res) {
       if (groups.length) {
         insert.groups = groups;
       }
-      req.db.collection('__users__').insertOne(insert, (err, result) => {
+      req.db.collection(getUsersCollectionName()).insertOne(insert, (err, result) => {
         if (err) {
           return helpers.error(res, err);
         }
@@ -401,7 +437,7 @@ function acceptInvitation(req, res) {
       $gt: new Date()
     }
   };
-  req.db.collection('__users__').findOneAndUpdate(
+  req.db.collection(getUsersCollectionName()).findOneAndUpdate(
     query,
     {
       $unset: { [`identities.invitation-${req.params.invitationToken}`]: true }
@@ -449,12 +485,45 @@ function addGroupsToUser(req, res) {
   const update = { $addToSet: { groups: { $each: groups } } };
 
   req.db
-    .collection('__users__')
+    .collection(getUsersCollectionName())
     .findOneAndUpdate({ _id: req.user._id }, update, {
       returnDocument: 'after'
     })
     .then(result => res.json(result.value))
     .catch(error => helpers.error(res, error));
+}
+
+function extractUserPersonalData(req, res) {
+  if (req.user && req.user?.isAdmin) {
+    let userId;
+    try {
+      userId = new ObjectId(req.params.userId);
+    } catch (e) {
+      return redirectWithError(req, res, new Error('Erroneous userId'));
+    }
+
+    req.db.collection(getUsersCollectionName()).findOne(
+      { _id: userId },
+      {
+        projection: {
+          email: 1,
+          displayname: 1,
+          picture: 1,
+          identities: {
+            local: { id: 1, username: 1 },
+            google: { id: 1, sub: 1, name: 1, given_name: 1, familly_name: 1, picture: 1, email: 1 },
+            facebook: { id: 1, name: 1, email: 1 }
+          }
+        }
+      },
+      (_err, user) => {
+        if (!user) return helpers.notFound(res);
+        res.json(user);
+      }
+    );
+  } else {
+    return helpers.unauthorized(res, new Error('Only admin users can extract personal data for users'));
+  }
 }
 
 module.exports = {
@@ -472,5 +541,6 @@ module.exports = {
   inviteUser,
   acceptInvitation,
   addGroupsToUser,
-  tokenMaintenance
+  tokenMaintenance,
+  extractUserPersonalData
 };

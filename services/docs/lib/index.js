@@ -4,6 +4,7 @@ const param = require('./param');
 const handlers = require('./handlers');
 const async = require('async');
 const Ajv = require('ajv');
+const addFormats = require('ajv-formats');
 const $RefParser = require('json-schema-ref-parser');
 const debug = require('debug')('campsi:docs');
 const format = require('string-format');
@@ -30,9 +31,12 @@ module.exports = class DocsService extends CampsiService {
     this.router.param('resource', param.attachResource(service.options));
     this.router.get('/', handlers.getResources);
     this.router.get('/:resource', handlers.getDocuments);
+    this.router.post('/:resource/:id/locks', handlers.lockDocument);
+    this.router.get('/:resource/:id/locks', handlers.getLocks);
     this.router.get('/:resource/:id/users', handlers.getDocUsers);
     this.router.post('/:resource/:id/users', handlers.postDocUser);
     this.router.delete('/:resource/:id/users/:user', handlers.delDocUser);
+    this.router.post('/:resource/:id/:state/locks', handlers.lockDocument);
     this.router.get('/:resource/:id/:state', handlers.getDoc);
     this.router.get('/:resource/:id', handlers.getDoc);
     this.router.post('/:resource/:state', handlers.postDoc);
@@ -43,25 +47,28 @@ module.exports = class DocsService extends CampsiService {
     this.router.patch('/:resource/:id', handlers.patchDoc);
     this.router.delete('/:resource/:id', handlers.delDoc);
     this.router.delete('/:resource/:id/:state', handlers.delDoc);
+    this.router.delete('/:resource/:id/locks/:lock', handlers.deleteLock);
     return new Promise(resolve => {
-      const ajvWriter = new Ajv({ useAssign: true });
+      const ajvWriter = new Ajv({ useAssign: true, strictTuples: false, strict: false });
+      addFormats(ajvWriter);
       csdAssign(ajvWriter);
-      const ajvReader = new Ajv({ useVisibility: true });
+      const ajvReader = new Ajv({ useVisibility: true, strictTuples: false, strict: false });
+      addFormats(ajvReader);
       csdVisibility(ajvReader);
       async.eachOf(
         service.options.resources,
-        function(resource, name, cb) {
+        function (resource, name, cb) {
           Object.assign(resource, service.options.classes[resource.class]);
           resource.collection = server.db.collection('docs.{0}.{1}'.format(service.path, name));
           $RefParser
             .dereference(service.config.optionsBasePath + '/', resource.schema, {})
-            .then(function(schema) {
+            .then(function (schema) {
               resource.schema = schema;
               resource.validate = ajvWriter.compile(schema);
               resource.filter = ajvWriter.compile(schema);
               cb();
             })
-            .catch(function(error) {
+            .catch(function (error) {
               debug(error);
               cb();
             });

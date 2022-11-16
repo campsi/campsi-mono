@@ -60,7 +60,7 @@ describe('VersionedDocs API', () => {
       res.should.be.json;
       res.body.should.be.a('object');
       res.body.should.have.property('message');
-      res.body.message.should.be.a('string').and.eq(" should have required property 'content'");
+      res.body.message.should.be.a('string').and.eq("undefined must have required property 'content'");
     });
   });
   describe('/GET all documents', () => {

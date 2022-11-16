@@ -13,6 +13,8 @@ const debug = require('debug')('campsi:test');
 const setupBeforeEach = require('../helpers/setupBeforeEach');
 const { ObjectId } = require('mongodb');
 
+
+const { getUsersCollectionName } = require('../../services/auth/lib/modules/collectionNames');
 const expect = chai.expect;
 format.extend(String.prototype);
 chai.use(chaiHttp);
@@ -94,6 +96,49 @@ const expiredTokens2 = {
 };
 
 
+const bob = {
+  displayName: 'Bobby baton',
+  email: 'b.baton@donuts.fr',
+  username: 'bobby',
+  password: 'signup!'
+};
+
+function makeUserDoNotDelete(token, db) {
+  const usersCollection = db.collection('__users__');
+  return new Promise((resolve, reject) => {
+    usersCollection
+      .updateOne(
+        { [`tokens.${token}`]: { $exists: true } },
+        { $set: { [`tokens.${token}.doNotDelete`]: true } },
+        { returnDocument: 'after' }
+      )
+      .then(result => resolve(result))
+      .catch(err => {
+        console.log(err);
+        reject(err);
+      });
+  });
+}
+
+const identities = {
+  google: {
+    id: '111111111111111111111',
+    sub: '111111111111111111111',
+    name: 'Glenda Bennett',
+    given_name: 'Glenda',
+    family_name: 'Bennett',
+    picture: 'https://lh3.googleusercontent.com/a/AItbvmmG_9I4BLRBt_pnttW2mknH0OGckY7_U6vud2t4=s96-c',
+    email: 'glenda@agilitation.fr',
+    email_verified: true,
+    locale: 'en'
+  },
+  facebook: {
+    id: '111111111111111111111',
+    name: 'Glenda Bennett',
+    email: 'glenda@agilitation.fr'
+  }
+};
+
 const services = {
   Auth: require('../../services/auth/lib'),
   Trace: require('../../services/trace/lib'),
@@ -106,6 +151,7 @@ describe('Auth API', () => {
   afterEach(done => {
     context.server.close(done);
   });
+
   /*
    * Test the /GET providers route
    */
@@ -128,6 +174,7 @@ describe('Auth API', () => {
         });
     });
   });
+
   /*
    * Test the /GET me route
    */
@@ -146,6 +193,7 @@ describe('Auth API', () => {
         });
     });
   });
+
   describe('/GET me [connected]', () => {
     it('it should return user when connected', done => {
       const campsi = context.campsi;
@@ -205,7 +253,113 @@ describe('Auth API', () => {
         });
     });
   });
+
   describe('/GET logout [connected]', () => {
+    it('it should return success & token must be removed from the user token list and be archived', done => {
+      const campsi = context.campsi;
+      createUser(chai, campsi, glenda).then(token => {
+        chai
+          .request(campsi.app)
+          .get('/auth/logout')
+          .set('Authorization', 'Bearer ' + token)
+          .end((err, res) => {
+            if (err) debug(`received an error from chai: ${err.message}`);
+            res.should.have.status(200);
+            res.should.be.json;
+            res.body.should.be.a('object');
+            res.body.should.have.property('message');
+            // bdd token must be removed from tokens list and it should be in the token archive
+            const filter = { [`tokens.${token}`]: { $exists: true } };
+            campsi.db
+              .collection('__users__')
+              .findOne(filter)
+              .then(user => {
+                expect(user).to.be.null;
+              })
+              .then(() => {
+                const filter = { [`${token}`]: { $exists: true } };
+                campsi.db
+                  .collection('__users__.tokens_log')
+                  .findOne(filter)
+                  .then(result => {
+                    done();
+                  });
+              })
+              .catch(error => {
+                done(new Error(error));
+              });
+          });
+      });
+    });
+
+    it('it should create two users and log them both out, both tokens should be archived', done => {
+      const campsi = context.campsi;
+      createUser(chai, campsi, bob).then(bobtoken => {
+        createUser(chai, campsi, glenda).then(glendatoken => {
+          chai
+            .request(campsi.app)
+            .get('/auth/logout')
+            .set('Authorization', 'Bearer ' + glendatoken)
+            .end((_err, res) => {
+              chai
+                .request(campsi.app)
+                .get('/auth/logout')
+                .set('Authorization', 'Bearer ' + bobtoken)
+                .end((_err, res) => {
+                  const query = { $or: [{ [`${bobtoken}`]: { $exists: true } }, { [`${glendatoken}`]: { $exists: true } }] };
+                  campsi.db
+                    .collection('__users__.tokens_log')
+                    .find(query)
+                    .toArray()
+                    .then(result => {
+                      result.length.should.eq(2);
+                      done();
+                    });
+                });
+            });
+        });
+      });
+    });
+
+    it('token must not be removed from the user token list nor archived', done => {
+      const campsi = context.campsi;
+      createUser(chai, campsi, bob).then(token => {
+        const filter = { [`tokens.${token}`]: { $exists: true } };
+        makeUserDoNotDelete(token, campsi.db).then(result => {
+          chai
+            .request(campsi.app)
+            .get('/auth/logout')
+            .set('Authorization', 'Bearer ' + token)
+            .end((err, res) => {
+              if (err) debug(`received an error from chai: ${err.message}`);
+              res.should.have.status(200);
+              res.should.be.json;
+              res.body.should.be.a('object');
+              res.body.should.have.property('message');
+
+              // bdd token still present and not archived
+              campsi.db
+                .collection('__users__')
+                .findOne(filter)
+                .then(user => {
+                  expect(user).to.not.be.null;
+                  const filter = { [`${token}`]: { $exists: true } };
+                  campsi.db
+                    .collection('__users__.tokens_log')
+                    .findOne(filter)
+                    .then(result => {
+                      expect(result).to.be.null;
+                      done();
+                    });
+                })
+                .catch(error => {
+                  done(new Error(error));
+                });
+            });
+        });
+      });
+    });
+
     it('it should return success & token must disappear from database', done => {
       const campsi = context.campsi;
       createUser(chai, campsi, glenda).then(token => {
@@ -223,7 +377,7 @@ describe('Auth API', () => {
             const filter = {};
             filter['token.value'] = token;
             campsi.db
-              .collection('__users__')
+              .collection(getUsersCollectionName())
               .findOne(filter)
               .then(user => {
                 expect(user).to.be.null;
@@ -236,6 +390,7 @@ describe('Auth API', () => {
       });
     });
   });
+
   /*
    * Test redirection
    */
@@ -362,7 +517,7 @@ describe('Auth API', () => {
       };
       createUser(chai, campsi, admin, true).then(adminToken => {
         campsi.db
-          .collection('__users__')
+          .collection(getUsersCollectionName())
           .findOneAndUpdate({ email: admin.email }, { $set: { isAdmin: true } }, { returnDocument: 'after' })
           .then(updateResult => {
             createUser(chai, campsi, glenda).then(userToken => {
@@ -449,7 +604,7 @@ describe('Auth API', () => {
               res.should.be.a('object');
               res.body.should.have.property('id');
               debug(res.body);
-              campsi.db.collection('__users__').findOne({ email: robert.email }, (err, doc) => {
+              campsi.db.collection(getUsersCollectionName()).findOne({ email: robert.email }, (err, doc) => {
                 if (err) return debug(`received an error from chai: ${err.message}`);
                 doc.should.be.a('object');
                 res.body.id.should.be.eq(doc._id.toString());
@@ -517,6 +672,7 @@ describe('Auth API', () => {
       }
     }).timeout(10000);
   });
+
 
   it('it should not let me remove expired tokens', async () => {
     const campsi = context.campsi;
@@ -652,5 +808,89 @@ describe('Auth API', () => {
       .toArray();
 
     expiredUserTokens.length.should.be.eq(6);
+   });
   });
-});
+
+  describe('extract user personal data', () => {
+    it('should extract personal data', async () => {
+      const campsi = context.campsi;
+      const admin = {
+        email: 'admin@campsi.io',
+        username: 'admin@campsi.io',
+        displayName: 'admin',
+        password: 'password'
+      };
+
+      // create two users, one admin one lamba
+      const adminToken = await createUser(chai, campsi, admin, true);
+      await campsi.db.collection('__users__').findOneAndUpdate({ email: admin.email }, { $set: { isAdmin: true } });
+
+      await createUser(chai, campsi, glenda);
+
+      // add facebook and google identites to glenda
+      await campsi.db
+        .collection('__users__')
+        .findOneAndUpdate(
+          { email: glenda.email },
+          { $set: { 'identities.facebook': identities.facebook, 'identities.google': identities.google } }
+        );
+
+      let res = await chai
+        .request(campsi.app)
+        .get('/auth/users')
+        .set('Authorization', 'Bearer ' + adminToken);
+
+      res.should.have.status(200);
+
+      // get glenda's id
+      const glendaId = res.body.filter(u => u.email === glenda.email)[0]._id;
+
+      // get the personal data based on user id
+      res = await chai
+        .request(campsi.app)
+        .get(`/auth/users/${glendaId}/extract_personal_data`)
+        .set('Authorization', 'Bearer ' + adminToken);
+
+      res.body.identities.local.id.should.equal(glenda.username);
+      res.body.identities.local.username.should.equal(glenda.username);
+      res.body.identities.facebook.name.should.equal(identities.facebook.name);
+      res.body.identities.facebook.email.should.equal(identities.facebook.email);
+      res.body.identities.google.name.should.equal(identities.google.name);
+      res.body.identities.google.given_name.should.equal(identities.google.given_name);
+      res.body.identities.google.picture.should.equal(identities.google.picture);
+      res.body.identities.google.email.should.equal(identities.google.email);
+    });
+
+    it('should return a not authorized error', async () => {
+      const campsi = context.campsi;
+      const admin = {
+        email: 'admin@campsi.io',
+        username: 'admin@campsi.io',
+        displayName: 'admin',
+        password: 'password'
+      };
+
+      // create two users one admin one lambda
+      const adminToken = await createUser(chai, campsi, admin, true);
+      await campsi.db.collection('__users__').findOneAndUpdate({ email: admin.email }, { $set: { isAdmin: true } });
+
+      const glendaToken = await createUser(chai, campsi, glenda);
+
+      let res = await chai
+        .request(campsi.app)
+        .get('/auth/users')
+        .set('Authorization', 'Bearer ' + adminToken);
+
+      res.should.have.status(200);
+
+      // get glenda's id
+      const glendaId = res.body.filter(u => u.email === glenda.email)[0]._id;
+
+      // should return a 401 error
+      res = await chai
+        .request(campsi.app)
+        .get(`/auth/users/${glendaId}/extract_personal_data`)
+        .set('Authorization', 'Bearer ' + glendaToken);
+    });
+  });
+  });

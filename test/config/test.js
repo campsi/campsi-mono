@@ -72,7 +72,8 @@ module.exports = {
           local: require('../../services/auth/lib/providers/local')({
             baseUrl: host + '/auth',
             salt: 'CNDygyeFC6536964425994',
-            resetPasswordTokenExpiration: 10
+            resetPasswordTokenExpiration: 10,
+            passwordRegex: /^((?!ilyes).)*$/s
           }),
           github: require('../../services/auth/lib/providers/github')({
             baseUrl: host + '/auth',

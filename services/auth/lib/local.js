@@ -173,7 +173,7 @@ module.exports.signup = function (req, res) {
   };
 
   if (req.body.email) {
-    if (!passwordRegex.test('^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$')) {
+    if (!/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(req.body.email)) {
       return helpers.error(res, new Error('Invalid email'));
     }
   }

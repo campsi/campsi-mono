@@ -165,7 +165,6 @@ describe('Auth Local Password Regex', () => {
               done();
             });
         });
-      delete campsi.services.get('auth').options.providers.local.options.passwordRegex;
     });
   });
 });

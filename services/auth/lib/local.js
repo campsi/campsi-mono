@@ -400,7 +400,7 @@ module.exports.resetPassword = function (req, res) {
 module.exports.updatePassword = function (req, res) {
   const missingParams = getMissingParameters(req.body, ['new', 'confirm']);
   const passwordRegex = new RegExp(req.authProvider.options.passwordRegex);
-  if (!passwordRegex.test(req.body.password)) {
+  if (!passwordRegex.test(req.body.new)) {
     return helpers.error(
       res,
       new Error(`Invalid password, please respect this regex : ${req.authProvider.options.passwordRegex ?? '/.*/'}`)

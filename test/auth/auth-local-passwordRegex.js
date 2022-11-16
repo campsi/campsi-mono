@@ -159,7 +159,6 @@ describe('Auth Local Password Regex', () => {
                   res.should.have.status(200);
                   res.should.be.json;
                   res.body.should.be.a('object');
-                  res.body.should.have.property('message');
                 });
               done();
             });

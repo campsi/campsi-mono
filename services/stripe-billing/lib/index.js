@@ -224,7 +224,7 @@ module.exports = class StripeBillingService extends CampsiService {
       const schedules = [];
       const params = {
         customer: req.body.customer,
-        limit: req.body.limit || 100,
+        limit: parseInt(req.body.limit) <= 100 ? parseInt(req.body.limit) : 100,
         canceled_at: req.body.canceled_at,
         completed_at: req.body.completed_at,
         created: req.body.created,
@@ -241,21 +241,27 @@ module.exports = class StripeBillingService extends CampsiService {
         ) {
           continue;
         }
-        if (req.body.status && schedule.status !== req.body.status) {
-          continue;
+        if (req.body.status) {
+          let status = req.body.status;
+          if (typeof status !== 'string' && !Array.isArray(status)) {
+            return helpers.badRequest(res, new Error(`subscription status type must be either string or array of strings`));
+          }
+          if (typeof status === 'string') {
+            status = [status];
+          }
+          if (!status.includes(schedule.status)) {
+            continue;
+          }
         }
         schedules.push(schedule);
       }
       res.json(schedules);
     });
 
-    this.router.deleteAsync('/subscription-schedules/:id', (req, res) => {
-      stripe.subscriptionSchedules.cancel(
+    this.router.deleteAsync('/subscription-schedules/:id[:]release', (req, res) => {
+      stripe.subscriptionSchedules.release(
         req.params.id,
-        {
-          invoice_now: req.body.invoice_now,
-          prorate: req.body.prorate
-        },
+        { preserve_cancel_date: req.body.preserve_cancel_date },
         defaultHandler(res)
       );
     });

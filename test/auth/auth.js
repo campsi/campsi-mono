@@ -668,222 +668,224 @@ describe('Auth API', () => {
       }
     }).timeout(10000);
   });
-  it('it should not let me remove expired tokens', async () => {
-    const campsi = context.campsi;
-    const res = await chai
-      .request(campsi.app)
-      .put('/auth/tokens?action=deleteExpiredTokens')
-      .set('content-type', 'application/json');
 
-    res.status.should.eq(401);
-  });
+  describe('token expiration', () => {
+    it('it should not let me remove expired tokens', async () => {
+      const campsi = context.campsi;
+      const res = await chai
+        .request(campsi.app)
+        .put('/auth/tokens?action=deleteExpiredTokens')
+        .set('content-type', 'application/json');
 
-  it.skip('should remove expired tokens', async () => {
-    const campsi = context.campsi;
-    const adminToken = await createUser(chai, campsi, admin, true);
-    await createUser(chai, campsi, robert);
-    await createUser(chai, campsi, glenda);
+      res.status.should.eq(401);
+    });
 
-    let robertUser = await campsi.db.collection('__users__').findOne({ email: robert.email });
+    it('should remove expired tokens', async () => {
+      const campsi = context.campsi;
+      const adminToken = await createUser(chai, campsi, admin, true);
+      await createUser(chai, campsi, robert);
+      await createUser(chai, campsi, glenda);
 
-    Object.entries(robertUser.tokens).length.should.be.eq(1);
+      let robertUser = await campsi.db.collection('__users__').findOne({ email: robert.email });
 
-    const user = await campsi.db.collection('__users__').findOneAndUpdate(
-      { email: robert.email },
-      {
-        $set: {
-          tokens: { ...robertUser.tokens, ...expiredTokens },
-          isAdmin: true
-        }
-      },
-      { returnDocument: 'after' }
-    );
+      Object.entries(robertUser.tokens).length.should.be.eq(1);
 
-    await campsi.db.collection('__users__').findOneAndUpdate(
-      { email: admin.email },
-      {
-        $set: {
-          isAdmin: true
-        }
-      }
-    );
-
-    const oldTokens = Object.entries(user.value.tokens);
-    oldTokens.length.should.be.eq(7);
-
-    await chai
-      .request(campsi.app)
-      .put('/auth/tokens?action=deleteExpiredTokens')
-      .set('content-type', 'application/json')
-      .set('Authorization', `Bearer ${adminToken}`);
-
-    robertUser = await campsi.db.collection('__users__').findOne({ email: robert.email });
-
-    const validTokens = Object.entries(robertUser.tokens);
-    validTokens.length.should.be.eq(1);
-
-    const expiredUserTokens = await campsi.db
-      .collection('__users__.tokens_log')
-      .find({ userId: new ObjectId(robertUser._id) })
-      .toArray();
-
-    expiredUserTokens.length.should.be.eq(6);
-  });
-
-  it('should remove expired tokens for 2 users', async () => {
-    const campsi = context.campsi;
-    const adminToken = await createUser(chai, campsi, admin, true);
-    await createUser(chai, campsi, robert);
-    await createUser(chai, campsi, glenda);
-
-    let robertUser = await campsi.db.collection('__users__').findOne({ email: robert.email });
-    let glendaUser = await campsi.db.collection('__users__').findOne({ email: glenda.email });
-
-    Object.entries(robertUser.tokens).length.should.be.eq(1);
-
-    await campsi.db.collection('__users__').findOneAndUpdate(
-      { email: robert.email },
-      {
-        $set: {
-          tokens: { ...robertUser.tokens, ...expiredTokens },
-          isAdmin: true
-        }
-      },
-      { returnDocument: 'after' }
-    );
-
-    await campsi.db.collection('__users__').findOneAndUpdate(
-      { email: glenda.email },
-      {
-        $set: {
-          tokens: { ...glendaUser.tokens, ...expiredTokens2 },
-          isAdmin: true
-        }
-      },
-      { returnDocument: 'after' }
-    );
-
-    await campsi.db.collection('__users__').findOneAndUpdate(
-      { email: admin.email },
-      {
-        $set: {
-          isAdmin: true
-        }
-      }
-    );
-
-    await chai
-      .request(campsi.app)
-      .put('/auth/tokens?action=deleteExpiredTokens')
-      .set('content-type', 'application/json')
-      .set('Authorization', `Bearer ${adminToken}`);
-
-    robertUser = await campsi.db.collection('__users__').findOne({ email: robert.email });
-
-    let validTokens = Object.entries(robertUser.tokens);
-    validTokens.length.should.be.eq(1);
-
-    let expiredUserTokens = await campsi.db
-      .collection('__users__.tokens_log')
-      .find({ userId: new ObjectId(robertUser._id) })
-      .toArray();
-
-    expiredUserTokens.length.should.be.eq(6);
-
-    glendaUser = await campsi.db.collection('__users__').findOne({ email: glenda.email });
-
-    validTokens = Object.entries(glendaUser.tokens);
-
-    validTokens.length.should.be.eq(1);
-
-    expiredUserTokens = await campsi.db
-      .collection('__users__.tokens_log')
-      .find({ userId: new ObjectId(glendaUser._id) })
-      .toArray();
-
-    expiredUserTokens.length.should.be.eq(6);
-  });
-});
-
-describe('extract user personal data', () => {
-  it('should extract personal data', async () => {
-    const campsi = context.campsi;
-    const admin = {
-      email: 'admin@campsi.io',
-      username: 'admin@campsi.io',
-      displayName: 'admin',
-      password: 'password'
-    };
-
-    // create two users, one admin one lamba
-    const adminToken = await createUser(chai, campsi, admin, true);
-    await campsi.db.collection('__users__').findOneAndUpdate({ email: admin.email }, { $set: { isAdmin: true } });
-
-    await createUser(chai, campsi, glenda);
-
-    // add facebook and google identites to glenda
-    await campsi.db
-      .collection('__users__')
-      .findOneAndUpdate(
-        { email: glenda.email },
-        { $set: { 'identities.facebook': identities.facebook, 'identities.google': identities.google } }
+      const user = await campsi.db.collection('__users__').findOneAndUpdate(
+        { email: robert.email },
+        {
+          $set: {
+            tokens: { ...robertUser.tokens, ...expiredTokens },
+            isAdmin: true
+          }
+        },
+        { returnDocument: 'after' }
       );
 
-    let res = await chai
-      .request(campsi.app)
-      .get('/auth/users')
-      .set('Authorization', 'Bearer ' + adminToken);
+      await campsi.db.collection('__users__').findOneAndUpdate(
+        { email: admin.email },
+        {
+          $set: {
+            isAdmin: true
+          }
+        }
+      );
 
-    res.should.have.status(200);
+      const oldTokens = Object.entries(user.value.tokens);
+      oldTokens.length.should.be.eq(7);
 
-    // get glenda's id
-    const glendaId = res.body.filter(u => u.email === glenda.email)[0]._id;
+      await chai
+        .request(campsi.app)
+        .put('/auth/tokens?action=deleteExpiredTokens')
+        .set('content-type', 'application/json')
+        .set('Authorization', `Bearer ${adminToken}`);
 
-    // get the personal data based on user id
-    res = await chai
-      .request(campsi.app)
-      .get(`/auth/users/${glendaId}/extract_personal_data`)
-      .set('Authorization', 'Bearer ' + adminToken);
+      robertUser = await campsi.db.collection('__users__').findOne({ email: robert.email });
 
-    res.body.identities.local.id.should.equal(glenda.username);
-    res.body.identities.local.username.should.equal(glenda.username);
-    res.body.identities.facebook.name.should.equal(identities.facebook.name);
-    res.body.identities.facebook.email.should.equal(identities.facebook.email);
-    res.body.identities.google.name.should.equal(identities.google.name);
-    res.body.identities.google.given_name.should.equal(identities.google.given_name);
-    res.body.identities.google.picture.should.equal(identities.google.picture);
-    res.body.identities.google.email.should.equal(identities.google.email);
+      const validTokens = Object.entries(robertUser.tokens);
+      validTokens.length.should.be.eq(1);
+
+      const expiredUserTokens = await campsi.db
+        .collection('__users__.tokens_log')
+        .find({ userId: new ObjectId(robertUser._id) })
+        .toArray();
+
+      expiredUserTokens.length.should.be.eq(6);
+    });
+
+    it('should remove expired tokens for 2 users', async () => {
+      const campsi = context.campsi;
+      const adminToken = await createUser(chai, campsi, admin, true);
+      await createUser(chai, campsi, robert);
+      await createUser(chai, campsi, glenda);
+
+      let robertUser = await campsi.db.collection('__users__').findOne({ email: robert.email });
+      let glendaUser = await campsi.db.collection('__users__').findOne({ email: glenda.email });
+
+      Object.entries(robertUser.tokens).length.should.be.eq(1);
+
+      await campsi.db.collection('__users__').findOneAndUpdate(
+        { email: robert.email },
+        {
+          $set: {
+            tokens: { ...robertUser.tokens, ...expiredTokens },
+            isAdmin: true
+          }
+        },
+        { returnDocument: 'after' }
+      );
+
+      await campsi.db.collection('__users__').findOneAndUpdate(
+        { email: glenda.email },
+        {
+          $set: {
+            tokens: { ...glendaUser.tokens, ...expiredTokens2 },
+            isAdmin: true
+          }
+        },
+        { returnDocument: 'after' }
+      );
+
+      await campsi.db.collection('__users__').findOneAndUpdate(
+        { email: admin.email },
+        {
+          $set: {
+            isAdmin: true
+          }
+        }
+      );
+
+      await chai
+        .request(campsi.app)
+        .put('/auth/tokens?action=deleteExpiredTokens')
+        .set('content-type', 'application/json')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      robertUser = await campsi.db.collection('__users__').findOne({ email: robert.email });
+
+      let validTokens = Object.entries(robertUser.tokens);
+      validTokens.length.should.be.eq(1);
+
+      let expiredUserTokens = await campsi.db
+        .collection('__users__.tokens_log')
+        .find({ userId: new ObjectId(robertUser._id) })
+        .toArray();
+
+      expiredUserTokens.length.should.be.eq(6);
+
+      glendaUser = await campsi.db.collection('__users__').findOne({ email: glenda.email });
+
+      validTokens = Object.entries(glendaUser.tokens);
+
+      validTokens.length.should.be.eq(1);
+
+      expiredUserTokens = await campsi.db
+        .collection('__users__.tokens_log')
+        .find({ userId: new ObjectId(glendaUser._id) })
+        .toArray();
+
+      expiredUserTokens.length.should.be.eq(6);
+    });
   });
+  describe('extract user personal data', () => {
+    it('should extract personal data', async () => {
+      const campsi = context.campsi;
+      const admin = {
+        email: 'admin@campsi.io',
+        username: 'admin@campsi.io',
+        displayName: 'admin',
+        password: 'password'
+      };
 
-  it('should return a not authorized error', async () => {
-    const campsi = context.campsi;
-    const admin = {
-      email: 'admin@campsi.io',
-      username: 'admin@campsi.io',
-      displayName: 'admin',
-      password: 'password'
-    };
+      // create two users, one admin one lamba
+      const adminToken = await createUser(chai, campsi, admin, true);
+      await campsi.db.collection('__users__').findOneAndUpdate({ email: admin.email }, { $set: { isAdmin: true } });
 
-    // create two users one admin one lambda
-    const adminToken = await createUser(chai, campsi, admin, true);
-    await campsi.db.collection('__users__').findOneAndUpdate({ email: admin.email }, { $set: { isAdmin: true } });
+      await createUser(chai, campsi, glenda);
 
-    const glendaToken = await createUser(chai, campsi, glenda);
+      // add facebook and google identites to glenda
+      await campsi.db
+        .collection('__users__')
+        .findOneAndUpdate(
+          { email: glenda.email },
+          { $set: { 'identities.facebook': identities.facebook, 'identities.google': identities.google } }
+        );
 
-    let res = await chai
-      .request(campsi.app)
-      .get('/auth/users')
-      .set('Authorization', 'Bearer ' + adminToken);
+      let res = await chai
+        .request(campsi.app)
+        .get('/auth/users')
+        .set('Authorization', 'Bearer ' + adminToken);
 
-    res.should.have.status(200);
+      res.should.have.status(200);
 
-    // get glenda's id
-    const glendaId = res.body.filter(u => u.email === glenda.email)[0]._id;
+      // get glenda's id
+      const glendaId = res.body.filter(u => u.email === glenda.email)[0]._id;
 
-    // should return a 401 error
-    res = await chai
-      .request(campsi.app)
-      .get(`/auth/users/${glendaId}/extract_personal_data`)
-      .set('Authorization', 'Bearer ' + glendaToken);
+      // get the personal data based on user id
+      res = await chai
+        .request(campsi.app)
+        .get(`/auth/users/${glendaId}/extract_personal_data`)
+        .set('Authorization', 'Bearer ' + adminToken);
+
+      res.body.identities.local.id.should.equal(glenda.username);
+      res.body.identities.local.username.should.equal(glenda.username);
+      res.body.identities.facebook.name.should.equal(identities.facebook.name);
+      res.body.identities.facebook.email.should.equal(identities.facebook.email);
+      res.body.identities.google.name.should.equal(identities.google.name);
+      res.body.identities.google.given_name.should.equal(identities.google.given_name);
+      res.body.identities.google.picture.should.equal(identities.google.picture);
+      res.body.identities.google.email.should.equal(identities.google.email);
+    });
+
+    it('should return a not authorized error', async () => {
+      const campsi = context.campsi;
+      const admin = {
+        email: 'admin@campsi.io',
+        username: 'admin@campsi.io',
+        displayName: 'admin',
+        password: 'password'
+      };
+
+      // create two users one admin one lambda
+      const adminToken = await createUser(chai, campsi, admin, true);
+      await campsi.db.collection('__users__').findOneAndUpdate({ email: admin.email }, { $set: { isAdmin: true } });
+
+      const glendaToken = await createUser(chai, campsi, glenda);
+
+      let res = await chai
+        .request(campsi.app)
+        .get('/auth/users')
+        .set('Authorization', 'Bearer ' + adminToken);
+
+      res.should.have.status(200);
+
+      // get glenda's id
+      const glendaId = res.body.filter(u => u.email === glenda.email)[0]._id;
+
+      // should return a 401 error
+      res = await chai
+        .request(campsi.app)
+        .get(`/auth/users/${glendaId}/extract_personal_data`)
+        .set('Authorization', 'Bearer ' + glendaToken);
+    });
   });
 });

@@ -5,6 +5,7 @@ const helpers = require('../../../lib/modules/responseHelpers');
 const handlers = require('./handlers');
 const param = require('./param');
 const format = require('string-format');
+const busboyBodyParser = require('busboy-body-parser');
 const notAvailable = (req, res) => {
   helpers.serviceNotAvailable(res, new Error('Assets listing is not available'));
 };
@@ -12,8 +13,6 @@ format.extend(String.prototype);
 
 class AssetsService extends CampsiService {
   async initialize() {
-    const { default: multer } = await import('multer');
-
     this.collection = this.db.collection('assets.{0}'.format(this.path));
     this.router.use((req, res, next) => {
       req.service = this;
@@ -22,7 +21,7 @@ class AssetsService extends CampsiService {
     this.router.param('asset', param.attachAsset);
     this.router.param('asset', param.attachStorage);
     this.router.post('/copy', handlers.copyRemote, handlers.postAssets);
-    this.router.post('/', multer().array('file'), handlers.postAssets);
+    this.router.post('/', busboyBodyParser({ multi: true }), handlers.postAssets);
     this.router.get('/', this.options.allowPublicListing ? handlers.getAssets : notAvailable);
     this.router.get('/local/*', handlers.sendLocalFile);
     this.router.get('/:asset/metadata', handlers.getAssetMetadata);

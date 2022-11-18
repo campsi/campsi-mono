@@ -1,4 +1,5 @@
 const session = require('express-session');
+const { getSessionCollectionName } = require('../modules/collectionNames');
 const SessionStore = require('connect-mongodb-session')(session);
 /**
  *
@@ -13,7 +14,7 @@ module.exports = function authUser(server, service) {
     saveUninitialized: false,
     store: new SessionStore({
       uri: server.config.mongo.uri,
-      collection: '__sessions__'
+      collection: getSessionCollectionName()
     })
   });
 };

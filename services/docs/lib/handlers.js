@@ -6,6 +6,7 @@ const buildLink = require('../../../lib/modules/buildLink');
 const buildSingleDocumentLink = require('../../../lib/modules/buildSingleDocumentLink');
 const { ObjectId } = require('mongodb');
 const ValidationError = require('../../../lib/errors/ValidationError');
+const { getDocumentLockServiceOptions } = require('./modules/serviceOptions');
 
 const getEmitPayload = (req, additionalProps) => {
   return Object.assign(
@@ -31,6 +32,21 @@ function dispatchError(res, error) {
       return helpers.error(res, error);
   }
 }
+
+module.exports.deleteLock = async function (req, res) {
+  try {
+    await documentService.deleteLock(
+      req?.params?.lock,
+      req.user,
+      getDocumentLockServiceOptions(req),
+      req.db,
+      req?.query?.surrogateId
+    );
+    return helpers.json(res);
+  } catch (ex) {
+    dispatchError(res, ex);
+  }
+};
 
 module.exports.getDocuments = function (req, res) {
   const pagination = {};
@@ -224,4 +240,27 @@ module.exports.softDelete = function (req, res) {
     .anonymizePersonalData(req.user, req.resource, req.filter, req.update)
     .then(helpers.json(res))
     .catch(err => helpers.notFound(res, err));
+};
+
+module.exports.getLocks = async function (req, res) {
+  try {
+    const locks = await documentService.getLocks(req.state, req.filter, req.user, getDocumentLockServiceOptions(req), req.db);
+    helpers.json(res, locks);
+  } catch (ex) {
+    dispatchError(res, ex);
+  }
+};
+
+module.exports.lockDocument = function (req, res) {
+  try {
+    documentService.lockDocument(req.resource, req.state, req.filter, req.query?.lockTimeout, req.user, req).then(lock => {
+      if (lock) {
+        helpers.json(res, lock);
+      } else {
+        helpers.conflict(res);
+      }
+    });
+  } catch (err) {
+    helpers.badRequest(res, err);
+  }
 };

@@ -33,7 +33,7 @@ describe('Assets API', () => {
   });
 
   function createAsset(source) {
-    return new Promise(function(resolve, reject) {
+    return new Promise(function (resolve, reject) {
       const localStorage = context.campsi.services.get('assets').config.options.storages.local;
       const originalName = path.basename(source);
       const storageName = uniqueSlug('');
@@ -147,7 +147,7 @@ describe('Assets API', () => {
           res.should.be.json;
           done();
         });
-    });
+    }).timeout(10000);
   });
 
   /*
@@ -186,7 +186,7 @@ describe('Assets API', () => {
           res.should.be.json;
           done();
         });
-    });
+    }).timeout(10000);
   });
   /*
    * Test the /GET /local route

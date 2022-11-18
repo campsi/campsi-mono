@@ -1,10 +1,12 @@
 const helpers = require('../../../lib/modules/responseHelpers');
 const createObjectId = require('../../../lib/modules/createObjectId');
 const { can } = require('./modules/permissions');
+const documentService = require('./services/document');
 const { getValidGroupsFromString } = require('../../../lib/modules/groupsHelpers');
 const createError = require('http-errors');
+const { getDocumentLockServiceOptions } = require('./modules/serviceOptions');
 
-module.exports.attachResource = function(options) {
+module.exports.attachResource = function (options) {
   return (req, res, next) => {
     this.attach(req, res, next, options);
   };
@@ -40,13 +42,33 @@ module.exports.attach = (req, res, next, options) => {
 
     req.groups = req.query?.groups ? getValidGroupsFromString(req.query.groups) : [];
 
-    // USER can access RESOURCE/FILTER with METHOD/STATE ?
-    try {
-      const filter = can(req.user, req.resource, req.method, req.state);
-      req.filter = { ...req.filter, ...filter };
-      next();
-    } catch (err) {
-      throw new createError.Unauthorized(err.message);
-    }
+    // check if the document is locked by someone else if we are trying to modify it
+    const lockChek = new Promise((resolve, reject) => {
+      if (['PUT', 'POST', 'PATCH', 'DELETE'].some(method => req.method.includes(method))) {
+        documentService
+          .isDocumentLockedByOtherUser(req.state, req.filter, req.user, getDocumentLockServiceOptions(req), req.db)
+          .then(lock => {
+            if (lock && !req?.user?.isAdmin) {
+              reject(helpers.unauthorized(res));
+            }
+            resolve();
+          });
+      } else resolve();
+    });
+
+    lockChek
+      .then(() => {
+        try {
+          const filter = can(req.user, req.resource, req.method, req.state);
+          req.filter = { ...req.filter, ...filter };
+
+          next();
+        } catch (err) {
+          return helpers.unauthorized(res);
+        }
+      })
+      .catch(err => {
+        return err;
+      });
   }
 };

@@ -3,6 +3,7 @@ const CampsiService = require('../../lib/service');
 const debug = require('debug')('campsi:notifications');
 const handlers = require('./handlers');
 const Ajv = require('ajv');
+const addFormats = require('ajv-formats');
 const csdAssign = require('../../lib/keywords/csdAssign');
 const csdVisibility = require('../../lib/keywords/csdVisibility');
 const $RefParser = require('json-schema-ref-parser');
@@ -32,10 +33,12 @@ module.exports = class NotificationsService extends CampsiService {
     this.router.deleteAsync('/:resource/:id', handlers.deleteNotification);
 
     return new Promise(resolve => {
-      const ajvWriter = new Ajv({ useAssign: true });
+      const ajvWriter = new Ajv({ useAssign: true, strictTuples: false, strict: false });
       csdAssign(ajvWriter);
-      const ajvReader = new Ajv({ useVisibility: true });
+      addFormats(ajvWriter);
+      const ajvReader = new Ajv({ useVisibility: true, strictTuples: false, strict: false });
       csdVisibility(ajvReader);
+      addFormats(ajvReader);
 
       async.eachOf(
         service.options.resources,

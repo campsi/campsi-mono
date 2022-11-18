@@ -31,29 +31,17 @@ const owner = {
 
 // Helpers
 async function createData() {
-  return new Promise((resolve, reject) => {
-    const category = campsi.services.get('docs').options.resources.categories;
-    const entries = [
-      { label: 'first label', price: 10, start: new Date('2022-05-09') },
-      { label: 'second label', price: 20, start: new Date('2022-05-10'), visible: false, unique: true },
-      { label: 'third label', price: 30, start: new Date('2022-05-11'), visible: true }
-    ];
+  const category = campsi.services.get('docs').options.resources.categories;
+  const entries = [
+    { label: 'first label', price: 10, start: new Date('2022-05-09') },
+    { label: 'second label', price: 20, start: new Date('2022-05-10'), visible: false, unique: true },
+    { label: 'third label', price: 30, start: new Date('2022-05-11'), visible: true }
+  ];
 
-    async.map(
-      entries,
-      (data, cb) => {
-        return builder.create({ user: owner, data, resource: category, state: 'published' }).then(record => {
-          return category.collection.insertOne(record, (err, result) => {
-            if (err) return cb(null, err);
-            cb();
-          });
-        });
-      },
-      () => {
-        resolve();
-      }
-    );
-  });
+  for await (const data of entries) {
+    const record = await builder.create({ user: owner, data, resource: category, state: 'published' });
+    await category.collection.insertOne(record);
+  }
 }
 
 function testResponse(response, length) {
@@ -266,7 +254,7 @@ describe('Filter Documents', () => {
       return new Promise(resolve => {
         chai
           .request(campsi.app)
-          .get('/docs/categories?data.price[gte]=20')
+          .get('/docs/categories?data.price[gte]=20&sort=_id')
           .end((err, res) => {
             if (err) debug(`received an error from chai: ${err.message}`);
             testResponse(res, 2);

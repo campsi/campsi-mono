@@ -34,9 +34,9 @@ module.exports = class VersionedDocsService extends CampsiService {
     this.router.patchAsync('/:resource/:id', handlers.updateDoc);
     this.router.deleteAsync('/:resource/:id', handlers.delDoc);
 
-    const ajvWriter = new Ajv({ useAssign: true });
+    const ajvWriter = new Ajv({ useAssign: true, strict: false });
     csdAssign(ajvWriter);
-    const ajvReader = new Ajv({ useVisibility: true });
+    const ajvReader = new Ajv({ useVisibility: true, strict: false });
     csdVisibility(ajvReader);
     try {
       return Promise.all(

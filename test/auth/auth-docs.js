@@ -8,7 +8,6 @@ const chaiHttp = require('chai-http');
 const format = require('string-format');
 const config = require('config');
 const setupBeforeEach = require('../helpers/setupBeforeEach');
-const debug = require('debug')('campsi:test');
 const { ObjectId } = require('mongodb');
 
 format.extend(String.prototype);
@@ -50,83 +49,70 @@ function createUser(campsi, user) {
   });
 }
 
-describe('Auth Local API', () => {
+describe('Auth Local API', async () => {
   const context = {};
   beforeEach(setupBeforeEach(config, services, context));
   afterEach(done => context.server.close(done));
 
-  describe('/PUT docs as a user', () => {
-    it('it should create 2 users and try to update a doc and get the correct status code', done => {
-      const campsi = context.campsi;
-      createUser(campsi, glenda).then(() => {
-        chai
+  describe('/PUT docs as a user', async () => {
+    it('it should create 2 users and try to update a doc and get the correct status code', async () => {
+      try {
+        const campsi = context.campsi;
+        await createUser(campsi, glenda);
+
+        let res = await chai.request(campsi.app).post('/auth/local/signin').set('content-type', 'application/json').send({
+          username: 'Glenda@agilitation.fr',
+          password: 'signup!'
+        });
+
+        const token = res.body.token;
+
+        res = await chai
           .request(campsi.app)
-          .post('/auth/local/signin')
+          .post('/docs/opening_hours')
           .set('content-type', 'application/json')
-          .send({
-            username: 'Glenda@agilitation.fr',
-            password: 'signup!'
-          })
-          .end((err, res) => {
-            if (err) debug(`received an error from chai: ${err.message}`);
-            const token = res.body.token;
-            const campsi = context.campsi;
-            chai
-              .request(campsi.app)
-              .post('/docs/opening_hours')
-              .set('content-type', 'application/json')
-              .set('Authorization', 'Bearer ' + token)
-              .send({ name: 'test doc' })
-              .end((_err, res) => {
-                const id = res.body.id;
-                createUser(campsi, glenda2).then(() => {
-                  chai
-                    .request(campsi.app)
-                    .post('/auth/local/signin')
-                    .set('content-type', 'application/json')
-                    .send({
-                      username: 'Glenda2@agilitation.fr',
-                      password: 'signup!'
-                    })
-                    .end((_err, res) => {
-                      const token2 = res.body.token;
-                      chai
-                        .request(campsi.app)
-                        .put(`/docs/opening_hours/${id}`)
-                        .set('content-type', 'application/json')
-                        .set('Authorization', 'Bearer ' + token2)
-                        .send({ name: 'test modified' })
-                        .end((_err, res) => {
-                          res.should.have.status(401);
+          .set('Authorization', 'Bearer ' + token)
+          .send({ name: 'test doc' });
 
-                          chai
-                            .request(campsi.app)
-                            .put(`/docs/opening_hours/${id}`)
-                            .set('content-type', 'application/json')
-                            .set('Authorization', 'Bearer ' + token)
-                            .send({ name: 'test modified' })
-                            .end((_err, res) => {
-                              res.should.have.status(200);
+        let id = res.body.id;
 
-                              const id = new ObjectId().toHexString();
+        await createUser(campsi, glenda2);
+        res = await chai.request(campsi.app).post('/auth/local/signin').set('content-type', 'application/json').send({
+          username: 'Glenda2@agilitation.fr',
+          password: 'signup!'
+        });
 
-                              chai
-                                .request(campsi.app)
-                                .put(`/docs/opening_hours/${id.toString()}`)
-                                .set('content-type', 'application/json')
-                                .set('Authorization', 'Bearer ' + token2)
-                                .send({ name: 'test modified' })
-                                .end((_err, res) => {
-                                  res.should.have.status(404);
-                                  done();
-                                });
-                            });
-                        });
-                    });
-                });
-              });
-          });
-      });
+        const token2 = res.body.token;
+        res = await chai
+          .request(campsi.app)
+          .put(`/docs/opening_hours/${id}`)
+          .set('content-type', 'application/json')
+          .set('Authorization', 'Bearer ' + token2)
+          .send({ name: 'test modified' });
+
+        res.should.have.status(401);
+
+        res = await chai
+          .request(campsi.app)
+          .put(`/docs/opening_hours/${id}`)
+          .set('content-type', 'application/json')
+          .set('Authorization', 'Bearer ' + token)
+          .send({ name: 'test modified' });
+
+        res.should.have.status(200);
+
+        id = new ObjectId().toHexString();
+
+        res = await chai
+          .request(campsi.app)
+          .put(`/docs/opening_hours/${id.toString()}`)
+          .set('content-type', 'application/json')
+          .set('Authorization', 'Bearer ' + token2)
+          .send({ name: 'test modified' });
+        res.should.have.status(404);
+      } catch (err) {
+        console.log(err);
+      }
     });
   });
 });

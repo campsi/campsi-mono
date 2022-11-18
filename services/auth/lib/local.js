@@ -70,9 +70,11 @@ module.exports.callback = function localCallback(req, username, password, done) 
         }
         if (isMatch) {
           user.identity = user.identities.local;
+
           return done(null, user);
+        } else {
+          done(null, null);
         }
-        done(null, null);
       });
     })
     .catch(done);

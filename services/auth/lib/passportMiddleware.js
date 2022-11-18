@@ -1,7 +1,6 @@
 const { getUsersCollectionName } = require('./modules/collectionNames');
 const findCallback = require('./modules/findCallback');
 const builder = require('./modules/queryBuilder');
-
 /**
  * Intercepts passport callback
  * @param fn
@@ -10,7 +9,7 @@ const builder = require('./modules/queryBuilder');
  */
 function proxyVerifyCallback(fn, args, done) {
   const { callback, index } = findCallback(args);
-  args[index] = function(err, user) {
+  args[index] = function (err, user) {
     done(err, user, callback);
   };
   fn.apply(null, args);
@@ -25,7 +24,7 @@ function proxyVerifyCallback(fn, args, done) {
 module.exports = function passportMiddleware(req) {
   const users = req.db.collection(getUsersCollectionName());
   const provider = req.authProvider;
-  proxyVerifyCallback(provider.callback, arguments, function(err, profile, passportCallback) {
+  proxyVerifyCallback(provider.callback, arguments, function (err, profile, passportCallback) {
     if (!profile || err) {
       return passportCallback('cannot find user');
     }
@@ -49,6 +48,7 @@ module.exports = function passportMiddleware(req) {
         return users.insertOne(insert).then(insertResult => {
           const payload = { _id: insertResult.insertedId, ...insert };
           passportCallback(null, payload);
+
           // We dispatch an event here to be able to execute side effects
           // i.e. create a lead in a 3rd party CRM
           req.service.emit('signup', payload);

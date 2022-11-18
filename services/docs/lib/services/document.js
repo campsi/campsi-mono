@@ -15,13 +15,15 @@ const getRequestedStatesFromQuery = (resource, query) => {
   return query.states ? query.states.split(',') : Object.keys(resource.states);
 };
 
-
-module.exports.anonymizePersonalData = async function (user, resource, filter, update) {
+module.exports.anonymizePersonalData = async function (user, resource, collection, update) {
   if (user && user?.isAdmin) {
     try {
-      const result = await resource.collection.findOneAndUpdate({ filter, deletedAt: { $exists: false } }, update, {
-        returnDocument: 'after'
-      });
+      const result = await resource.collection(collection).findOneAndUpdate(
+        { update, deletedAt: { $exists: false } },
+        {
+          returnDocument: 'after'
+        }
+      );
 
       // also anonymize additional field if passed in
       if (result && result.value) {
@@ -34,7 +36,8 @@ module.exports.anonymizePersonalData = async function (user, resource, filter, u
     }
   } else {
     throw new createError.Unauthorized('Need to be admin to call this route');
-  };
+  }
+};
 
 module.exports.deleteLock = async function deleteLocks(id, user, editLock, db, surrogateId) {
   let ownerId;

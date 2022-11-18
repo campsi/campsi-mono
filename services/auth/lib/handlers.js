@@ -454,6 +454,7 @@ function softDelete(req, res) {
   } else {
     return helpers.unauthorized(res);
   }
+}
 
 function extractUserPersonalData(req, res) {
   if (req.user && req.user?.isAdmin) {

@@ -94,7 +94,7 @@ describe('Auth API', () => {
       const project = createProject(userId);
 
       // insert fake __users__.user project with userId.displayName contaiting a filled in name
-      let result = await campsi.db.collection('__users__').insertOne(project);
+      await campsi.db.collection('__users__').insertOne(project);
 
       // sepcify a field that needs to be anonymized in addition to the existing user data
       res = await chai

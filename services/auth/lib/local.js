@@ -111,7 +111,7 @@ module.exports.createRandomToken = function (username, salt) {
 
 module.exports.signup = function (req, res) {
   const salt = req.authProvider.options.salt;
-  const passwordRegex = new RegExp(req.authProvider.options.passwordRegex ?? '/.*/');
+  const passwordRegex = new RegExp(req.authProvider.options.passwordRegex ?? '.*');
   if (!passwordRegex.test(req.body.password)) {
     return helpers.error(
       res,
@@ -340,7 +340,7 @@ module.exports.createResetPasswordToken = function (req, res) {
  */
 module.exports.resetPassword = function (req, res) {
   const missingParams = getMissingParameters(req.body, ['password', 'token']);
-  const passwordRegex = new RegExp(req.authProvider.options.passwordRegex ?? '/.*/');
+  const passwordRegex = new RegExp(req.authProvider.options.passwordRegex ?? '.*');
   if (!passwordRegex.test(req.body.password)) {
     return helpers.error(
       res,
@@ -399,7 +399,7 @@ module.exports.resetPassword = function (req, res) {
  */
 module.exports.updatePassword = function (req, res) {
   const missingParams = getMissingParameters(req.body, ['new', 'confirm']);
-  const passwordRegex = new RegExp(req.authProvider.options.passwordRegex ?? '/.*/');
+  const passwordRegex = new RegExp(req.authProvider.options.passwordRegex ?? '.*');
   if (!passwordRegex.test(req.body.new)) {
     return helpers.error(
       res,

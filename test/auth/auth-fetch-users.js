@@ -20,6 +20,13 @@ const glenda = {
   password: 'signup!'
 };
 
+const badGlenda = {
+  displayName: 'Glenda Bennett',
+  email: 'glenda@agilitation',
+  username: 'badGlenda',
+  password: 'signup!'
+};
+
 const services = {
   Auth: require('../../services/auth/lib'),
   Trace: require('campsi-service-trace'),
@@ -35,7 +42,7 @@ function createUser(campsi, user) {
       .send(user)
       .end((err, res) => {
         if (err) return reject(err);
-        resolve(res.body.token);
+        resolve(res);
       });
   });
 }
@@ -46,7 +53,8 @@ describe('User Fetching', () => {
   afterEach(done => context.server.close(done));
   describe('AuthService.fetchUsers', () => {
     it('it should return an array of user objects', done => {
-      createUser(context.campsi, glenda).then(bearerToken => {
+      createUser(context.campsi, glenda).then(res => {
+        const bearerToken = res.body.token;
         chai
           .request(context.campsi.app)
           .get('/auth/me')
@@ -69,6 +77,13 @@ describe('User Fetching', () => {
                 done();
               });
           });
+      });
+    });
+    it('create bad user', done => {
+      createUser(context.campsi, badGlenda).then(res => {
+        console.log(res.status);
+        res.should.have.status(400);
+        done();
       });
     });
   });

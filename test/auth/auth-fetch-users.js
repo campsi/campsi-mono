@@ -81,7 +81,6 @@ describe('User Fetching', () => {
     });
     it('create bad user', done => {
       createUser(context.campsi, badGlenda).then(res => {
-        console.log(res.status);
         res.should.have.status(400);
         done();
       });

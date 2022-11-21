@@ -15,15 +15,10 @@ const getRequestedStatesFromQuery = (resource, query) => {
   return query.states ? query.states.split(',') : Object.keys(resource.states);
 };
 
-module.exports.anonymizePersonalData = async function (user, resource, collection, update) {
+module.exports.anonymizePersonalData = async function (user, db, collection, field) {
   if (user && user?.isAdmin) {
     try {
-      const result = await resource.collection(collection).findOneAndUpdate(
-        { update, deletedAt: { $exists: false } },
-        {
-          returnDocument: 'after'
-        }
-      );
+      const result = await db.collection(collection).findOneAndUpdate({ [field]: { $exists: true } }, { $set: { [field]: '' } });
 
       // also anonymize additional field if passed in
       if (result && result.value) {

@@ -237,7 +237,7 @@ module.exports.delDocUser = function (req, res) {
 
 module.exports.softDelete = function (req, res) {
   documentService
-    .anonymizePersonalData(req.user, req.resource, req.params.collection, req.params.update)
+    .anonymizePersonalData(req.user, req.db, req.body?.collection, req.body?.field)
     .then(helpers.json(res))
     .catch(err => helpers.notFound(res, err));
 };

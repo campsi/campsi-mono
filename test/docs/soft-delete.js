@@ -119,15 +119,15 @@ describe('Owner', () => {
       const collection = '__users__';
 
       // eslint-disable-next-line no-template-curly-in-string
-      const update = "{ [ `users.${userId}.displayName`]: { $exists: true } }, { $set: { [ `users.${userId}.displayName`]: ''} }";
+      const field = `users.${userId}.displayName`;
 
       await chai
         .request(campsi.app)
-        .delete('/docs/none:soft-delete')
+        .delete('/docs/:soft-delete')
         .set('Authorization', `Bearer ${adminToken}`)
         .set('content-type', 'application/json')
         .send({
-          update,
+          field,
           collection
         });
 

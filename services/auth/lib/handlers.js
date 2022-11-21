@@ -6,7 +6,73 @@ const editURL = require('edit-url');
 const state = require('./state');
 const debug = require('debug')('campsi:service:auth');
 const { ObjectId } = require('mongodb');
+const { deleteExpiredTokens } = require('./tokens');
 const { getUsersCollectionName } = require('./modules/collectionNames');
+
+async function tokenMaintenance(req, res) {
+  if (!req?.user?.isAdmin) {
+    return helpers.unauthorized(res);
+  }
+
+  // this aggregation only returns users that have expired tokens to archive
+  if (req?.query?.action === 'deleteExpiredTokens') {
+    const aggregation = [
+      {
+        $project: {
+          user: '$$ROOT',
+          expiredTokens: {
+            $filter: {
+              input: { $objectToArray: '$$ROOT.tokens' },
+              as: 'tokens',
+              cond: {
+                $lte: ['$$tokens.v.expiration', '$$NOW']
+              }
+            }
+          }
+        }
+      },
+      {
+        $project: {
+          user: 1,
+          expiredTokens: 1,
+          tokens: {
+            $gt: [
+              {
+                $size: '$expiredTokens'
+              },
+              1
+            ]
+          }
+        }
+      },
+      {
+        $match: {
+          tokens: true
+        }
+      },
+      {
+        $project: {
+          user: 1
+        }
+      }
+    ];
+
+    const cursor = req.db.collection('__users__').aggregate(aggregation);
+
+    for await (const user of cursor) {
+      try {
+        await deleteExpiredTokens(user.user.tokens, user._id, req.db);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    res.json();
+  } else {
+    return helpers.badRequest(res);
+  }
+}
+
 
 function logout(req, res) {
   if (!req.user) {
@@ -505,5 +571,6 @@ module.exports = {
   acceptInvitation,
   addGroupsToUser,
   softDelete,
+  tokenMaintenance,
   extractUserPersonalData
 };

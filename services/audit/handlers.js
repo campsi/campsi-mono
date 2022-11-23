@@ -18,8 +18,7 @@ module.exports.getResources = async function (req, res) {
     });
   });
 
-  module.exports.createLogEntry (req, res) {
-    
-  }
+  module.exports.createLogEntry = async function (req, res) {};
+
   return helpers.json(res, result);
 };

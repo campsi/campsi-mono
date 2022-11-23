@@ -18,7 +18,9 @@ module.exports.getResources = async function (req, res) {
     });
   });
 
-  module.exports.createLogEntry = async function (req, res) {};
-
   return helpers.json(res, result);
 };
+
+module.exports.createLogEntry = async function (req, res) {};
+
+module.exports.getLog = async function (req, res) {};

@@ -23,7 +23,7 @@ module.exports = class AuditService extends CampsiService {
       return next();
     });
 
-    this.router.param('resource', param.attachResource(service.options));
+    //this.router.param('resource', param.attachResource(service.options));
     this.router.get('/', handlers.getResources);
     this.router.getAsync('/log/', handlers.getLog);
     this.router.postAsync('/log/', handlers.createLogEntry);

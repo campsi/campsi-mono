@@ -153,6 +153,25 @@ You can configure webhooks that are triggered when an request processed by _camp
 _todo_ distributed architecture example
 
 ## Usage
+First, start Redis and MongoDB containers by running:
+
+```sh
+docker compose up -d
+```
+
+To stop the containers, run:
+
+```sh
+docker compose down
+```
+
+To restart the containers, run:
+
+```sh
+docker compose restart
+```
+
+Once the containers are running, you can start the server by running:
 
 ```sh
 node auth-index.js

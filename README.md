@@ -174,7 +174,7 @@ docker compose restart
 Once the containers are running, you can start the server by running:
 
 ```sh
-node run test
+npm run test
 ```
 
 ### Flags

@@ -174,9 +174,7 @@ docker compose restart
 Once the containers are running, you can start the server by running:
 
 ```sh
-node auth-index.js
-# or
-npm start
+node run test
 ```
 
 ### Flags

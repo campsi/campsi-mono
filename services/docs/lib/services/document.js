@@ -81,7 +81,7 @@ module.exports.getLocks = async function (state, filter, user, editLock, db) {
 };
 
 const getDocumentLock = async function (state, filter, lockCollection) {
-  if (!filter._id) {
+  if (!filter?._id) {
     return undefined;
   }
 

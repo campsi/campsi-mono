@@ -189,74 +189,72 @@ npm run test
 
 #### Root
 
-| Property      | Type                 |  Description
-|:------------- |:-------------------  |:--------------------------------------
-| `name`        | `String`             | unique identifier of your api
-| `title`       | `String`             | title of the API
-| `description` | `String`             | markdown description
-| `roles`       | `<Role>`             | roles hashmap
-| `types`       | `<ResourceType>`     | resource types hashmap
-| `resources`   | `<Resource>`         | resources hasmap
+| Property      | Type             | Description                   |
+|:--------------|:-----------------|:------------------------------|
+| `name`        | `String`         | unique identifier of your api |
+| `title`       | `String`         | title of the API              |
+| `description` | `String`         | markdown description          |
+| `roles`       | `<Role>`         | roles hashmap                 |
+| `types`       | `<ResourceType>` | resource types hashmap        |
+| `resources`   | `<Resource>`     | resources hasmap              |
 
 #### Role
 
-| Property    | Type      | Description
-|:----------- |:--------  |:------------------------------
-| `label`     | `String`  | unique identifier of your api
-| `auth`      | `Boolean` | title of the API
-| `admin`     | `Boolean` | markdown descripition
+| Property | Type      | Description                   |
+|:---------|:----------|:------------------------------|
+| `label`  | `String`  | unique identifier of your api |
+| `auth`   | `Boolean` | title of the API              |
+| `admin`  | `Boolean` | markdown descripition         |
 
 #### ResourceType
 
-| Property          | Type                      |  Description
-|:----------------- |:------------------------  |:--------------------------------------
-| `defaultState`    | `String`                  | name of the state any request will default to
-| `states`          | `<State>`                 | hashmap of the states
-| `permissions`     | `<Role, <State, Method>>` | Allowed HTTP methods by role and by state
+| Property       | Type                      | Description                                   |
+|:---------------|:--------------------------|:----------------------------------------------|
+| `defaultState` | `String`                  | name of the state any request will default to |
+| `states`       | `<State>`                 | hashmap of the states                         |
+| `permissions`  | `<Role, <State, Method>>` | Allowed HTTP methods by role and by state     |
 
 #### State
 
-| Property       | type         |  Description
-|:-------------- |:-----------  |:--------------------------------------
-| `name`         | `String`     | name of the state any request will default to
-| `label`        | `String`     | hashmap of the states
-| `validate`     | `Boolean`    | wether the data has to be valid to be saved or not
+| Property   | type      | Description                                        |
+|:-----------|:----------|:---------------------------------------------------|
+| `name`     | `String`  | name of the state any request will default to      |
+| `label`    | `String`  | hashmap of the states                              |
+| `validate` | `Boolean` | wether the data has to be valid to be saved or not |
 
 #### Resource
 
-| Property          | type         |  Description
-|:----------------- |:-----------  |:--------------------------------------
-| `title`           | `String`     | readable title
-| `description`     | `String`     | markdown description
-| `type`            | `String`     | name of the ResourceType
-| `fields`          | `[Object]`   | list of the fields composing the model
-| `hooks`           | `[Hook]`     | list of hooks bound to the resource
-| `rels`            | `<Rel>`      | hashmap of relationships
+| Property      | type       | Description                            |
+|:--------------|:-----------|:---------------------------------------|
+| `title`       | `String`   | readable title                         |
+| `description` | `String`   | markdown description                   |
+| `type`        | `String`   | name of the ResourceType               |
+| `fields`      | `[Object]` | list of the fields composing the model |
+| `hooks`       | `[Hook]`   | list of hooks bound to the resource    |
+| `rels`        | `<Rel>`    | hashmap of relationships               |
 
 #### Rel
 
-| Property          | type         |  Description
-|:----------------- |:-----------  |:--------------------------------------
-| `path`            | `String`     | property path
-| `resource`        | `String`     | name of the resource it points to (self reference is OK)
-| `embed`           | `Boolean`    | resolve relation automatically
-| `fields`          | `[String]`   | list of the fields that gets embedded
-
+| Property   | type       | Description                                              |
+|:-----------|:-----------|:---------------------------------------------------------|
+| `path`     | `String`   | property path                                            |
+| `resource` | `String`   | name of the resource it points to (self reference is OK) |
+| `embed`    | `Boolean`  | resolve relation automatically                           |
+| `fields`   | `[String]` | list of the fields that gets embedded                    |
 
 #### Hook
 
-| Property          | type              |  Description
-|:----------------- |:----------------  |:--------------------------------------
-| `name`            | `String`          | hook identifier
-| `uri`             | `String`          | todo support parameter
-| `method`          | `String`          | one of `POST` `GET` `PUT` `DELETE`
-| `payload`         | `Boolean`         | if true and method is `POST` or `PUT`, send the `data`
-| `on`              | `[String]`        | list of actions
-| `states`          | `[String]`        | list of states
-| `retry`           | `Number`          | number of time the HTTP client tries to reach the endpoint
-| `timeout`         | `Number`          | number of seconds before the HTTP client hangs up
-| `headers`         | `<String,String>` | hashmap of the request headers
-
+| Property  | type              | Description                                                |
+|:----------|:------------------|:-----------------------------------------------------------|
+| `name`    | `String`          | hook identifier                                            |
+| `uri`     | `String`          | todo support parameter                                     |
+| `method`  | `String`          | one of `POST` `GET` `PUT` `DELETE`                         |
+| `payload` | `Boolean`         | if true and method is `POST` or `PUT`, send the `data`     |
+| `on`      | `[String]`        | list of actions                                            |
+| `states`  | `[String]`        | list of states                                             |
+| `retry`   | `Number`          | number of time the HTTP client tries to reach the endpoint |
+| `timeout` | `Number`          | number of seconds before the HTTP client hangs up          |
+| `headers` | `<String,String>` | hashmap of the request headers                             |
 
 ## Requirements
 

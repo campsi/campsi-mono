@@ -32,10 +32,11 @@ function fetchDocument(resource, reference) {
  */
 function getSubDocument(resource, reference, fields) {
   return fetchDocument(resource, reference).then((document) => {
-    const subDocument = { _id: new ObjectId(reference) };
+    const subDocument = {};
     fields.forEach((field) => {
       subDocument[field] = document?.[field];
     });
+    subDocument._id = new ObjectId(reference);
     return subDocument;
   });
 }

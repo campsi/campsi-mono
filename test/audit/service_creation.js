@@ -7,6 +7,7 @@ const chai = require('chai');
 const chaiHttp = require('chai-http');
 const config = require('config');
 const fakeObjectId = require('fake-object-id');
+const { ObjectId } = require('mongodb');
 const setupBeforeEach = require('../helpers/setupBeforeEach');
 chai.use(chaiHttp);
 chai.should();
@@ -40,6 +41,13 @@ describe('Audit Service', () => {
 
       res.should.have.status(200);
       res.should.be.json;
+
+      // check it is in the db
+      const logEntry = await context.campsi.db.collection('audit').findOne({ user: ObjectId(entry.user) });
+
+      const theSame = logEntry.user.equals(ObjectId(entry.user));
+
+      theSame.should.be.true;
     });
 
     it('should retrieve a journal entry via a REST CALL', async () => {
@@ -86,9 +94,16 @@ describe('Audit Service', () => {
         date: new Date().toISOString()
       };
 
-      console.log(entry);
       const auditService = context.campsi.services.get('audit');
-      auditService.createLog(entry);
+
+      await auditService.createLog(entry);
+
+      // check it is in the db
+      const logEntry = await context.campsi.db.collection('audit').findOne({ user: ObjectId(entry.user) });
+
+      const theSame = logEntry.user.equals(ObjectId(entry.user));
+
+      theSame.should.be.true;
     });
   });
 });

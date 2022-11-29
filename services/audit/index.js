@@ -4,6 +4,7 @@ const debug = require('debug')('campsi:audit');
 const handlers = require('./handlers');
 const utils = require('./utils.js');
 const JournalService = require('./services/journal');
+
 module.exports = class AuditService extends CampsiService {
   initialize() {
     debug('initialize audit service');

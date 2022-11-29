@@ -25,9 +25,9 @@ describe('Audit Service', () => {
   });
 
   /**
-   * Test the /GET route
+   * Test the journal creation
    */
-  describe('/GET', () => {
+  describe('/POST', () => {
     it('should create a journal entry via a REST call', async () => {
       const entry = {
         action: 'CREATE',
@@ -56,7 +56,9 @@ describe('Audit Service', () => {
 
       res.should.have.status(400);
     });
+  });
 
+  describe('/GET route', () => {
     it('should retrieve a journal entry via a REST CALL', async () => {
       const startDate = new Date();
       const endDate = new Date();
@@ -90,7 +92,9 @@ describe('Audit Service', () => {
       res.should.be.json;
       res.body.should.be.empty;
     });
+  });
 
+  describe('Test direct library usage', () => {
     it('should create a journal entry via the audit lib', async () => {
       const entry = {
         action: 'CREATE',

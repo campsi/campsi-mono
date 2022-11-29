@@ -165,7 +165,8 @@ module.exports = {
             schema: require('../schemas/log_entry.schema.json')
           }
         }
-      }
+      },
+      optionsBasePath: path.dirname(path.join(__dirname, '../'))
     }
   }
 };

@@ -4,6 +4,14 @@ const debug = require('debug')('audit');
 const createObjectId = require('../../../lib/modules/createObjectId');
 
 module.exports.createAuditEntry = async function createAuditEntry(db, entry, options) {
+  if (!entry || !db || !options | (Object.keys(entry).length === 0) || Object.keys(options).length === 0) {
+    return undefined;
+  }
+
+  if (!entry.date | !entry.user | !entry.action | !entry.data) {
+    return undefined;
+  }
+
   try {
     if (entry.date) {
       // make sure date is a Date object otherwise it will be stored as a string

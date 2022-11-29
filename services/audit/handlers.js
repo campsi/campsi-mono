@@ -22,18 +22,31 @@ module.exports.getResources = async function (req, res) {
 };
 
 module.exports.createLogEntry = async function (req, res) {
-  const id = await JournalService.createAuditEntry(req?.db, req.body, req.options);
-  helpers.json(res, id);
+  try {
+    const id = await JournalService.createAuditEntry(req?.db, req.body, req.options);
+
+    if (!id) {
+      helpers.badRequest(res);
+    } else {
+      helpers.json(res, id);
+    }
+  } catch (e) {
+    helpers.badRequest(res, e);
+  }
 };
 
 module.exports.getLog = async function (req, res) {
-  const entries = await JournalService.getJournalEntries(
-    req?.query?.startDate,
-    req?.query.endDate,
-    req?.query?.user,
-    req?.query?.actionType,
-    req?.db,
-    req.options
-  );
-  helpers.json(res, entries);
+  try {
+    const entries = await JournalService.getJournalEntries(
+      req?.query?.startDate,
+      req?.query.endDate,
+      req?.query?.user,
+      req?.query?.actionType,
+      req?.db,
+      req.options
+    );
+    helpers.json(res, entries);
+  } catch (e) {
+    helpers.badRequest(res, e);
+  }
 };

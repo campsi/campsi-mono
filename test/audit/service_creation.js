@@ -2,6 +2,7 @@
 process.env.NODE_CONFIG_DIR = './test/config';
 process.env.NODE_ENV = 'test';
 
+const { expect } = require('chai');
 // Require the dev-dependencies
 const chai = require('chai');
 const chaiHttp = require('chai-http');
@@ -48,6 +49,12 @@ describe('Audit Service', () => {
       const theSame = logEntry.user.equals(ObjectId(entry.user));
 
       theSame.should.be.true;
+    });
+
+    it('should fail to create a journal entry via a REST call', async () => {
+      const res = await chai.request(context.campsi.app).post('/audit/log').set('content-type', 'application/json');
+
+      res.should.have.status(400);
     });
 
     it('should retrieve a journal entry via a REST CALL', async () => {
@@ -104,6 +111,22 @@ describe('Audit Service', () => {
       const theSame = logEntry.user.equals(ObjectId(entry.user));
 
       theSame.should.be.true;
+    });
+
+    it('should fail to create a journal entry via the audit lib (missing action)', async () => {
+      const entry = {
+        data: {
+          name: 'james'
+        },
+        user: fakeObjectId(),
+        date: new Date().toISOString()
+      };
+
+      const auditService = context.campsi.services.get('audit');
+
+      const id = await auditService.createLog(entry);
+
+      expect(id).to.be.undefined;
     });
   });
 });

@@ -5,7 +5,7 @@ const defaultSchema = {
   properties: {
     action: {
       type: 'string',
-      enum: ['CREATE', 'DELETE', 'MODIFY', 'READ']
+      enum: ['CREATE', 'DELETE', 'UPDATE', 'READ']
     },
     data: {
       type: 'object'

@@ -9,6 +9,8 @@ module.exports = class AuditService extends CampsiService {
   initialize() {
     debug('initialize audit service');
     this.createLog = this.createLog.bind(this);
+    this.setupRoutes = this.setupRoutes.bind(this);
+
     const service = this;
 
     const schema = utils.validationSchema();
@@ -21,27 +23,35 @@ module.exports = class AuditService extends CampsiService {
       this.server.db
         .createCollection(utils.getCollectionName(), validator)
         .then(res => {
-          this.router.use('/', (req, _res, next) => {
-            req.options = service.options;
-            req.service = service;
-
-            return next();
-          });
-
-          this.router.get('/log', handlers.getLog);
-          this.router.post('/log', handlers.createLogEntry);
-
+          this.setupRoutes(service);
           resolve();
         })
         .catch(err => {
-          console.log(err);
-          debug("Can't create collection with supplied schema");
-          debug(err);
+          if (err.codeName === 'NamespaceExists') {
+            this.setupRoutes(service);
+          } else {
+            console.log(err);
+            debug("Can't create collection with supplied schema");
+            debug(err);
+          }
+
           resolve();
         });
     });
 
     return ret;
+  }
+
+  setupRoutes(service) {
+    this.router.use('/', (req, _res, next) => {
+      req.options = service.options;
+      req.service = service;
+
+      return next();
+    });
+
+    this.router.get('/log', handlers.getLog);
+    this.router.post('/log', handlers.createLogEntry);
   }
 
   createLog(body) {

@@ -14,7 +14,8 @@ chai.use(chaiHttp);
 chai.should();
 
 const services = {
-  Audit: require('../../services/audit')
+  Audit: require('../../services/audit'),
+  Docs: require('../../services/docs/lib')
 };
 
 describe('Audit Service', () => {

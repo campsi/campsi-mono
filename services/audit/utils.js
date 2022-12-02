@@ -11,13 +11,15 @@ const defaultSchema = {
       type: 'object'
     },
     user: {
-      bsonType: 'objectId'
+      type: 'string',
+      pattern: '^[a-f\\d]{24}$'
     },
     date: {
-      bsonType: 'date'
+      type: 'string',
+      format: 'date-time'
     }
   },
-  required: ['name', 'data', 'user', 'date']
+  required: ['action', 'data', 'user', 'date']
 };
 
 module.exports.getCollectionName = function getCollectionName(options) {

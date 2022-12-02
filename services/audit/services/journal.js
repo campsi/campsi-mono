@@ -4,7 +4,6 @@ const debug = require('debug')('audit');
 const createObjectId = require('../../../lib/modules/createObjectId');
 
 module.exports.createAuditEntry = async function createAuditEntry(db, entry, options) {
-  
   if (!entry || !db || !options || Object.keys(entry).length === 0 || Object.keys(options).length === 0) {
     return undefined;
   }
@@ -18,7 +17,7 @@ module.exports.createAuditEntry = async function createAuditEntry(db, entry, opt
 
     // get validator function that should now be in the resource
     for (const [key, resource] of Object.entries(options.resources)) {
-      if (resource.validate ) {
+      if (resource.validate) {
         validator = resource.validate;
         break;
       }

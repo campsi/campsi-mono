@@ -1,11 +1,11 @@
 function isAllowedTo(permission, method) {
-  return permission && (permission.includes(method) || permission === '*');
+  return permission && (permission.includes(method) || permission === "*");
 }
 
-const PUBLIC_ERR_MESSAGE = 'resource is not public for this state and method';
+const PUBLIC_ERR_MESSAGE = "resource is not public for this state and method";
 
 module.exports.can = function can(user, resource, method, state) {
-  const isAnonymous = typeof user === 'undefined';
+  const isAnonymous = typeof user === "undefined";
   const publicPermissions = resource.permissions.public?.[state];
   const publicIsAllowed = isAllowedTo(publicPermissions, method);
 
@@ -31,13 +31,13 @@ module.exports.can = function can(user, resource, method, state) {
       - or if they share at least one common group
    */
   const allowedRoles = Object.keys(resource.permissions)
-    .filter(role => {
+    .filter((role) => {
       return isAllowedTo(resource.permissions[role][state], method);
     })
-    .concat(['owner']);
+    .concat(["owner"]);
 
   let filter = {
-    [`users.${user._id}.roles`]: { $elemMatch: { $in: allowedRoles } }
+    [`users.${user._id}.roles`]: { $elemMatch: { $in: allowedRoles } },
   };
 
   if (user.groups && user.groups.length) {
@@ -46,11 +46,18 @@ module.exports.can = function can(user, resource, method, state) {
   return filter;
 };
 
-module.exports.getAllowedStatesFromDocForUser = function(user, resource, method, doc) {
+module.exports.getAllowedStatesFromDocForUser = function (
+  user,
+  resource,
+  method,
+  doc
+) {
   const getPublicStates = () => {
     const publicPermissions = resource.permissions.public;
     const publicPermissionsStates = Object.keys(publicPermissions);
-    return publicPermissionsStates.filter(stateName => isAllowedTo(publicPermissions[stateName], method));
+    return publicPermissionsStates.filter((stateName) =>
+      isAllowedTo(publicPermissions[stateName], method)
+    );
   };
   if (!user) {
     return getPublicStates();
@@ -58,26 +65,42 @@ module.exports.getAllowedStatesFromDocForUser = function(user, resource, method,
   if (user.isAdmin) {
     return Object.keys(resource.states);
   }
+
+  if (!Object.keys(doc.users).length) {
+    const userHasCommonGroup = doc.groups?.some(group => user.groups?.includes(group));
+    if  (userHasCommonGroup) {
+      return Object.keys(resource.states);
+    }
+  }
+
   const docUser = doc.users[user._id] || { roles: [] };
   if (!Array.isArray(docUser.roles)) {
     return getPublicStates();
   }
   let allowedStates = [];
-  docUser.roles.forEach(role => {
+  docUser.roles.forEach((role) => {
     const permsForRole = resource.permissions[role];
     if (!permsForRole) {
       return;
     }
     const statesForRole = Object.keys(permsForRole);
-    allowedStates = allowedStates.concat(statesForRole.filter(stateName => isAllowedTo(permsForRole[stateName], method)));
+    allowedStates = allowedStates.concat(
+      statesForRole.filter((stateName) =>
+        isAllowedTo(permsForRole[stateName], method)
+      )
+    );
   });
   return allowedStates;
 };
 
-module.exports.filterDocumentStates = function(document, allowedStates, requestedStates) {
+module.exports.filterDocumentStates = function (
+  document,
+  allowedStates,
+  requestedStates
+) {
   return Object.keys(document.states || {})
-    .filter(docState => requestedStates.includes(docState))
-    .filter(docState => allowedStates.includes(docState))
+    .filter((docState) => requestedStates.includes(docState))
+    .filter((docState) => allowedStates.includes(docState))
     .reduce((states, displayState) => {
       states[displayState] = document.states[displayState];
       return states;

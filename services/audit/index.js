@@ -4,42 +4,48 @@ const debug = require('debug')('campsi:audit');
 const handlers = require('./handlers');
 const utils = require('./utils.js');
 const JournalService = require('./services/journal');
+const Ajv = require('ajv');
+const addFormats = require('ajv-formats');
 
 module.exports = class AuditService extends CampsiService {
   initialize() {
     debug('initialize audit service');
     this.createLog = this.createLog.bind(this);
     this.setupRoutes = this.setupRoutes.bind(this);
+    this.setupSchemaValidation = this.setupSchemaValidation.bind(this);
 
     const service = this;
 
     const schema = utils.validationSchema();
 
-    const validator = { validator: { $jsonSchema: schema }, validationAction: 'warn' };
-
     this._journalService = JournalService;
 
-    const ret = new Promise(resolve => {
-      this.server.db
-        .createCollection(utils.getCollectionName(), validator)
-        .then(res => {
-          this.setupRoutes(service);
-          resolve();
-        })
-        .catch(err => {
-          if (err.codeName === 'NamespaceExists') {
-            this.setupRoutes(service);
-          } else {
-            console.log(err);
-            debug("Can't create collection with supplied schema");
-            debug(err);
-          }
+    const ret = new Promise((resolve, reject) => {
+      try {
+        for (const [key, resource] of Object.entries(service.options.resources)) {
+          this.setupSchemaValidation(resource, schema);
+        }
 
-          resolve();
-        });
+        this.setupRoutes(service);
+
+        resolve();
+      } catch (ex) {
+        reject(ex);
+      }
     });
 
     return ret;
+  }
+
+  setupSchemaValidation(resource, schema) {
+    const ajvReader = new Ajv({ useAssign: true, strictTuples: false, strict: false });
+    addFormats(ajvReader, ['date-time']);
+
+    try {
+      resource.validate = ajvReader.compile(schema);
+    } catch (ex) {
+      console.log(ex);
+    }
   }
 
   setupRoutes(service) {

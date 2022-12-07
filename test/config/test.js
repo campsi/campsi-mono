@@ -151,6 +151,22 @@ module.exports = {
         }
       },
       optionsBasePath: path.dirname(path.join(__dirname, '../'))
+    },
+    audit: {
+      title: 'Audit',
+      description: 'Audit Service',
+      options: {
+        roles: {},
+        classes: {},
+        resources: {
+          audit: {
+            label: 'audit',
+            class: 'publicEntry',
+            schema: require('../schemas/log_entry.schema.json')
+          }
+        }
+      },
+      optionsBasePath: path.dirname(path.join(__dirname, '../'))
     }
   }
 };

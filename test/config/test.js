@@ -167,6 +167,14 @@ module.exports = {
         }
       },
       optionsBasePath: path.dirname(path.join(__dirname, '../'))
+    },
+    billing: {
+      title: 'Contents',
+      description: 'Billing Service',
+      options: {
+        secret_key: 'sk_test_TLvEhxPpHyrPhJeyMnJyM9jj',
+        default_tax_percent: 20
+      }
     }
   }
 };

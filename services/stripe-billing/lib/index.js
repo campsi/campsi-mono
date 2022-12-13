@@ -91,7 +91,7 @@ module.exports = class StripeBillingService extends CampsiService {
     });
 
     this.router.put('/customers/:id', (req, res) => {
-      try{
+      try {
         this.checkEmailValidity(req?.body.email);
         stripe.customers.update(req.params.id, bodyToCustomer(req.body, 'default_source'), defaultHandler(res));
       }

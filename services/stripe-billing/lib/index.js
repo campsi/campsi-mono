@@ -1,7 +1,6 @@
 /* eslint-disable no-prototype-builtins */
 const CampsiService = require('../../../lib/service');
 const helpers = require('../../../lib/modules/responseHelpers');
-const { hasUncaughtExceptionCaptureCallback } = require('process');
 
 const subscriptionExpand = ['latest_invoice', 'latest_invoice.payment_intent', 'pending_setup_intent'];
 const customerExpand = ['tax_ids'];

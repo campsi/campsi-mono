@@ -28,26 +28,111 @@ module.exports = class DocsService extends CampsiService {
       req.service = service;
       next();
     });
-    this.router.param('resource', param.attachResource(service.options));
-    this.router.get('/', handlers.getResources);
-    this.router.get('/:resource', handlers.getDocuments);
-    this.router.post('/:resource/:id/locks', handlers.lockDocument);
-    this.router.get('/:resource/:id/locks', handlers.getLocks);
-    this.router.get('/:resource/:id/users', handlers.getDocUsers);
-    this.router.post('/:resource/:id/users', handlers.postDocUser);
-    this.router.delete('/:resource/:id/users/:user', handlers.delDocUser);
-    this.router.post('/:resource/:id/:state/locks', handlers.lockDocument);
-    this.router.get('/:resource/:id/:state', handlers.getDoc);
-    this.router.get('/:resource/:id', handlers.getDoc);
-    this.router.post('/:resource/:state', handlers.postDoc);
-    this.router.post('/:resource', handlers.postDoc);
-    this.router.put('/:resource/:id/state', handlers.putDocState);
-    this.router.put('/:resource/:id/:state', handlers.putDoc);
-    this.router.put('/:resource/:id', handlers.putDoc);
-    this.router.patch('/:resource/:id', handlers.patchDoc);
-    this.router.delete('/:resource/:id', handlers.delDoc);
-    this.router.delete('/:resource/:id/:state', handlers.delDoc);
-    this.router.delete('/:resource/:id/locks/:lock', handlers.deleteLock);
+    this.router.param(
+      // #swagger.tags = ['{DOCSERVICE}']
+      // #swagger.ignore = true
+      'resource',
+      param.attachResource(service.options)
+    );
+    this.router.get(
+      '/',
+      // #swagger.tags = ['DOCSERVICE']
+      // #swagger.ignore = true
+      handlers.getResources
+    );
+    this.router.get(
+      // #swagger.tags = ['DOCSERVICE']
+      '/:resource',
+      handlers.getDocuments
+    );
+    this.router.post(
+      '/:resource/:id/locks',
+      // #swagger.tags = ['DOCSERVICE']
+      // #swagger.ignore = true
+      handlers.lockDocument
+    );
+    this.router.get(
+      '/:resource/:id/locks',
+      // #swagger.ignore = true
+      // #swagger.tags = ['DOCSERVICE']
+      handlers.getLocks
+    );
+    this.router.get(
+      // #swagger.ignore = true
+      // #swagger.tags = ['DOCSERVICE'],
+      '/:resource/:id/users',
+      handlers.getDocUsers
+    );
+    this.router.post(
+      // #swagger.tags = ['DOCSERVICE'],
+      '/:resource/:id/users',
+      handlers.postDocUser
+    );
+    this.router.delete(
+      // #swagger.tags = ['DOCSERVICE'],
+      '/:resource/:id/users/:user',
+      handlers.delDocUser
+    );
+    this.router.post(
+      '/:resource/:id/:state/locks',
+      // #swagger.ignore = true
+      handlers.lockDocument
+    );
+    this.router.get(
+      // #swagger.tags = ['DOCSERVICE']
+      '/:resource/:id/:state',
+      handlers.getDoc
+    );
+    this.router.get(
+      // #swagger.tags = ['DOCSERVICE'],
+      '/:resource/:id',
+      handlers.getDoc
+    );
+    this.router.post(
+      // #swagger.tags = ['DOCSERVICE'],
+      '/:resource/:state',
+      handlers.postDoc
+    );
+    this.router.post(
+      // #swagger.tags = ['DOCSERVICE'],
+      '/:resource',
+      handlers.postDoc
+    );
+    this.router.put(
+      // #swagger.tags = ['DOCSERVICE'],
+      '/:resource/:id/state',
+      handlers.putDocState
+    );
+    this.router.put(
+      // #swagger.tags = ['DOCSERVICE'],
+      '/:resource/:id/:state',
+      handlers.putDoc
+    );
+    this.router.put(
+      // #swagger.tags = ['DOCSERVICE'],
+      '/:resource/:id',
+      handlers.putDoc
+    );
+    this.router.patch(
+      // #swagger.tags = ['DOCSERVICE'],
+      '/:resource/:id',
+      handlers.patchDoc
+    );
+    this.router.delete(
+      // #swagger.tags = ['DOCSERVICE'],
+      '/:resource/:id',
+      handlers.delDoc
+    );
+    this.router.delete(
+      // #swagger.tags = ['DOCSERVICE'],
+      '/:resource/:id/:state',
+      handlers.delDoc
+    );
+    this.router.delete(
+      '/:resource/:id/locks/:lock',
+      // #swagger.ignore = true
+      handlers.deleteLock
+    );
     return new Promise(resolve => {
       const ajvWriter = new Ajv({ useAssign: true, strictTuples: false, strict: false });
       addFormats(ajvWriter);

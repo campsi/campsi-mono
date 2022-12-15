@@ -9,6 +9,7 @@ const authUser = require('./middleware/authUser');
 const session = require('./middleware/session');
 const createObjectId = require('../../../lib/modules/createObjectId');
 const { getUsersCollectionName } = require('./modules/collectionNames');
+const mfaHandlers = require('./mfaHandlers');
 
 module.exports = class AuthService extends CampsiService {
   initialize() {
@@ -71,6 +72,12 @@ module.exports = class AuthService extends CampsiService {
     }
     this.router.get('/:provider', handlers.initAuth);
     this.router.get('/:provider/callback', handlers.callback);
+
+    router.getAsync('/mfa/send-otp-code', mfaHandlers.sendOtpCode);
+    router.getAsync('/mfa/verify-otp-code', mfaHandlers.verifyOtpCode);
+
+    this.router.get('/mfa/create-totp-seed-factor', mfaHandlers.createTotpSeedFactor);
+    this.router.get('/mfa/verify-totp-code', mfaHandlers.verifyTotpCode);
   }
 
   getMiddlewares() {

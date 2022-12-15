@@ -74,6 +74,7 @@
     "request": "^2.88.2",
     "string-format": "^2.0.0",
     "stripe": "^8.194.0",
+    "twilio": "^3.84.0",
     "unique-slug": "^2.0.0",
     "yargs": "^16.1.0"
   },

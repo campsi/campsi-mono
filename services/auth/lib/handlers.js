@@ -187,13 +187,17 @@ function patchMe(req, res) {
 
 async function updateUserTokenStatus(db, user, token, tokenStatus) {
   if (user) {
-    const update = { $upset: { tokens: { [`${token}`]: { status: tokenStatus } } } };
+    const update = { $set: { [`tokens.${token}.status`]: tokenStatus } };
 
-    const result = await db.collection(getUsersCollectionName()).findOneAndUpdate({ _id: user._id }, update, {
-      returnDocument: 'after'
-    });
+    try {
+      const result = await db.collection(getUsersCollectionName()).findOneAndUpdate({ _id: user._id }, update, {
+        returnDocument: 'after'
+      });
 
-    return result.value;
+      return result.value;
+    } catch (ex) {
+      console.log(ex);
+    }
   }
 }
 
@@ -255,23 +259,26 @@ function callback(req, res) {
 
         console.log(req.user);
 
-        const mfa = req.user.data?.authenticationPreference?.mode;
-        if (mfa) {
+        const mfa = { mode: undefined, to: undefined };
+        mfa.mode = req.user.data?.authenticationPreference?.mode;
+        if (mfa.mode) {
           switch (mfa) {
             case 'sms':
             case 'call': {
-              req.user.data.mfa.to = req.user.telephone;
+              mfa.to = req.user.data.phone;
               break;
             }
             case 'totp': {
-              req.user.data.mfa.to = req.user.email;
+              mfa.to = req.user.email;
               break;
             }
             case 'email': {
-              req.user.data.mfa.to = req.user.email;
+              mfa.to = req.user.email;
               break;
             }
           }
+
+          req.user.mfa = mfa;
 
           // update the token with pending status
           updateUserTokenStatus(req.db, req.user, req.authBearerToken, 'pending');

@@ -40,13 +40,19 @@ module.exports = class AuthService extends CampsiService {
     this.router.use((req, res, next) => {
       req.authProviders = providers;
       req.service = this;
+      if (this.options.mfa.twilio) {
+        const twilioClient = require('twilio')(this.options.mfa.twilio.accountSid, this.options.mfa.twilio.authToken);
+        req.verifyClient = twilioClient.verify.v2.services(this.options.mfa.twilio.serviceSid);
+      }
       next();
     });
+
     this.router.use(passport.initialize());
     this.router.param('provider', (req, res, next, id) => {
       req.authProvider = providers[id];
       return !req.authProvider ? helpers.notFound(res) : next();
     });
+
     router.get('/users', handlers.getUsers);
     router.get('/users/:userId/extract_personal_data', handlers.extractUserPersonalData);
     router.get('/users/:userId/access_token', handlers.getAccessTokenForUser);
@@ -82,6 +88,11 @@ module.exports = class AuthService extends CampsiService {
 
   getMiddlewares() {
     return [session, authUser];
+  }
+
+  attachVerifyClient(req, res, next) {
+    req.verifyClient = this.verifyClient;
+    next();
   }
 
   install() {

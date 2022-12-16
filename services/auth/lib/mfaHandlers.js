@@ -1,30 +1,26 @@
-const accountSid = 'REDACTED';
-const authToken = 'REDACTED';
-const client = require('twilio')(accountSid, authToken);
-const serviceSID = 'REDACTED';
-
-const verifyClient = client.verify.v2.services(serviceSID);
-
 const sendOtpCode = async (req, res) => {
-  const verification = await verifyClient.verifications.create({ to: req.query.to, channel: req.query.channel });
+  const verification = await req.verifyClient.verifications.create({ to: req.query.to, channel: req.query.channel });
   res.json(verification);
 };
 
 const verifyOtpCode = async (req, res) => {
-  const verificationCheck = await verifyClient.verificationChecks.create({ to: req.query.to, code: req.body.code });
+  const verificationCheck = await req.verifyClient.verificationChecks.create({ to: req.query.to, code: req.body.code });
   res.json(verificationCheck);
 };
 
 const createTotpSeedFactor = async (req, res) => {
-  const factor = await verifyClient.entities(req.query.userId).newFactors.create({
+  // TODO: validate userId, check if present in DB
+  const factor = await req.verifyClient.entities(req.query.userId).newFactors.create({
     friendlyName: req.query.friendlyName,
     factorType: 'totp'
   });
+
+  // TODO: if success, store in db
   res.json(factor);
 };
 
 const verifyTotpCode = async (req, res) => {
-  const verificationCheck = await verifyClient
+  const verificationCheck = await req.verifyClient
     .entities(req.query.userId)
     .factors(req.query.factorSid)
     .update({ authPayload: req.query.code });

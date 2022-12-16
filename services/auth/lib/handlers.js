@@ -139,6 +139,14 @@ function me(req, res) {
     .catch(error => helpers.error(res, error));
 }
 
+async function verifyOTPCode(req, res) {
+  const result = await  verifyOtpCode(req.to, req.code, req.verifyClient);
+
+  if (result?.status === 'approved') {
+    await updateUserTokenStatus(req.db, req.user, 'approved');
+  }
+}
+
 function updateMe(req, res) {
   if (!req.user) {
     return helpers.unauthorized(res);
@@ -588,5 +596,6 @@ module.exports = {
   acceptInvitation,
   addGroupsToUser,
   tokenMaintenance,
-  extractUserPersonalData
+  extractUserPersonalData,
+  verifyOTPCode
 };

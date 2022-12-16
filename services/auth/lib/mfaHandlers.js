@@ -6,9 +6,9 @@ const sendOtpCode = async (to, channel, verifyClient) => {
   return verification.status;
 };
 
-const verifyOtpCode = async (req, res) => {
-  const verificationCheck = await req.verifyClient.verificationChecks.create({ to: req.query.to, code: req.body.code });
-  res.json(verificationCheck);
+const verifyOtpCode = async (to, code, verifyClient) => {
+  const verificationCheck = await verifyClient.verificationChecks.create({ to, code });
+  return verificationCheck;
 };
 
 const createTotpSeedFactor = async (req, res) => {

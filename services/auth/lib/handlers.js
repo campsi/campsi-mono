@@ -8,6 +8,7 @@ const debug = require('debug')('campsi:service:auth');
 const { ObjectId } = require('mongodb');
 const { deleteExpiredTokens } = require('./tokens');
 const { getUsersCollectionName } = require('./modules/collectionNames');
+const { verifyOtpCode, sendOtpCode } = require('./mfaHandlers');
 
 async function tokenMaintenance(req, res) {
   if (!req?.user?.isAdmin) {
@@ -252,7 +253,8 @@ function callback(req, res) {
     }
     if (!redirectURI) {
       try {
-        const mfa = { mode: undefined, to: undefined };
+        const mfa = { mode: undefined, to: undefined, mfaStatus: undefined };
+
         mfa.mode = req.user.data?.authenticationPreference?.mode;
         if (mfa.mode) {
           switch (mfa) {
@@ -273,6 +275,7 @@ function callback(req, res) {
 
           // update the token with pending status
           updateUserTokenStatus(req.db, req.user, req.authBearerToken, 'pending');
+          mfa.mfaStatus = sendOtpCode(mfa.to, mfa.mode, req.verifyClient)?.status;
         }
 
         res.json({ token: req.authBearerToken, mfa });
@@ -305,6 +308,11 @@ function redirectWithError(req, res, err) {
       })
     );
   }
+}
+
+function verifyMFACode(req, res) {
+  const result = verifyOtpCode(req.to, req.code, req.verifyClient);
+  res.json(result);
 }
 
 function getUserFilterFromQuery(query) {

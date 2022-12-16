@@ -255,7 +255,6 @@ function callback(req, res) {
     if (!redirectURI) {
       try {
         console.log('callback - handlers - no redirect uri');
-        res.json({ token: req.authBearerToken });
 
         console.log(req.user);
 
@@ -278,11 +277,11 @@ function callback(req, res) {
             }
           }
 
-          req.user.mfa = mfa;
-
           // update the token with pending status
           updateUserTokenStatus(req.db, req.user, req.authBearerToken, 'pending');
         }
+
+        res.json({ token: req.authBearerToken, mfa });
       } catch (err) {
         debug('Catching headers', err);
       }

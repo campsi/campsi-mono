@@ -40,7 +40,7 @@ module.exports = class AuthService extends CampsiService {
     this.router.use((req, res, next) => {
       req.authProviders = providers;
       req.service = this;
-      if (this.options?.mfa?.twilio) {
+      if (this.options.mfa?.twilio) {
         const twilioClient = require('twilio')(this.options.mfa.twilio.accountSid, this.options.mfa.twilio.authToken);
         req.verifyClient = twilioClient.verify.v2.services(this.options.mfa.twilio.serviceSid);
       }

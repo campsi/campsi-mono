@@ -280,7 +280,8 @@ function callback(req, res) {
               break;
             }
             case 'totp': {
-              mfa.to = req.user.email;
+              mfa.userId = req.user._id;
+              mfa.factorSid = req.user.data.authenticationPreference.totpFactor.sid;
               break;
             }
             case 'email': {

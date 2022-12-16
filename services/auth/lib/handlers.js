@@ -72,8 +72,6 @@ async function tokenMaintenance(req, res) {
     return helpers.badRequest(res);
   }
 }
-
-
 function logout(req, res) {
   if (!req.user) {
     return helpers.unauthorized(res);
@@ -187,6 +185,18 @@ function patchMe(req, res) {
     .catch(error => helpers.error(res, error));
 }
 
+async function updateUserTokenStatus(db, user, token, tokenStatus) {
+  if (user) {
+    const update = { $upset: { tokens: { [`${token}`]: { status: tokenStatus } } } };
+
+    const result = await db.collection(getUsersCollectionName()).findOneAndUpdate({ _id: user._id }, update, {
+      returnDocument: 'after'
+    });
+
+    return result.value;
+  }
+}
+
 function createAnonymousUser(req, res) {
   const token = builder.genBearerToken(100);
   const insert = {
@@ -226,18 +236,46 @@ function getProviders(req, res) {
 }
 
 function callback(req, res) {
+  console.log('callback - handlers');
   const { redirectURI } = state.get(req);
+  console.log(redirectURI);
   // noinspection JSUnresolvedFunction
   passport.authenticate(req.authProvider.name, {
     session: false,
     failWithError: true
   })(req, res, () => {
+    console.log('callback - handlers - passport authenticate');
     if (!req.user) {
       return redirectWithError(req, res, new Error('unable to authentify user'));
     }
     if (!redirectURI) {
       try {
+        console.log('callback - handlers - no redirect uri');
         res.json({ token: req.authBearerToken });
+
+        console.log(req.user);
+
+        const mfa = req.user.data?.authenticationPreference?.mode;
+        if (mfa) {
+          switch (mfa) {
+            case 'sms':
+            case 'call': {
+              req.user.data.mfa.to = req.user.telephone;
+              break;
+            }
+            case 'totp': {
+              req.user.data.mfa.to = req.user.email;
+              break;
+            }
+            case 'email': {
+              req.user.data.mfa.to = req.user.email;
+              break;
+            }
+          }
+
+          // update the token with pending status
+          updateUserTokenStatus(req.db, req.user, req.authBearerToken, 'pending');
+        }
       } catch (err) {
         debug('Catching headers', err);
       }
@@ -253,6 +291,8 @@ function callback(req, res) {
         debug('session destroyed');
       });
     }
+
+    console.log('callback - handlers - end of functiron');
   });
 }
 

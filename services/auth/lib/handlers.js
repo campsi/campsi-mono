@@ -196,7 +196,7 @@ async function updateUserTokenStatus(db, user, token, tokenStatus) {
 
       return result.value;
     } catch (ex) {
-      console.log(ex);
+      debug(ex);
     }
   }
 }
@@ -240,24 +240,18 @@ function getProviders(req, res) {
 }
 
 function callback(req, res) {
-  console.log('callback - handlers');
   const { redirectURI } = state.get(req);
-  console.log(redirectURI);
+
   // noinspection JSUnresolvedFunction
   passport.authenticate(req.authProvider.name, {
     session: false,
     failWithError: true
   })(req, res, () => {
-    console.log('callback - handlers - passport authenticate');
     if (!req.user) {
       return redirectWithError(req, res, new Error('unable to authentify user'));
     }
     if (!redirectURI) {
       try {
-        console.log('callback - handlers - no redirect uri');
-
-        console.log(req.user);
-
         const mfa = { mode: undefined, to: undefined };
         mfa.mode = req.user.data?.authenticationPreference?.mode;
         if (mfa.mode) {
@@ -297,8 +291,6 @@ function callback(req, res) {
         debug('session destroyed');
       });
     }
-
-    console.log('callback - handlers - end of functiron');
   });
 }
 

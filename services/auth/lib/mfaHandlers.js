@@ -1,8 +1,9 @@
 const { getUsersCollectionName } = require('./modules/collectionNames');
 const createObjectId = require('../../../lib/modules/createObjectId');
-const sendOtpCode = async (req, res) => {
-  const verification = await req.verifyClient.verifications.create({ to: req.query.to, channel: req.query.channel });
-  res.json(verification);
+
+const sendOtpCode = async (to, channel, verifyClient) => {
+  const verification = await verifyClient.verifications.create({ to, channel });
+  return verification.status;
 };
 
 const verifyOtpCode = async (req, res) => {

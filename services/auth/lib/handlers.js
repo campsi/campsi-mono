@@ -247,7 +247,7 @@ function callback(req, res) {
   passport.authenticate(req.authProvider.name, {
     session: false,
     failWithError: true
-  })(req, res, () => {
+  })(req, res, async () => {
     if (!req.user) {
       return redirectWithError(req, res, new Error('unable to authentify user'));
     }
@@ -274,8 +274,8 @@ function callback(req, res) {
           }
 
           // update the token with pending status
-          updateUserTokenStatus(req.db, req.user, req.authBearerToken, 'pending');
-          mfa.mfaStatus = sendOtpCode(mfa.to, mfa.mode, req.verifyClient)?.status;
+          await updateUserTokenStatus(req.db, req.user, req.authBearerToken, 'pending');
+          mfa.mfaStatus = await sendOtpCode(mfa.to, mfa.mode, req.verifyClient)?.status;
         }
 
         res.json({ token: req.authBearerToken, mfa });

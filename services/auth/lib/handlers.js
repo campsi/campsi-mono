@@ -198,7 +198,13 @@ function patchMe(req, res) {
 
 async function updateUserTokenStatus(db, user, token, tokenStatus) {
   if (user) {
-    const update = { $set: { [`tokens.${token}.status`]: tokenStatus } };
+    let update;
+
+    if (tokenStatus === 'approved') {
+      update = { $unset: { [`tokens.${token}.status`]: tokenStatus } };
+    } else {
+      update = { $set: { [`tokens.${token}.status`]: tokenStatus } };
+    }
 
     try {
       const result = await db.collection(getUsersCollectionName()).findOneAndUpdate({ _id: user._id }, update, {

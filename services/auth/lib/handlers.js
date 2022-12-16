@@ -292,7 +292,9 @@ function callback(req, res) {
 
           // update the token with pending status
           await updateUserTokenStatus(req.db, req.user, req.authBearerToken, 'pending');
-          mfa.mfaStatus = await sendOtpCode(mfa.to, mfa.mode, req.verifyClient)?.status;
+          if (['sms', 'email', 'code'].includes(mfa.mode)) {
+            mfa.mfaStatus = await sendOtpCode(mfa.to, mfa.mode, req.verifyClient)?.status;
+          }
         }
 
         res.json({ token: req.authBearerToken, mfa });

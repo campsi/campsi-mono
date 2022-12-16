@@ -257,7 +257,7 @@ function callback(req, res) {
 
         mfa.mode = req.user.data?.authenticationPreference?.mode;
         if (mfa.mode) {
-          switch (mfa) {
+          switch (mfa.mode) {
             case 'sms':
             case 'call': {
               mfa.to = req.user.data.phone;

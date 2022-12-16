@@ -15,16 +15,24 @@ const createTotpSeedFactor = async (req, res) => {
     factorType: 'totp'
   });
 
-  // TODO: if success, store in db
   res.json(factor);
 };
 
-const verifyTotpCode = async (req, res) => {
+const verifyTotpRegistrationCode = async (req, res) => {
   const verificationCheck = await req.verifyClient
     .entities(req.query.userId)
     .factors(req.query.factorSid)
     .update({ authPayload: req.query.code });
+  // TODO: if success, store in db
+
   res.json(verificationCheck);
 };
 
-module.exports = { sendOtpCode, verifyOtpCode, createTotpSeedFactor, verifyTotpCode };
+const verifyTotpCode = async (req, res) => {
+  const challenge = await req.verifyClient
+    .entities(req.query.userId)
+    .challenges.create({ authPayload: req.query.code, factorSid: req.query.factorSid });
+  res.json(challenge);
+};
+
+module.exports = { sendOtpCode, verifyOtpCode, createTotpSeedFactor, verifyTotpRegistrationCode, verifyTotpCode };

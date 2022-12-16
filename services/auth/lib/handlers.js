@@ -140,7 +140,7 @@ function me(req, res) {
 }
 
 async function verifyOTPCode(req, res) {
-  const result = await verifyOtpCode(req.to, req.code, req.verifyClient);
+  const result = await verifyOtpCode(req.query.to, req.query.code, req.verifyClient);
 
   if (result?.status) {
     await updateUserTokenStatus(req.db, req.user, result.status);

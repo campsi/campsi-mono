@@ -84,7 +84,7 @@ module.exports = class AuthService extends CampsiService {
 
     this.router.get('/mfa/create-totp-seed-factor', mfaHandlers.createTotpSeedFactor);
     this.router.get('/mfa/verify-totp-registration-code', mfaHandlers.verifyTotpRegistrationCode);
-    this.router.get('/mfa/verify-totp-code', mfaHandlers.verifyTotpCode);
+    this.router.get('/mfa/verify-totp-code', handlers.verifyTOTPCode);
   }
 
   getMiddlewares() {

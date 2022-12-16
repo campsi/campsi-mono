@@ -54,12 +54,10 @@ const verifyTotpRegistrationCode = async (req, res) => {
   res.json(verificationCheck);
 };
 
-const verifyTotpCode = async (req, res) => {
+const verifyTotpCode = async (userId, factorSid, code, verifyClient) => {
   // TODO: validate userId & factorSid, check if present in DB
-  const challenge = await req.verifyClient
-    .entities(req.query.userId)
-    .challenges.create({ authPayload: req.query.code, factorSid: req.query.factorSid });
-  res.json(challenge);
+  const challenge = await verifyClient.entities(userId).challenges.create({ authPayload: code, factorSid });
+  return challenge;
 };
 
 module.exports = { sendOtpCode, verifyOtpCode, createTotpSeedFactor, verifyTotpRegistrationCode, verifyTotpCode };

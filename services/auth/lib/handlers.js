@@ -8,7 +8,8 @@ const debug = require('debug')('campsi:service:auth');
 const { ObjectId } = require('mongodb');
 const { deleteExpiredTokens } = require('./tokens');
 const { getUsersCollectionName } = require('./modules/collectionNames');
-const { verifyOtpCode, sendOtpCode } = require('./mfaHandlers');
+const { verifyOtpCode, verifyTotpCode, sendOtpCode } = require('./mfaHandlers');
+const createObjectId = require('../../../lib/modules/createObjectId');
 
 async function tokenMaintenance(req, res) {
   if (!req?.user?.isAdmin) {
@@ -143,7 +144,16 @@ async function verifyOTPCode(req, res) {
   const result = await verifyOtpCode(req.query.to, req.query.code, req.verifyClient);
 
   if (result?.status) {
-    await updateUserTokenStatus(req.db, req.user, result.status);
+    await updateUserTokenStatus(req.db, req.query.userId, req.query.token, result.status);
+  }
+
+  res.json(result);
+}
+async function verifyTOTPCode(req, res) {
+  const result = await verifyTotpCode(req.query.userId, req.query.factorSid, req.query.code, req.verifyClient);
+
+  if (result?.status) {
+    await updateUserTokenStatus(req.db, req.query.userId, req.query.token, result.status);
   }
 
   res.json(result);
@@ -196,8 +206,9 @@ function patchMe(req, res) {
     .catch(error => helpers.error(res, error));
 }
 
-async function updateUserTokenStatus(db, user, token, tokenStatus) {
-  if (user) {
+async function updateUserTokenStatus(db, userId, token, tokenStatus) {
+  userId = createObjectId(userId);
+  if (userId) {
     let update;
 
     if (tokenStatus === 'approved') {
@@ -207,7 +218,7 @@ async function updateUserTokenStatus(db, user, token, tokenStatus) {
     }
 
     try {
-      const result = await db.collection(getUsersCollectionName()).findOneAndUpdate({ _id: user._id }, update, {
+      const result = await db.collection(getUsersCollectionName()).findOneAndUpdate({ _id: userId }, update, {
         returnDocument: 'after'
       });
 
@@ -272,6 +283,7 @@ function callback(req, res) {
         const mfa = { mode: undefined, to: undefined, mfaStatus: undefined };
 
         mfa.mode = req.user.data?.authenticationPreference?.mode;
+        mfa.userId = req.user._id;
         if (mfa.mode) {
           switch (mfa.mode) {
             case 'sms':
@@ -280,7 +292,6 @@ function callback(req, res) {
               break;
             }
             case 'totp': {
-              mfa.userId = req.user._id;
               mfa.factorSid = req.user.data.authenticationPreference.totpFactor.sid;
               break;
             }
@@ -291,7 +302,7 @@ function callback(req, res) {
           }
 
           // update the token with pending status
-          await updateUserTokenStatus(req.db, req.user, req.authBearerToken, 'pending');
+          await updateUserTokenStatus(req.db, req.user._id, req.authBearerToken, 'pending');
           if (['sms', 'email', 'code'].includes(mfa.mode)) {
             mfa.mfaStatus = await sendOtpCode(mfa.to, mfa.mode, req.verifyClient)?.status;
           }
@@ -608,5 +619,6 @@ module.exports = {
   addGroupsToUser,
   tokenMaintenance,
   extractUserPersonalData,
-  verifyOTPCode
+  verifyOTPCode,
+  verifyTOTPCode
 };

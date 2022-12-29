@@ -263,4 +263,3 @@ npm run test
 - Optional
   - ImageMagick
   - Graphics Magick
-

@@ -21,7 +21,7 @@
     "campsi": "^1.0.6",
     "chai": "^4.1.2",
     "chai-http": "^4.0.0",
-    "config": "^1.30.0",
+    "config": "^3.3.8",
     "coveralls": "^3.0.0",
     "depcheck": "^1.2.0",
     "eslint": "^8.13.0",

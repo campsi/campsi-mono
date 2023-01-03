@@ -95,7 +95,7 @@ module.exports = class StripeBillingService extends CampsiService {
         stripe.customers.update(req.params.id, bodyToCustomer(req.body, 'default_source'), defaultHandler(res));
       }
       catch(err) {
-        res.status(400).json(ex);
+        res.status(400).json(err);
       }
     });
 
@@ -364,7 +364,7 @@ module.exports = class StripeBillingService extends CampsiService {
   };
 
   checkEmailValidity (email) {
-    if (!/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(email)) {
+    if (!/^\w+([.-/+]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(email)) {
       throw 'Invalid Email';
     }
   };

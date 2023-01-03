@@ -42,9 +42,69 @@ function createUser(campsi, user) {
   });
 }
 
+const expect = require('chai').expect;
+const proxyquire = require('proxyquire');
+const sinonChai = require('sinon-chai');
+
+chai.use(sinonChai);
+
+describe('it should get user account from the API', function () {
+  it.skip('should be able to access passport authenticate', async () => {
+    // configure request and response
+    const mockReq = {
+      body: {
+        username: 'johndoe',
+        password: 'secret'
+      },
+      logIn: function () {}
+    };
+
+    const mockRes = {};
+
+    // configure request-promise
+    const requestPromiseStub = sinon.stub();
+
+    requestPromiseStub
+      .onCall(0)
+      .returns(
+        Promise.resolve({
+          userId: 138
+        })
+      )
+      .onCall(1)
+      .returns(
+        Promise.resolve({
+          userName: 'johndoe',
+          status: 0
+        })
+      );
+
+    const overrides = {
+      'request-promise': requestPromiseStub
+    };
+
+    proxyquire('passport-next/passport', overrides)();
+    // passport.authenticate('local')(mockReq, mockRes);
+
+    const campsi = context.campsi;
+    // await createUser(campsi, glenda);
+
+    try {
+      const res = await chai.request(campsi.app).get(`/auth/github?username=${glenda.email}`);
+      res.should.have.status(200);
+      res.should.be.json;
+      res.body.should.be.a('object');
+      res.body.should.have.property('token');
+      res.body.token.should.be.a('string');
+    } catch (ex) {
+      if (ex) debug(`received an error from chai: ${ex}`);
+    }
+  });
+  // ASSERTS HERE
+  // expect(requestPromiseStub).to.have.been.called();
+});
+
 describe('Auth Local API', () => {
-
-
   const context = {};
   beforeEach(setupBeforeEach(config, services, context));
   afterEach(done => context.server.close(done));
@@ -151,6 +211,29 @@ describe('Auth Local API', () => {
       const campsi = context.campsi;
       // await createUser(campsi, glenda);
 
+      sinon.stub(passport._strategies.github, 'authenticate').callsFake(function verified() {
+        const self = this;
+        this._verify(
+          campsi,
+          null,
+          {
+            _json: { email: glenda.email },
+            name: {
+              givenName: glenda.displayName,
+              familyName: glenda.username
+            }
+          },
+          (err, user, info) => {
+            if (err) {
+              return self.error(err);
+            }
+            if (!user) {
+              return self.fail(info);
+            }
+            return self.success(user, info);
+          }
+        );
+      });
       try {
         const res = await chai.request(campsi.app).get(`/auth/github?username=${glenda.email}`);
         res.should.have.status(200);

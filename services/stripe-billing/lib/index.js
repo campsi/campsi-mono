@@ -4,7 +4,7 @@ const helpers = require('../../../lib/modules/responseHelpers');
 
 const subscriptionExpand = ['latest_invoice', 'latest_invoice.payment_intent', 'pending_setup_intent'];
 const customerExpand = ['tax_ids'];
-
+  
 const buildExpandFromBody = (body, defaultExpand = []) => {
   let expand = defaultExpand;
   if (body.expand) {
@@ -22,6 +22,7 @@ const buildExpandFromQuery = (query, defaultExpand) => {
 };
 
 const bodyToCustomer = (body, sourcePropertyName, user) => {
+  
   return {
     name: String(body.name),
     description: String(body.description),
@@ -74,7 +75,13 @@ module.exports = class StripeBillingService extends CampsiService {
     });
 
     this.router.post('/customers', (req, res) => {
-      stripe.customers.create(bodyToCustomer(req.body, 'source', req.user), defaultHandler(res));
+      try {
+        this.checkEmailValidity(req.body?.email);
+        stripe.customers.create(bodyToCustomer(req.body, 'source', req.user), defaultHandler(res));
+      }
+      catch (ex) {
+        res.status(400).json(ex);
+      }
     });
 
     this.router.get('/customers/:id', (req, res) => {
@@ -83,7 +90,13 @@ module.exports = class StripeBillingService extends CampsiService {
     });
 
     this.router.put('/customers/:id', (req, res) => {
-      stripe.customers.update(req.params.id, bodyToCustomer(req.body, 'default_source'), defaultHandler(res));
+      try {
+        this.checkEmailValidity(req?.body.email);
+        stripe.customers.update(req.params.id, bodyToCustomer(req.body, 'default_source'), defaultHandler(res));
+      }
+      catch(err) {
+        res.status(400).json(ex);
+      }
     });
 
     this.router.patch('/customers/:id', (req, res) => {
@@ -348,6 +361,12 @@ module.exports = class StripeBillingService extends CampsiService {
       creditNotes.push(creditNote);
     }
     return creditNotes;
+  };
+
+  checkEmailValidity (email) {
+    if (!/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(email)) {
+      throw 'Invalid Email';
+    }
   };
 
   // eslint-disable-next-line

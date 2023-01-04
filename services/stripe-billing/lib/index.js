@@ -1,10 +1,11 @@
 /* eslint-disable no-prototype-builtins */
 const CampsiService = require('../../../lib/service');
 const helpers = require('../../../lib/modules/responseHelpers');
+const crypto = require('crypto');
 
 const subscriptionExpand = ['latest_invoice', 'latest_invoice.payment_intent', 'pending_setup_intent'];
 const customerExpand = ['tax_ids'];
-  
+
 const buildExpandFromBody = (body, defaultExpand = []) => {
   let expand = defaultExpand;
   if (body.expand) {
@@ -22,7 +23,7 @@ const buildExpandFromQuery = (query, defaultExpand) => {
 };
 
 const bodyToCustomer = (body, sourcePropertyName, user) => {
-  
+
   return {
     name: String(body.name),
     description: String(body.description),
@@ -77,7 +78,9 @@ module.exports = class StripeBillingService extends CampsiService {
     this.router.post('/customers', (req, res) => {
       try {
         this.checkEmailValidity(req.body?.email);
-        stripe.customers.create(bodyToCustomer(req.body, 'source', req.user), defaultHandler(res));
+        const params = bodyToCustomer(req.body, 'source', req.user);
+        const idempotencyKey = this.createIdempotencyKey(params, 'customers.create');
+        stripe.customers.create(params, { idempotencyKey }, defaultHandler(res));
       }
       catch (ex) {
         res.status(400).json(ex);
@@ -95,7 +98,7 @@ module.exports = class StripeBillingService extends CampsiService {
         stripe.customers.update(req.params.id, bodyToCustomer(req.body, 'default_source'), defaultHandler(res));
       }
       catch(err) {
-        res.status(400).json(ex);
+        res.status(400).json(err);
       }
     });
 
@@ -129,19 +132,19 @@ module.exports = class StripeBillingService extends CampsiService {
     });
 
     this.router.post('/subscriptions', (req, res) => {
-      stripe.subscriptions.create(
-        {
-          customer: req.body.customer,
-          collection_method: 'charge_automatically',
-          items: req.body.items,
-          metadata: req.body.metadata,
-          coupon: req.body.coupon,
-          promotion_code: req.body.promotion_code,
-          expand: buildExpandFromBody(req.body, subscriptionExpand),
-          default_tax_rates: req.body.default_tax_rates,
-          default_source: req.body.default_source
-        },
-        defaultHandler(res)
+      const params = {
+        customer: req.body.customer,
+        collection_method: 'charge_automatically',
+        items: req.body.items,
+        metadata: req.body.metadata,
+        coupon: req.body.coupon,
+        promotion_code: req.body.promotion_code,
+        expand: buildExpandFromBody(req.body, subscriptionExpand),
+        default_tax_rates: req.body.default_tax_rates,
+        default_source: req.body.default_source
+      };
+      const idempotencyKey = this.createIdempotencyKey(params, 'subscriptions.create');
+      stripe.subscriptions.create(params, { idempotencyKey }, defaultHandler(res)
       );
     });
 
@@ -203,19 +206,18 @@ module.exports = class StripeBillingService extends CampsiService {
     });
 
     this.router.postAsync('/subscription-schedules', (req, res) => {
-      stripe.subscriptionSchedules.create(
-        {
-          customer: req.body.customer,
-          metadata: req.body.metadata,
-          phases: req.body.phases,
-          start_date: req.body.start_date,
-          default_settings: req.body.default_settings,
-          end_behavior: req.body.end_behavior,
-          from_subscription: req.body.from_subscription,
-          expand: buildExpandFromBody(req.body)
-        },
-        defaultHandler(res)
-      );
+      const params = {
+        customer: req.body.customer,
+        metadata: req.body.metadata,
+        phases: req.body.phases,
+        start_date: req.body.start_date,
+        default_settings: req.body.default_settings,
+        end_behavior: req.body.end_behavior,
+        from_subscription: req.body.from_subscription,
+        expand: buildExpandFromBody(req.body)
+      };
+      const idempotencyKey = this.createIdempotencyKey(params, 'subscriptionSchedules.create');
+      stripe.subscriptionSchedules.create(params, { idempotencyKey }, defaultHandler(res));
     });
 
     this.router.putAsync('/subscription-schedules/:id', (req, res) => {
@@ -280,17 +282,18 @@ module.exports = class StripeBillingService extends CampsiService {
     });
 
     this.router.post('/setup_intents', (req, res) => {
-      stripe.setupIntents.create(
-        {
-          confirm: true,
-          payment_method: req.body.payment_method,
-          customer: req.body.customer,
-          payment_method_types: ['card', 'sepa_debit'],
-          metadata: req.body.metadata
-        },
-        defaultHandler(res)
+      const params = {
+        confirm: true,
+        payment_method: req.body.payment_method,
+        customer: req.body.customer,
+        payment_method_types: ['card', 'sepa_debit'],
+        metadata: req.body.metadata
+      };
+      const idempotencyKey = this.createIdempotencyKey(params, 'setupIntents.create');
+      stripe.setupIntents.create(params, { idempotencyKey }, defaultHandler(res)
       );
     });
+
     this.router.get('/coupons/:code[:]check-validity', this.checkCouponCodeValidity);
 
     this.router.get('/payment_intents/:id', (req, res) => {
@@ -300,7 +303,7 @@ module.exports = class StripeBillingService extends CampsiService {
       stripe.paymentIntents.confirm(req.params.id, defaultHandler(res));
     });
     this.router.post('/payment_intents', (req, res) => {
-      const payload = {
+      const params = {
         confirm: req.body.confirm || true,
         amount: req.body.amount,
         currency: req.body.currency || 'eur',
@@ -309,9 +312,10 @@ module.exports = class StripeBillingService extends CampsiService {
         customer: req.body.customer
       };
       if (req.body.payment_method) {
-        payload.payment_method = req.body.payment_method;
+        params.payment_method = req.body.payment_method;
       }
-      stripe.paymentIntents.create(payload, defaultHandler(res));
+      const idempotencyKey = this.createIdempotencyKey(params, 'paymentIntents.create');
+      stripe.paymentIntents.create(params,{ idempotencyKey }, defaultHandler(res));
     });
     this.router.patch('/payment_intents/:id', (req, res) => {
       const payload = {
@@ -331,6 +335,18 @@ module.exports = class StripeBillingService extends CampsiService {
 
   fetchSubscription(subscriptionId, cb) {
     this.stripe.subscriptions.retrieve(subscriptionId, cb);
+  }
+
+  /**
+   * Create idempotency key to avoid creating a stripe resource multiple time within the same second
+   * @param params
+   * @returns {string}
+   */
+  createIdempotencyKey(params, method) {
+    return crypto
+      .createHash('sha256')
+      .update(JSON.stringify({ ...params, method, now: new Date().toISOString().slice(0,-5) }))
+      .digest('base64')
   }
 
   /**

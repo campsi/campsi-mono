@@ -21,9 +21,6 @@ describe('Stripe Billing Service', () => {
     context.server.close(done);
   });
 
-  /**
-   * Test the journal creation
-   */
   describe('direct service method calls', () => {
     it('should reject the email address', async () => {
       let emailOK;
@@ -94,6 +91,22 @@ describe('Stripe Billing Service', () => {
 
       const billingService = context.campsi.services.get('billing');
       const goodEmail = 'jlotery@hotmail.com';
+
+      try {
+        await billingService.checkEmailValidity(goodEmail);
+        emailOK = true;
+      } catch (ex) {
+        emailOK = false;
+      }
+
+      emailOK.should.be.true;
+    });
+
+    it('should accept an email address with a + ', async () => {
+      let emailOK;
+
+      const billingService = context.campsi.services.get('billing');
+      const goodEmail = 'bob+munch@hotmail.com';
 
       try {
         await billingService.checkEmailValidity(goodEmail);

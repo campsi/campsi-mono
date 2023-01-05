@@ -87,21 +87,25 @@ module.exports = class AuthService extends CampsiService {
       handlers.addGroupsToUser
     );
     router.get(
+      // #swagger.ignore = true
       // #swagger.ignore = true,
       '/anonymous',
       handlers.createAnonymousUser
     );
     router.get(
+      // #swagger.ignore = true
       // #swagger.tags = ['Auth service'],
       '/logout',
       handlers.logout
     );
     router.post(
+      // #swagger.ignore = true
       // #swagger.tags = ['Auth service'],
       '/invitations',
       handlers.inviteUser
     );
     router.post(
+      // #swagger.ignore = true
       // #swagger.tags = ['Auth service'],
       '/invitations/:invitationToken',
       handlers.acceptInvitation
@@ -120,20 +124,70 @@ module.exports = class AuthService extends CampsiService {
         local.middleware(providers.local)
       );
       router.post(
-        // #swagger.tags = ['Auth service'],
-        // #swagger.description = 'AUTH_LOCAL_SIGNUP_DESCRIPTION'
-        // #swagger.summary = 'AUTH_LOCAL_SIGNUP_SUMMARY'
-        // #AUTH_LOCAL_SIGNIN_PARAM_REQUEST_BODY
-        // #AUTH_LOCAL_SIGNIN_PARAM_HEADER
+        /*
+        #swagger.tags = ['Auth service'],
+        #swagger.description = 'AUTH_LOCAL_SIGNUP_DESCRIPTION'
+        #swagger.summary = 'AUTH_LOCAL_SIGNUP_SUMMARY'
+        #swagger.parameters['X-Requested-With'] = {
+          in: 'header',
+          schema: {
+            type: 'string',
+            '@enum': ['XMLHttpRequest']
+          }
+        }
+        #swagger.requestBody = {
+            required: true,
+            content: {
+                "application/json": {
+                    schema: { $ref: "#/components/schemas/CreateUserRequest" }
+                }
+            }
+        }
+        #swagger.responses[200] = {
+            description: "Token",
+            content: {
+                "application/json": {
+                    schema:{
+                        $ref: "#/components/schemas/TokenResponse"
+                    }
+                }
+            }
+        }
+        */
         '/local/signup',
         local.signup
       );
       router.post(
-        // #swagger.tags = ['Auth service'],
-        // #swagger.description = 'AUTH_LOCAL_SIGNIN_DESCRIPTION'
-        // #swagger.summary = 'AUTH_LOCAL_SIGNIN_SUMMARY'
-        // #AUTH_LOCAL_SIGNIN_PARAM_REQUEST_BODY
-        // #AUTH_LOCAL_SIGNIN_PARAM_HEADER
+        /*
+        #swagger.tags = ['Auth service'],
+        #swagger.description = 'AUTH_LOCAL_SIGNIN_DESCRIPTION'
+        #swagger.summary = 'AUTH_LOCAL_SIGNIN_SUMMARY'
+        #swagger.parameters['X-Requested-With'] = {
+          in: 'header',
+          schema: {
+            type: 'string',
+            '@enum': ['XMLHttpRequest']
+          }
+        }
+        #swagger.requestBody = {
+            required: true,
+            content: {
+                "application/json": {
+                    schema: { $ref: "#/components/schemas/CredentialRequest" }
+                }
+            }
+        }
+        #swagger.responses[200] = {
+            description: "Token",
+            content: {
+                "application/json": {
+                    schema:{
+                        $ref: "#/components/schemas/TokenResponse"
+                    }
+                }
+            }
+        }
+        */
         '/local/signin',
         local.signin
       );

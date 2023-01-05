@@ -49,14 +49,7 @@ const optionsFromQuery = query => {
   return options;
 };
 
-const defaultHandler = res => (err, obj) => {
-  if (err) {
-    helpers.error(res, err);
-    console.error(err);
-  } else {
-    helpers.json(res, obj);
-  }
-};
+
 
 module.exports = class StripeBillingService extends CampsiService {
   initialize() {
@@ -69,6 +62,16 @@ module.exports = class StripeBillingService extends CampsiService {
       req.service = this;
       next();
     });
+
+    const defaultHandler = (res) => (err, obj) => {
+      if (err) {
+        helpers.error(res, err);
+        console.error(err);
+        this.server.logger.error(err);
+      } else {
+        helpers.json(res, obj);
+      }
+    };
 
     this.router.post('/webhook', (req, res) => {
       res.send('OK');

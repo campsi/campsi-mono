@@ -383,7 +383,10 @@ module.exports = class StripeBillingService extends CampsiService {
   };
 
   checkEmailValidity (email) {
-    if (!/^\w+([.-/+]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(email)) {
+    const regex = new RegExp(
+      /^(([^<>()[\].,;:\s@"]+(\.[^<>()[\].,;:\s@"]+)*)|(".+"))@(([^<>()[\].,;:\s@"]+\.)+[^<>()[\].,;:\s@"]{2,})$/i
+    );
+    if (!regex.test(email)) {
       throw 'Invalid Email';
     }
   };

@@ -71,8 +71,9 @@ module.exports = class DocsService extends CampsiService {
       handlers.postDocUser
     );
     this.router.delete(
-      // #swagger.tags = ['DOCSERVICE'],
-      // #swagger.ignore = true
+      /* #swagger.tags = ['DOCSERVICE'],
+         #swagger.ignore = true
+      */
       '/:resource/:id/users/:user',
       handlers.delDocUser
     );
@@ -88,8 +89,27 @@ module.exports = class DocsService extends CampsiService {
       handlers.getDoc
     );
     this.router.get(
-      // #swagger.tags = ['DOCSERVICE'],
-      // #swagger.summary = 'DOCS_GET_RESOURCE_ID_SUMMARY'
+      /* #swagger.tags = ['DOCSERVICE'],
+      #swagger.summary = 'DOCS_GET_RESOURCE_ID_SUMMARY'
+       #swagger.parameters['dummy']={}
+      #swagger.requestBody = {
+        required: true,
+        content: {
+            "application/json": {
+                schema: { $ref: "#/components/schemas/CreateProjectRequest" }
+            }
+        }
+      }
+      #swagger.responses[200] = {
+          description: "Token",
+          content: {
+              "application/json": {
+                  schema:{
+                      $ref: "#/components/schemas/VaultProjectResponse"
+                  }
+              }
+          }
+      } */
       '/:resource/:id',
       handlers.getDoc
     );
@@ -100,8 +120,26 @@ module.exports = class DocsService extends CampsiService {
       handlers.postDoc
     );
     this.router.post(
-      // #swagger.tags = ['DOCSERVICE'],
-      // #swagger.summary = 'DOCS_POST_RESOURCE_SUMMARY'
+      /* #swagger.tags = ['DOCSERVICE'],
+         #swagger.summary = 'DOCS_POST_RESOURCE_SUMMARY'
+         #swagger.requestBody = {
+          required: true,
+            content: {
+                "application/json": {
+                    schema: { $ref: "#/components/schemas/CreateProjectRequest" }
+                }
+            }
+        }
+        #swagger.responses[200] = {
+            description: "Token",
+            content: {
+                "application/json": {
+                    schema:{
+                        $ref: "#/components/schemas/VaultProjectResponse"
+                    }
+                }
+            }
+        } */
       '/:resource',
       handlers.postDoc
     );
@@ -118,8 +156,27 @@ module.exports = class DocsService extends CampsiService {
       handlers.putDoc
     );
     this.router.put(
-      // #swagger.tags = ['DOCSERVICE'],
-      // #swagger.summary = 'DOCS_PUT_RESOURCE_ID_SUMMARY'
+      /* #swagger.tags = ['DOCSERVICE'],
+      #swagger.parameters['resource']={}
+      #swagger.summary = 'DOCS_PUT_RESOURCE_ID_SUMMARY'
+      #swagger.requestBody = {
+        required: true,
+          content: {
+              "application/json": {
+                  schema: { $ref: "#/components/schemas/CreateProjectRequest" }
+              }
+          }
+      }
+      #swagger.responses[200] = {
+          description: "Token",
+          content: {
+              "application/json": {
+                  schema:{
+                      $ref: "#/components/schemas/VaultProjectResponse"
+                  }
+              }
+          }
+      } */
       '/:resource/:id',
       handlers.putDoc
     );
@@ -130,8 +187,26 @@ module.exports = class DocsService extends CampsiService {
       handlers.patchDoc
     );
     this.router.delete(
-      // #swagger.tags = ['DOCSERVICE'],
-      // #swagger.summary = 'DOCS_DELETE_RESOURCE_ID_SUMMARY'
+      /* #swagger.tags = ['DOCSERVICE'],
+      #swagger.summary = 'DOCS_DELETE_RESOURCE_ID_SUMMARY'
+      #swagger.requestBody = {
+        required: true,
+          content: {
+              "application/json": {
+                  schema: { $ref: "#/components/schemas/CreateProjectRequest" }
+              }
+          }
+      }
+      #swagger.responses[200] = {
+          description: "Token",
+          content: {
+              "application/json": {
+                  schema:{
+                      $ref: "#/components/schemas/VaultProjectResponse"
+                  }
+              }
+          }
+      } */
       '/:resource/:id',
       handlers.delDoc
     );

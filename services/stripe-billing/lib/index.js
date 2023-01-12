@@ -348,7 +348,7 @@ module.exports = class StripeBillingService extends CampsiService {
   createIdempotencyKey(params, method) {
     return crypto
       .createHash('sha256')
-      .update(JSON.stringify({ ...params, method, now: new Date().toISOString().slice(0,-5) }))
+      .update(JSON.stringify({ ...params, method, now: new Date().toISOString().slice(0,-6) }))
       .digest('base64')
   }
 

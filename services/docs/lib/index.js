@@ -91,21 +91,15 @@ module.exports = class DocsService extends CampsiService {
     this.router.get(
       /* #swagger.tags = ['DOCSERVICE'],
       #swagger.summary = 'DOCS_GET_RESOURCE_ID_SUMMARY'
-       #swagger.parameters['dummy']={}
-      #swagger.requestBody = {
-        required: true,
-        content: {
-            "application/json": {
-                schema: { $ref: "#/components/schemas/CreateProjectRequest" }
-            }
+      #swagger.parameters['id']={
+          description: "DOCS_GET_ID_PARAM_DESCRIPTION"
         }
-      }
       #swagger.responses[200] = {
-          description: "Token",
+          description: "DOCS_GET_RESPONSE_DESCRIPTION",
           content: {
               "application/json": {
                   schema:{
-                      $ref: "#/components/schemas/VaultProjectResponse"
+                      $ref: "DOCS_RESPONSE_SCHEMA"
                   }
               }
           }
@@ -126,16 +120,16 @@ module.exports = class DocsService extends CampsiService {
           required: true,
             content: {
                 "application/json": {
-                    schema: { $ref: "#/components/schemas/CreateProjectRequest" }
+                    schema: { $ref: "DOCS_WRITE_SCHEMA" }
                 }
             }
         }
         #swagger.responses[200] = {
-            description: "Token",
+            description: "DOCS_POST_RESPONSE_DESCRIPTION",
             content: {
                 "application/json": {
                     schema:{
-                        $ref: "#/components/schemas/VaultProjectResponse"
+                        $ref: "DOCS_RESPONSE_SCHEMA"
                     }
                 }
             }
@@ -157,22 +151,24 @@ module.exports = class DocsService extends CampsiService {
     );
     this.router.put(
       /* #swagger.tags = ['DOCSERVICE'],
-      #swagger.parameters['resource']={}
       #swagger.summary = 'DOCS_PUT_RESOURCE_ID_SUMMARY'
+      #swagger.parameters['id']={
+          description: "DOCS_PUT_ID_PARAM_DESCRIPTION"
+      }
       #swagger.requestBody = {
         required: true,
           content: {
               "application/json": {
-                  schema: { $ref: "#/components/schemas/CreateProjectRequest" }
+                  schema: { $ref: "DOCS_WRITE_SCHEMA" }
               }
           }
       }
       #swagger.responses[200] = {
-          description: "Token",
+          description: "DOCS_PUT_RESPONSE_DESCRIPTION",
           content: {
               "application/json": {
                   schema:{
-                      $ref: "#/components/schemas/VaultProjectResponse"
+                      $ref: "DOCS_RESPONSE_SCHEMA"
                   }
               }
           }
@@ -189,24 +185,20 @@ module.exports = class DocsService extends CampsiService {
     this.router.delete(
       /* #swagger.tags = ['DOCSERVICE'],
       #swagger.summary = 'DOCS_DELETE_RESOURCE_ID_SUMMARY'
-      #swagger.requestBody = {
-        required: true,
-          content: {
-              "application/json": {
-                  schema: { $ref: "#/components/schemas/CreateProjectRequest" }
-              }
-          }
+      #swagger.parameters['id']={
+          description: "DOCS_DELETE_ID_PARAM_DESCRIPTION"
       }
       #swagger.responses[200] = {
-          description: "Token",
+          description: "DOCS_DELETE_RESPONSE_DESCRIPTION",
           content: {
               "application/json": {
                   schema:{
-                      $ref: "#/components/schemas/VaultProjectResponse"
+                      type: "object"
                   }
               }
           }
-      } */
+        }
+      */
       '/:resource/:id',
       handlers.delDoc
     );

@@ -248,6 +248,12 @@ module.exports.getDocuments = function (resource, filter, user, query, state, so
     $project: dbFields
   });
 
+  if (sort) {
+    pipeline.push({
+      // eslint-disable-next-line indexof/no-indexof
+      $sort: sortCursor(null, sort, sort.indexOf('data') === 0 ? 'states.{}.data.'.format(state) : '', true)
+    });
+  }
   const cursor = !aggregate
     ? resource.collection.find(dbQuery, { projection: dbFields })
     : resource.collection.aggregate(pipeline);
@@ -269,7 +275,7 @@ module.exports.getDocuments = function (resource, filter, user, query, state, so
         if (info.page < info.lastPage) {
           result.nav.next = info.page + 1;
         }
-        if (sort) {
+        if (sort && !aggregate) {
           // eslint-disable-next-line indexof/no-indexof
           sortCursor(cursor, sort, sort.indexOf('data') === 0 ? 'states.{}.data.'.format(state) : '');
         }

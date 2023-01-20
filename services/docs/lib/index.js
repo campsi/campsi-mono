@@ -28,26 +28,191 @@ module.exports = class DocsService extends CampsiService {
       req.service = service;
       next();
     });
-    this.router.param('resource', param.attachResource(service.options));
-    this.router.get('/', handlers.getResources);
-    this.router.get('/:resource', handlers.getDocuments);
-    this.router.post('/:resource/:id/locks', handlers.lockDocument);
-    this.router.get('/:resource/:id/locks', handlers.getLocks);
-    this.router.get('/:resource/:id/users', handlers.getDocUsers);
-    this.router.post('/:resource/:id/users', handlers.postDocUser);
-    this.router.delete('/:resource/:id/users/:user', handlers.delDocUser);
-    this.router.post('/:resource/:id/:state/locks', handlers.lockDocument);
-    this.router.get('/:resource/:id/:state', handlers.getDoc);
-    this.router.get('/:resource/:id', handlers.getDoc);
-    this.router.post('/:resource/:state', handlers.postDoc);
-    this.router.post('/:resource', handlers.postDoc);
-    this.router.put('/:resource/:id/state', handlers.putDocState);
-    this.router.put('/:resource/:id/:state', handlers.putDoc);
-    this.router.put('/:resource/:id', handlers.putDoc);
-    this.router.patch('/:resource/:id', handlers.patchDoc);
-    this.router.delete('/:resource/:id', handlers.delDoc);
-    this.router.delete('/:resource/:id/:state', handlers.delDoc);
-    this.router.delete('/:resource/:id/locks/:lock', handlers.deleteLock);
+    this.router.param(
+      // #swagger.tags = ['{DOCSERVICE}']
+      // #swagger.ignore = true
+      'resource',
+      param.attachResource(service.options)
+    );
+    this.router.get(
+      '/',
+      // #swagger.tags = ['DOCSERVICE']
+      // #swagger.ignore = true
+      handlers.getResources
+    );
+    this.router.get(
+      // #swagger.tags = ['DOCSERVICE']
+      // #swagger.ignore = true
+      '/:resource',
+      handlers.getDocuments
+    );
+    this.router.post(
+      '/:resource/:id/locks',
+      // #swagger.tags = ['DOCSERVICE']
+      // #swagger.ignore = true
+      handlers.lockDocument
+    );
+    this.router.get(
+      '/:resource/:id/locks',
+      // #swagger.ignore = true
+      // #swagger.tags = ['DOCSERVICE']
+      handlers.getLocks
+    );
+    this.router.get(
+      // #swagger.ignore = true
+      // #swagger.tags = ['DOCSERVICE'],
+      '/:resource/:id/users',
+      handlers.getDocUsers
+    );
+    this.router.post(
+      // #swagger.tags = ['DOCSERVICE'],
+      // #swagger.ignore = true
+      '/:resource/:id/users',
+      handlers.postDocUser
+    );
+    this.router.delete(
+      /* #swagger.tags = ['DOCSERVICE'],
+         #swagger.ignore = true
+      */
+      '/:resource/:id/users/:user',
+      handlers.delDocUser
+    );
+    this.router.post(
+      '/:resource/:id/:state/locks',
+      // #swagger.ignore = true
+      handlers.lockDocument
+    );
+    this.router.get(
+      // #swagger.tags = ['DOCSERVICE']
+      // #swagger.ignore = true
+      '/:resource/:id/:state',
+      handlers.getDoc
+    );
+    this.router.get(
+      /* #swagger.tags = ['DOCSERVICE'],
+      #swagger.summary = 'DOCS_GET_RESOURCE_ID_SUMMARY'
+      #swagger.parameters['id']={
+          description: "DOCS_GET_ID_PARAM_DESCRIPTION"
+        }
+      #swagger.responses[200] = {
+          description: "DOCS_GET_RESPONSE_DESCRIPTION",
+          content: {
+              "application/json": {
+                  schema:{
+                      $ref: "DOCS_RESPONSE_SCHEMA"
+                  }
+              }
+          }
+      } */
+      '/:resource/:id',
+      handlers.getDoc
+    );
+    this.router.post(
+      // #swagger.tags = ['DOCSERVICE'],
+      // #swagger.ignore = true
+      '/:resource/:state',
+      handlers.postDoc
+    );
+    this.router.post(
+      /* #swagger.tags = ['DOCSERVICE'],
+         #swagger.summary = 'DOCS_POST_RESOURCE_SUMMARY'
+         #swagger.requestBody = {
+          required: true,
+            content: {
+                "application/json": {
+                    schema: { $ref: "DOCS_WRITE_SCHEMA" }
+                }
+            }
+        }
+        #swagger.responses[200] = {
+            description: "DOCS_POST_RESPONSE_DESCRIPTION",
+            content: {
+                "application/json": {
+                    schema:{
+                        $ref: "DOCS_RESPONSE_SCHEMA"
+                    }
+                }
+            }
+        } */
+      '/:resource',
+      handlers.postDoc
+    );
+    this.router.put(
+      // #swagger.tags = ['DOCSERVICE'],
+      // #swagger.ignore = true
+      '/:resource/:id/state',
+      handlers.putDocState
+    );
+    this.router.put(
+      // #swagger.tags = ['DOCSERVICE'],
+      // #swagger.ignore = true
+      '/:resource/:id/:state',
+      handlers.putDoc
+    );
+    this.router.put(
+      /* #swagger.tags = ['DOCSERVICE'],
+      #swagger.summary = 'DOCS_PUT_RESOURCE_ID_SUMMARY'
+      #swagger.parameters['id']={
+          description: "DOCS_PUT_ID_PARAM_DESCRIPTION"
+      }
+      #swagger.requestBody = {
+        required: true,
+          content: {
+              "application/json": {
+                  schema: { $ref: "DOCS_WRITE_SCHEMA" }
+              }
+          }
+      }
+      #swagger.responses[200] = {
+          description: "DOCS_PUT_RESPONSE_DESCRIPTION",
+          content: {
+              "application/json": {
+                  schema:{
+                      $ref: "DOCS_RESPONSE_SCHEMA"
+                  }
+              }
+          }
+      } */
+      '/:resource/:id',
+      handlers.putDoc
+    );
+    this.router.patch(
+      // #swagger.tags = ['DOCSERVICE'],
+      // #swagger.ignore = true
+      '/:resource/:id',
+      handlers.patchDoc
+    );
+    this.router.delete(
+      /* #swagger.tags = ['DOCSERVICE'],
+      #swagger.summary = 'DOCS_DELETE_RESOURCE_ID_SUMMARY'
+      #swagger.parameters['id']={
+          description: "DOCS_DELETE_ID_PARAM_DESCRIPTION"
+      }
+      #swagger.responses[200] = {
+          description: "DOCS_DELETE_RESPONSE_DESCRIPTION",
+          content: {
+              "application/json": {
+                  schema:{
+                      type: "object"
+                  }
+              }
+          }
+        }
+      */
+      '/:resource/:id',
+      handlers.delDoc
+    );
+    this.router.delete(
+      // #swagger.tags = ['DOCSERVICE'],
+      // #swagger.ignore = true
+      '/:resource/:id/:state',
+      handlers.delDoc
+    );
+    this.router.delete(
+      '/:resource/:id/locks/:lock',
+      // #swagger.ignore = true
+      handlers.deleteLock
+    );
     return new Promise(resolve => {
       const ajvWriter = new Ajv({ useAssign: true, strictTuples: false, strict: false });
       addFormats(ajvWriter);

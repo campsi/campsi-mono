@@ -736,7 +736,7 @@ const prepareGetDocument = settings => {
 
   addVirtualProperties(resource, currentState.data);
 
-  return {
+  const result = {
     id: doc._id,
     state,
     createdAt: currentState.createdAt,
@@ -746,7 +746,13 @@ const prepareGetDocument = settings => {
     data: currentState.data || {},
     groups: doc.groups || [],
     states: permissions.filterDocumentStates(doc, allowedStates, requestedStates)
-  };
+  }
+
+  if (doc.metadata) {
+    result.metadata = doc.metadata;
+  }
+
+  return result;
 };
 
 const removeVirtualProperties = (resource, data) => {

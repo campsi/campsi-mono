@@ -250,8 +250,12 @@ module.exports.getDocuments = function (resource, filter, user, query, state, so
 
   if (sort) {
     pipeline.push({
-      // eslint-disable-next-line indexof/no-indexof
-      $sort: sortCursor(null, sort, (sort.startsWith('data') || sort.startsWith('-data')) ? 'states.{}.data.'.format(state) : '', true)
+      $sort: sortCursor(
+        null,
+        sort,
+        (sort.startsWith('data') || sort.startsWith('-data')) ? 'states.{}.data.'.format(state) : '',
+        true
+      )
     });
   }
   const cursor = !aggregate
@@ -276,8 +280,7 @@ module.exports.getDocuments = function (resource, filter, user, query, state, so
           result.nav.next = info.page + 1;
         }
         if (sort && !aggregate) {
-          // eslint-disable-next-line indexof/no-indexof
-          sortCursor(cursor, sort, sort.indexOf('data') === 0 ? 'states.{}.data.'.format(state) : '');
+          sortCursor(cursor, sort, (sort.startsWith('data') || sort.startsWith('-data')) ? 'states.{}.data.'.format(state) : '');
         }
         return cursor.toArray();
       })

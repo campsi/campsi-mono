@@ -5,61 +5,37 @@ const CryptoJS = require('crypto-js');
 const { ObjectId } = require('mongodb');
 const { encryptPassword } = require('../lib/local');
 
-function createEncryptedPassword(collection, salt, removeOldPassword, onComplete) {
-  const errors = [];
-  const updates = [];
-  collection
-    .find({
-      'identities.local.password': { $exists: true }
-    })
-    .toArray((err, users) => {
-      if (err) debug(`received an error: ${err.message}`);
-      async.forEach(
-        users,
-        (user, cb) => {
-          const decrypted = CryptoJS.AES.decrypt(user.identities.local.password, salt).toString(CryptoJS.enc.Utf8);
-          encryptPassword(decrypted)
-            .then(encryptedPassword => {
-              const ops = {
-                $set: {
-                  'identities.local.encryptedPassword': encryptedPassword
-                }
-              };
-              if (removeOldPassword) {
-                ops.$unset = { password: '' };
-              }
-              updates.push([{ _id: ObjectId(user._id) }, ops]);
-              cb();
-            })
-            .catch(err => {
-              errors.push(err);
-              cb();
-            });
-        },
-        () => {
-          async.map(
-            updates,
-            (update, cb) => {
-              collection.updateOne(update[0], update[1], { bypassDocumentValidation: true }, (err, cmdResult) => {
-                cb(err, cmdResult);
-              });
-            },
-            (err, results) => {
-              if (err) debug(`received an error: ${err.message}`);
-              onComplete(results);
-            }
-          );
+async function createEncryptedPassword(collection, salt, removeOldPassword, onComplete) {
+  try {
+    const users = collection.find({ 'identities.local.password': { $exists: true } }).toArray();
+    let updates = await Promise.allSettled(
+      users.map(async user => {
+        const decrypted = CryptoJS.AES.decrypt(user.identities.local.password, salt).toString(CryptoJS.enc.Utf8);
+        const encryptedPassword = encryptPassword(decrypted);
+        const ops = { $set: { 'identities.local.encryptedPassword': encryptedPassword } };
+        if (removeOldPassword) {
+          ops.$unset = { password: '' };
         }
-      );
-    });
+        return { filter: { _id: ObjectId(user._id) }, ops };
+      })
+    );
+    updates = updates.filter(result => result.status === 'fulfilled').map(result => result.value);
+
+    const results = await Promise.allSettled(
+      updates.map(update => collection.updateOne(update.filter, update.ops, { bypassDocumentValidation: true }))
+    );
+
+    onComplete(results.filter(result => result.status === 'fulfilled').map(result => result.value));
+  } catch (err) {
+    debug(`received an error: ${err.message}`);
+  }
 }
 
-function createTokensProperty(collection, done) {
-  collection.find({ 'token.expiration': { $gt: new Date() } }).toArray((err, users) => {
-    if (err) debug(`received an error: ${err.message}`);
-    async.forEach(
-      users,
-      (user, cb) => {
+async function createTokensProperty(collection, done) {
+  try {
+    const users = await collection.find({ 'token.expiration': { $gt: new Date() } }).toArray();
+    await Promise.all(
+      users.map(user =>
         collection.updateOne(
           { _id: user._id },
           {
@@ -69,17 +45,13 @@ function createTokensProperty(collection, done) {
                 grantedByProvider: user.identities.local ? 'local' : 'anonymous'
               }
             }
-          },
-          (err, cmdReturn) => {
-            if (err) debug(`received an error: ${err.message}`);
-            debug(cmdReturn);
-            cb();
           }
-        );
-      },
-      done
+        )
+      )
     );
-  });
+  } catch (err) {
+    debug(`received an error: ${err.message}`);
+  }
 }
 
 module.exports = createEncryptedPassword;
@@ -95,16 +67,16 @@ const config = require(configPath);
 
 const authKey = process.argv[3] || 'auth';
 const mongoUri = config.campsi.mongo.uri;
-MongoClient.connect(mongoUri, (err, client) => {
-  if (err) debug(`received an error: ${err.message}`);
-  const db = client.db(config.campsi.mongo.database);
-  const authConfig = config.services[authKey].options;
-  const salt = authConfig.providers.local.options.salt;
-  const collection = db.collection(authConfig.collectionName);
-  createEncryptedPassword(collection, salt, true, result => {
-    debug(JSON.stringify(result, null, 2));
-    createTokensProperty(collection, () => {
+MongoClient.connect(mongoUri)
+  .then(async client => {
+    const db = client.db(config.campsi.mongo.database);
+    const authConfig = config.services[authKey].options;
+    const salt = authConfig.providers.local.options.salt;
+    const collection = db.collection(authConfig.collectionName);
+    await createEncryptedPassword(collection, salt, true, async result => {
+      debug(JSON.stringify(result, null, 2));
+      await createTokensProperty(collection);
       process.exit();
     });
-  });
-});
+  })
+  .catch(err => debug(`received an error: ${err.message}`));

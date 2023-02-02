@@ -12,6 +12,7 @@ const format = require('string-format');
 const CampsiServer = require('campsi');
 const config = require('config');
 const builder = require('../../services/docs/lib/modules/queryBuilder');
+const { emptyDatabase } = require('../helpers/emptyDatabase');
 
 chai.should();
 let campsi;
@@ -24,50 +25,28 @@ const services = {
 };
 
 // Helpers
-function createPizza(data, state) {
-  return new Promise(function(resolve, reject) {
-    const resource = campsi.services.get('docs').options.resources.pizzas;
-    builder
-      .create({
-        user: null,
-        data,
-        resource,
-        state
-      })
-      .then(doc => {
-        resource.collection.insertOne(doc, (err, result) => {
-          if (err) return reject(err);
-          resolve(result.insertedId);
-        });
-      })
-      .catch(error => {
-        reject(error);
-      });
-  });
+async function createPizza(data, state) {
+  const resource = campsi.services.get('docs').options.resources.pizzas;
+  const doc = await builder.create({ user: null, data, resource, state });
+  const result = await resource.collection.insertOne(doc);
+  return result.insertedId;
 }
 
 // Our parent block
 describe('CRUD', () => {
-  beforeEach(done => {
-    // Empty the database
-    const mongoUri = mongoUriBuilder(config.campsi.mongo);
-    MongoClient.connect(mongoUri, (err, client) => {
-      if (err) throw err;
-      const db = client.db(config.campsi.mongo.database);
-      db.dropDatabase(() => {
-        client.close();
-        campsi = new CampsiServer(config.campsi);
+  beforeEach(async done => {
+    await emptyDatabase(config);
 
-        campsi.mount('docs', new services.Docs(config.services.docs));
+    campsi = new CampsiServer(config.campsi);
 
-        campsi.on('campsi/ready', () => {
-          server = campsi.listen(config.port);
-          done();
-        });
-        campsi.start().catch(err => {
-          debug('Error: %s', err);
-        });
-      });
+    campsi.mount('docs', new services.Docs(config.services.docs));
+
+    campsi.on('campsi/ready', () => {
+      server = campsi.listen(config.port);
+      done();
+    });
+    campsi.start().catch(err => {
+      debug('Error: %s', err);
     });
   });
 

@@ -14,6 +14,7 @@ const config = require('config');
 const builder = require('../../services/docs/lib/modules/queryBuilder');
 const async = require('async');
 const fakeId = require('fake-object-id');
+const { emptyDatabase } = require('../helpers/emptyDatabase');
 
 chai.should();
 let campsi;
@@ -30,96 +31,76 @@ const owner = {
 };
 
 // Helpers
-function createArticle(title) {
-  return new Promise((resolve, reject) => {
-    const category = campsi.services.get('docs').options.resources.categories;
-    const article = campsi.services.get('docs').options.resources.articles;
-    const ids = {};
-
-    async.map(
-      ['parent', 'other_1', 'other_2', 'other_3'],
-      (label, cb) => {
-        builder.create({ user: owner, data: { label }, resource: category, state: 'published' }).then(record => {
-          category.collection.insertOne(record, (err, result) => {
-            if (err) return cb(null, err);
-            ids[label] = result.insertedId;
-            cb();
-          });
-        });
-      },
-      err => {
-        if (err) return reject(err);
-        builder
-          .create({
-            user: owner,
-            data: {
-              title,
-              rels: {
-                oneToOneRelationship: ids.parent.toString(),
-                oneToManyRelationship: [ids.other_1.toString(), ids.other_2.toString(), ids.other_3.toString()]
-              }
-            },
-            resource: article,
-            state: 'published'
-          })
-          .then(record => {
-            article.collection.insertOne(record, (err, result) => {
-              if (err) return reject(err);
-              resolve(result.insertedId.toString());
-            });
-          });
+async function createArticle(title) {
+  const category = campsi.services.get('docs').options.resources.categories;
+  const article = campsi.services.get('docs').options.resources.articles;
+  const ids = {};
+  async.map(
+    ['parent', 'other_1', 'other_2', 'other_3'],
+    async (label, cb) => {
+      const record = await builder.create({ user: owner, data: { label }, resource: category, state: 'published' });
+      try {
+        const result = await category.collection.insertOne(record);
+        ids[label] = result.insertedId;
+        cb();
+      } catch (err) {
+        return cb(null, err);
       }
-    );
-  });
-}
-
-function createEmptyArticle(title) {
-  return new Promise((resolve, reject) => {
-    const article = campsi.services.get('docs').options.resources.articles;
-
-    builder
-      .create({
+    },
+    async err => {
+      if (err) {
+        throw err;
+      }
+      const record = await builder.create({
         user: owner,
         data: {
-          title
+          title,
+          rels: {
+            oneToOneRelationship: ids.parent.toString(),
+            oneToManyRelationship: [ids.other_1.toString(), ids.other_2.toString(), ids.other_3.toString()]
+          }
         },
         resource: article,
         state: 'published'
-      })
-      .then(record => {
-        article.collection.insertOne(record, (err, result) => {
-          if (err) return reject(err);
-          resolve(result.insertedId.toString());
-        });
       });
+      const result = await article.collection.insertOne(record);
+      return result.insertedId.toString();
+    }
+  );
+}
+
+async function createEmptyArticle(title) {
+  const article = campsi.services.get('docs').options.resources.articles;
+  const record = await builder.create({
+    user: owner,
+    data: {
+      title
+    },
+    resource: article,
+    state: 'published'
   });
+  const result = await article.collection.insertOne(record);
+  return result.insertedId.toString();
 }
 
 // Our parent block
 describe('Embedded Documents', () => {
-  beforeEach(done => {
-    // Empty the database
-    const mongoUri = mongoUriBuilder(config.campsi.mongo);
-    MongoClient.connect(mongoUri, (err, client) => {
-      if (err) throw err;
-      const db = client.db(config.campsi.mongo.database);
-      db.dropDatabase(() => {
-        client.close();
-        campsi = new CampsiServer(config.campsi);
-        campsi.mount('docs', new services.Docs(config.services.docs));
-        campsi.app.use((req, res, next) => {
-          req.user = owner;
-          next();
-        });
+  beforeEach(async done => {
+    await emptyDatabase(config);
 
-        campsi.on('campsi/ready', () => {
-          server = campsi.listen(config.port);
-          done();
-        });
-        campsi.start().catch(err => {
-          debug('Error: %s', err);
-        });
-      });
+    campsi = new CampsiServer(config.campsi);
+    campsi.mount('docs', new services.Docs(config.services.docs));
+    campsi.app.use((req, res, next) => {
+      req.user = owner;
+      next();
+    });
+
+    campsi.on('campsi/ready', () => {
+      server = campsi.listen(config.port);
+      done();
+    });
+    campsi.start().catch(err => {
+      debug('Error: %s', err);
     });
   });
 

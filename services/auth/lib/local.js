@@ -137,9 +137,9 @@ module.exports.signup = function (req, res) {
         });
     });
   };
-  const updateInvitedUser = function (user) {
-    return new Promise((resolve, reject) => {
-      users.findOneAndUpdate(
+  const updateInvitedUser = async function (user) {
+    try {
+      const result = await users.findOneAndUpdate(
         {
           email: user.email
         },
@@ -151,27 +151,20 @@ module.exports.signup = function (req, res) {
             updatedAt: new Date()
           }
         },
-        {
-          returnDocument: 'after'
-        },
-        (err, result) => {
-          return err ? reject(new Error('could not perform findOneAndUpdate')) : resolve(result.value);
-        }
+        { returnDocument: 'after' }
       );
-    });
+      return result.value;
+    } catch (err) {
+      throw new Error('could not perform findOneAndUpdate');
+    }
   };
 
-  const doesUserExist = function (user) {
-    return new Promise((resolve, reject) => {
-      users.findOne(
-        {
-          email: user.email
-        },
-        (err, result) => {
-          return err ? reject(new Error('could not perform findOneAndUpdate')) : resolve(result);
-        }
-      );
-    });
+  const doesUserExist = async function (user) {
+    try {
+      return await users.findOne({ email: user.email });
+    } catch (e) {
+      throw new Error('could not perform findOneAndUpdate');
+    }
   };
 
   if (req.body.email) {

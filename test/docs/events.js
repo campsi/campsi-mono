@@ -3,8 +3,6 @@ process.env.NODE_CONFIG_DIR = './test/docs/config';
 process.env.NODE_ENV = 'test';
 
 // Require the dev-dependencies
-const { MongoClient } = require('mongodb');
-const mongoUriBuilder = require('mongo-uri-builder');
 const debug = require('debug')('campsi:test');
 const chai = require('chai');
 const chaiHttp = require('chai-http');
@@ -12,6 +10,7 @@ const format = require('string-format');
 const CampsiServer = require('campsi');
 const config = require('config');
 const async = require('async');
+const { emptyDatabase } = require('../helpers/emptyDatabase');
 
 chai.should();
 let campsi;
@@ -27,30 +26,23 @@ const me = { _id: 'me' };
 
 // Our parent block
 describe('Events', () => {
-  beforeEach(done => {
-    // Empty the database
-    const mongoUri = mongoUriBuilder(config.campsi.mongo);
-    MongoClient.connect(mongoUri, (err, client) => {
-      if (err) throw err;
-      const db = client.db(config.campsi.mongo.database);
-      db.dropDatabase(() => {
-        client.close();
-        campsi = new CampsiServer(config.campsi);
-        campsi.mount('docs', new services.Docs(config.services.docs));
-        campsi.app.use((req, res, next) => {
-          req.user = me;
-          next();
-        });
+  beforeEach(async done => {
+    await emptyDatabase(config);
 
-        campsi.on('campsi/ready', () => {
-          server = campsi.listen(config.port);
-          done();
-        });
+    campsi = new CampsiServer(config.campsi);
+    campsi.mount('docs', new services.Docs(config.services.docs));
+    campsi.app.use((req, res, next) => {
+      req.user = me;
+      next();
+    });
 
-        campsi.start().catch(err => {
-          debug('Error: %s', err);
-        });
-      });
+    campsi.on('campsi/ready', () => {
+      server = campsi.listen(config.port);
+      done();
+    });
+
+    campsi.start().catch(err => {
+      debug('Error: %s', err);
     });
   });
 
@@ -136,11 +128,7 @@ describe('Events', () => {
         },
         cb => {
           // DELETE
-          chai
-            .request(campsi.app)
-            .delete(`/docs/simple/${documentId}`)
-            .set('content-type', 'application/json')
-            .end(cb);
+          chai.request(campsi.app).delete(`/docs/simple/${documentId}`).set('content-type', 'application/json').end(cb);
         }
       ]);
     });
@@ -186,10 +174,7 @@ describe('Events', () => {
             .end(cb);
         },
         cb => {
-          chai
-            .request(campsi.app)
-            .delete(`/docs/simple/${documentId}/users/not_me`)
-            .end(cb);
+          chai.request(campsi.app).delete(`/docs/simple/${documentId}/users/not_me`).end(cb);
         }
       ]);
     });

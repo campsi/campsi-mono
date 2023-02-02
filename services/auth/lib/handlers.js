@@ -73,7 +73,6 @@ async function tokenMaintenance(req, res) {
   }
 }
 
-
 function logout(req, res) {
   if (!req.user) {
     return helpers.unauthorized(res);
@@ -356,7 +355,7 @@ function initAuth(req, res, next) {
   passport.authenticate(req.params.provider, params)(req, res, next);
 }
 
-function inviteUser(req, res) {
+async function inviteUser(req, res) {
   if (!req.user) {
     return helpers.unauthorized(res, new Error('You must be authentified to send an invitation'));
   }
@@ -375,10 +374,10 @@ function inviteUser(req, res) {
     update.$addToSet = { groups: { $each: groups } };
   }
   // if user exists with the given email, we return the id
-  req.db.collection(getUsersCollectionName()).findOneAndUpdate(filter, update, { returnDocument: 'after' }, (err, result) => {
-    if (err) {
-      return helpers.error(res, err);
-    }
+  try {
+    const result = await req.db
+      .collection(getUsersCollectionName())
+      .findOneAndUpdate(filter, update, { returnDocument: 'after' });
     if (result.value) {
       const doc = result.value;
       res.json({ id: doc._id.toString(), invitationToken });
@@ -410,25 +409,24 @@ function inviteUser(req, res) {
       if (groups.length) {
         insert.groups = groups;
       }
-      req.db.collection(getUsersCollectionName()).insertOne(insert, (err, result) => {
-        if (err) {
-          return helpers.error(res, err);
-        }
-        res.json({ id: result.insertedId, insertToken, invitationToken });
-        dispatchInvitationEvent({
-          id: result.insertedId,
-          email: profile.email,
-          invitedBy: req.user._id,
-          token: invitationToken,
-          requestBody: req.body,
-          requestHeaders: req.headers
-        });
+
+      const result = await req.db.collection(getUsersCollectionName()).insertOne(insert);
+      res.json({ id: result.insertedId, insertToken, invitationToken });
+      dispatchInvitationEvent({
+        id: result.insertedId,
+        email: profile.email,
+        invitedBy: req.user._id,
+        token: invitationToken,
+        requestBody: req.body,
+        requestHeaders: req.headers
       });
     }
-  });
+  } catch (err) {
+    return helpers.error(res, err);
+  }
 }
 
-function acceptInvitation(req, res) {
+async function acceptInvitation(req, res) {
   if (!req.user) {
     return helpers.unauthorized(res, new Error('You must be authentified to accept an invitation'));
   }
@@ -437,34 +435,34 @@ function acceptInvitation(req, res) {
       $gt: new Date()
     }
   };
-  req.db.collection(getUsersCollectionName()).findOneAndUpdate(
-    query,
-    {
-      $unset: { [`identities.invitation-${req.params.invitationToken}`]: true }
-    },
-    {
-      returnDocument: 'before'
-    },
-    (err, updateResult) => {
-      if (err) return helpers.error(res, err);
-      const doc = updateResult.value;
-      if (!doc) {
-        debug('No user was found nor updated in query', query);
-        return helpers.notFound(res, new Error('No user was found with this invitation token'));
-      }
-      const invitation = doc.identities[`invitation-${req.params.invitationToken}`];
-      const payload = {
-        userId: req.user._id,
-        invitedUserId: doc._id,
-        invitedBy: invitation.invitedBy,
-        data: invitation.data,
-        requestBody: req.body,
-        requestHeaders: req.headers
-      };
-      res.json(payload);
-      req.service.emit('invitation/accepted', payload);
+  try {
+    const updateResult = await req.db
+      .collection(getUsersCollectionName())
+      .findOneAndUpdate(
+        query,
+        { $unset: { [`identities.invitation-${req.params.invitationToken}`]: true } },
+        { returnDocument: 'before' }
+      );
+
+    const doc = updateResult.value;
+    if (!doc) {
+      debug('No user was found nor updated in query', query);
+      return helpers.notFound(res, new Error('No user was found with this invitation token'));
     }
-  );
+    const invitation = doc.identities[`invitation-${req.params.invitationToken}`];
+    const payload = {
+      userId: req.user._id,
+      invitedUserId: doc._id,
+      invitedBy: invitation.invitedBy,
+      data: invitation.data,
+      requestBody: req.body,
+      requestHeaders: req.headers
+    };
+    res.json(payload);
+    req.service.emit('invitation/accepted', payload);
+  } catch (err) {
+    return helpers.error(res, err);
+  }
 }
 
 function addGroupsToUser(req, res) {
@@ -493,7 +491,7 @@ function addGroupsToUser(req, res) {
     .catch(error => helpers.error(res, error));
 }
 
-function extractUserPersonalData(req, res) {
+async function extractUserPersonalData(req, res) {
   if (req.user && req.user?.isAdmin) {
     let userId;
     try {
@@ -502,25 +500,29 @@ function extractUserPersonalData(req, res) {
       return redirectWithError(req, res, new Error('Erroneous userId'));
     }
 
-    req.db.collection(getUsersCollectionName()).findOne(
-      { _id: userId },
-      {
-        projection: {
-          email: 1,
-          displayname: 1,
-          picture: 1,
-          identities: {
-            local: { id: 1, username: 1 },
-            google: { id: 1, sub: 1, name: 1, given_name: 1, familly_name: 1, picture: 1, email: 1 },
-            facebook: { id: 1, name: 1, email: 1 }
+    try {
+      const user = await req.db.collection(getUsersCollectionName()).findOne(
+        { _id: userId },
+        {
+          projection: {
+            email: 1,
+            displayname: 1,
+            picture: 1,
+            identities: {
+              local: { id: 1, username: 1 },
+              google: { id: 1, sub: 1, name: 1, given_name: 1, familly_name: 1, picture: 1, email: 1 },
+              facebook: { id: 1, name: 1, email: 1 }
+            }
           }
         }
-      },
-      (_err, user) => {
-        if (!user) return helpers.notFound(res);
-        res.json(user);
+      );
+      if (!user) {
+        return helpers.notFound(res);
       }
-    );
+      res.json(user);
+    } catch (err) {
+      return helpers.error(res, err);
+    }
   } else {
     return helpers.unauthorized(res, new Error('Only admin users can extract personal data for users'));
   }

@@ -3,8 +3,6 @@ process.env.NODE_CONFIG_DIR = './test/docs/config';
 process.env.NODE_ENV = 'test';
 
 // Require the dev-dependencies
-const { MongoClient } = require('mongodb');
-const mongoUriBuilder = require('mongo-uri-builder');
 const debug = require('debug')('campsi:test');
 const chai = require('chai');
 const chaiHttp = require('chai-http');
@@ -13,6 +11,7 @@ const CampsiServer = require('campsi');
 const config = require('config');
 const builder = require('../../services/docs/lib/modules/queryBuilder');
 const fakeId = require('fake-object-id');
+const { emptyDatabase } = require('../helpers/emptyDatabase');
 
 chai.should();
 let campsi;
@@ -28,30 +27,15 @@ const services = {
   Docs: require('../../services/docs/lib')
 };
 
-function buildPizzaDoc(data, resource, state) {
-  return new Promise(function(resolve, reject) {
-    builder
-      .create({
-        user: owner,
-        data,
-        resource,
-        state
-      })
-      .then(doc => {
-        resource.collection.insertOne(doc, (err, result) => {
-          if (err) return reject(err);
-          resolve(result.insertedId);
-        });
-      })
-      .catch(error => {
-        reject(error);
-      });
-  });
+async function buildPizzaDoc(data, resource, state) {
+  const doc = await builder.create({ user: owner, data, resource, state });
+  const result = await resource.collection.insertOne(doc);
+  return result.insertedId;
 }
 
 // Helpers
 function createPizzas() {
-  return new Promise(function(resolve, reject) {
+  return new Promise(function (resolve, reject) {
     const resource = campsi.services.get('docs').options.resources.pizzas;
     const pizzas = [];
     const promises = [];
@@ -72,27 +56,20 @@ function createPizzas() {
 
 // Our parent block
 describe('Pagination', () => {
-  before(done => {
-    // Empty the database
-    const mongoUri = mongoUriBuilder(config.campsi.mongo);
-    MongoClient.connect(mongoUri, (err, client) => {
-      if (err) throw err;
-      const db = client.db(config.campsi.mongo.database);
-      db.dropDatabase(() => {
-        client.close();
-        campsi = new CampsiServer(config.campsi);
-        campsi.mount('docs', new services.Docs(config.services.docs));
+  before(async done => {
+    await emptyDatabase(config);
 
-        campsi.on('campsi/ready', () => {
-          server = campsi.listen(config.port);
+    campsi = new CampsiServer(config.campsi);
+    campsi.mount('docs', new services.Docs(config.services.docs));
 
-          createPizzas().then(() => done());
-        });
+    campsi.on('campsi/ready', () => {
+      server = campsi.listen(config.port);
 
-        campsi.start().catch(err => {
-          debug('Error: %s', err);
-        });
-      });
+      createPizzas().then(() => done());
+    });
+
+    campsi.start().catch(err => {
+      debug('Error: %s', err);
     });
   });
 

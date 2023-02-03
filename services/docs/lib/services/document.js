@@ -251,11 +251,10 @@ module.exports.getDocuments = function (resource, filter, user, query, state, so
 
   if (sort) {
     pipeline.push({
-      // eslint-disable-next-line indexof/no-indexof
       $sort: sortCursor(
         null,
         sort,
-        sort.startsWith('data') || sort.startsWith('-data') ? 'states.{}.data.'.format(state) : '',
+        (sort.startsWith('data') || sort.startsWith('-data')) ? 'states.{}.data.'.format(state) : '',
         true
       )
     });
@@ -282,8 +281,7 @@ module.exports.getDocuments = function (resource, filter, user, query, state, so
           result.nav.next = info.page + 1;
         }
         if (sort && !aggregate) {
-          // eslint-disable-next-line indexof/no-indexof
-          sortCursor(cursor, sort, sort.indexOf('data') === 0 ? 'states.{}.data.'.format(state) : '');
+          sortCursor(cursor, sort, (sort.startsWith('data') || sort.startsWith('-data')) ? 'states.{}.data.'.format(state) : '');
         }
         return cursor.toArray();
       })
@@ -668,7 +666,7 @@ const prepareGetDocument = settings => {
 
   addVirtualProperties(resource, currentState.data);
 
-  const result = {
+  return {
     id: doc._id,
     state,
     createdAt: currentState.createdAt,
@@ -679,12 +677,6 @@ const prepareGetDocument = settings => {
     groups: doc.groups || [],
     states: permissions.filterDocumentStates(doc, allowedStates, requestedStates)
   };
-
-  if (doc.metadata) {
-    result.metadata = doc.metadata;
-  }
-
-  return result;
 };
 
 const removeVirtualProperties = (resource, data) => {

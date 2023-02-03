@@ -99,6 +99,59 @@ describe('Pagination', () => {
     });
   });
 
+   /*
+   * Test the /GET docs/pizzas route
+   */
+   describe('Test sort', () => {
+    it('it should GET all the pizzas sorted by name in reverse order', async() => {
+      const res = await chai.request(campsi.app).get('/docs/pizzas/?sort=-data.name');
+    
+      const pizzas = res?.body;
+
+      res.should.have.status(200);
+      pizzas.should.be.a('array');
+      pizzas.length.should.be.eq(100);
+
+      // check last 5 entries are in the correct order
+      pizzas[99]?.data?.name.should.be.eq('margherita_0');
+      pizzas[98]?.data?.name.should.be.eq('margherita_1');
+      pizzas[97]?.data?.name.should.be.eq('margherita_10');
+      pizzas[96]?.data?.name.should.be.eq('margherita_11');
+      pizzas[95]?.data?.name.should.be.eq('margherita_12');
+
+      // check first 5 entries are in the correct order
+      pizzas[4]?.data?.name.should.be.eq('margherita_95');
+      pizzas[3]?.data?.name.should.be.eq('margherita_96');
+      pizzas[2]?.data?.name.should.be.eq('margherita_97');
+      pizzas[1]?.data?.name.should.be.eq('margherita_98');
+      pizzas[0]?.data?.name.should.be.eq('margherita_99');
+    });
+
+    it('it should GET all the pizzas sorted by name in alphabetical order', async () => {
+        const res = await chai.request(campsi.app).get('/docs/pizzas/?sort=data.name');
+    
+        const pizzas = res?.body;
+
+        res.should.have.status(200);
+        pizzas.should.be.a('array');
+        pizzas.length.should.be.eq(100);
+
+        // check first 5 entries are in the correct order
+        pizzas[0]?.data?.name.should.be.eq('margherita_0');
+        pizzas[1]?.data?.name.should.be.eq('margherita_1');
+        pizzas[2]?.data?.name.should.be.eq('margherita_10');
+        pizzas[3]?.data?.name.should.be.eq('margherita_11');
+        pizzas[4]?.data?.name.should.be.eq('margherita_12');
+
+        // check last 5 entries are in the correct order
+        pizzas[95]?.data?.name.should.be.eq('margherita_95');
+        pizzas[96]?.data?.name.should.be.eq('margherita_96');
+        pizzas[97]?.data?.name.should.be.eq('margherita_97');
+        pizzas[98]?.data?.name.should.be.eq('margherita_98');
+        pizzas[99]?.data?.name.should.be.eq('margherita_99');
+    });
+  });
+
   /*
    * Test the /GET docs/pizzas route
    */

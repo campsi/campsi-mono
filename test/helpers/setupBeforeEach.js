@@ -2,7 +2,7 @@ const CampsiServer = require('campsi');
 const { emptyDatabase } = require('./emptyDatabase');
 const debug = require('debug')('campsi:test');
 
-module.exports = (config, services, context) => async done => {
+module.exports = async (config, services, context) => {
   await emptyDatabase(config);
   context.campsi = new CampsiServer(config.campsi);
   Object.entries(services).map(([name, service]) => {
@@ -12,9 +12,6 @@ module.exports = (config, services, context) => async done => {
 
   context.campsi.on('campsi/ready', () => {
     context.server = context.campsi.listen(config.port);
-    done();
   });
-  context.campsi.start().catch(err => {
-    debug('Error: %s', err);
-  });
+  return await context.campsi.start();
 };

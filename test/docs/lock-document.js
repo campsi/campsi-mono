@@ -247,7 +247,7 @@ describe('locks', () => {
         .get(`/docs/pizzas/${docId}/locks`)
         .set('Authorization', 'Bearer ' + adminToken);
 
-      const userId = ObjectId(user._id).toString();
+      const userId = new ObjectId(user._id).toString();
       res.body[0].published.userId.should.eq(userId);
     });
 
@@ -268,8 +268,8 @@ describe('locks', () => {
 
         res.should.have.status(200);
 
-        const userId = ObjectId(user._id).toString();
-        const noOwnerUserId = ObjectId(noOwnerUser._id).toString();
+        const userId = new ObjectId(user._id).toString();
+        const noOwnerUserId = new ObjectId(noOwnerUser._id).toString();
         res.body[0].working_draft.userId.should.eq(noOwnerUserId);
         res.body[1].published.userId.should.eq(userId);
       } catch (err) {

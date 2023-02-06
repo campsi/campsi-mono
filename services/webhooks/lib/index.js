@@ -73,7 +73,7 @@ class WebhooksService extends CampsiService {
 
   getWebhooks(req, res) {
     this.collection
-      .find(this.options.requireAuth ? { createdBy: ObjectId(req.user._id) } : {})
+      .find(this.options.requireAuth ? { createdBy: new ObjectId(req.user._id) } : {})
       .toArray()
       .then(webhooks => {
         res.json({ webhooks });
@@ -93,7 +93,7 @@ class WebhooksService extends CampsiService {
       failCount: 0
     };
     if (this.options.requireAuth) {
-      doc.createdBy = ObjectId(req.user._id);
+      doc.createdBy = new ObjectId(req.user._id);
     }
     this.collection
       .insertOne(doc)
@@ -110,7 +110,7 @@ class WebhooksService extends CampsiService {
       _id: ObjectId(req.params.id)
     };
     if (this.options.requireAuth) {
-      filter.createdBy = ObjectId(req.user._id);
+      filter.createdBy = new ObjectId(req.user._id);
     }
     this.collection
       .deleteOne(filter)

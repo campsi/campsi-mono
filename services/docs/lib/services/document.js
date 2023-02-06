@@ -254,7 +254,7 @@ module.exports.getDocuments = function (resource, filter, user, query, state, so
       $sort: sortCursor(
         null,
         sort,
-        (sort.startsWith('data') || sort.startsWith('-data')) ? 'states.{}.data.'.format(state) : '',
+        sort.startsWith('data') || sort.startsWith('-data') ? 'states.{}.data.'.format(state) : '',
         true
       )
     });
@@ -281,7 +281,7 @@ module.exports.getDocuments = function (resource, filter, user, query, state, so
           result.nav.next = info.page + 1;
         }
         if (sort && !aggregate) {
-          sortCursor(cursor, sort, (sort.startsWith('data') || sort.startsWith('-data')) ? 'states.{}.data.'.format(state) : '');
+          sortCursor(cursor, sort, sort.startsWith('data') || sort.startsWith('-data') ? 'states.{}.data.'.format(state) : '');
         }
         return cursor.toArray();
       })
@@ -352,7 +352,7 @@ module.exports.setDocument = async function (resource, filter, data, state, user
   const result = await resource.collection.updateOne(filter, update);
   // if document not found, must be a permissions issue
   if (result.modifiedCount !== 1) {
-    const doc = await resource.collection.findOne({ _id: ObjectId(filter._id) });
+    const doc = await resource.collection.findOne({ _id: new ObjectId(filter._id) });
     if (!doc) {
       throw new createError.NotFound('Not Found');
     }

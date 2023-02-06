@@ -16,7 +16,7 @@ async function createEncryptedPassword(collection, salt, removeOldPassword, onCo
         if (removeOldPassword) {
           ops.$unset = { password: '' };
         }
-        return { filter: { _id: ObjectId(user._id) }, ops };
+        return { filter: { _id: new ObjectId(user._id) }, ops };
       })
     );
     updates = updates.filter(result => result.status === 'fulfilled').map(result => result.value);

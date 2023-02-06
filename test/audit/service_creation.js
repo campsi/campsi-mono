@@ -45,9 +45,9 @@ describe('Audit Service', () => {
       res.should.be.json;
 
       // check it is in the db
-      const logEntry = await context.campsi.db.collection('audit').findOne({ user: ObjectId(entry.user) });
+      const logEntry = await context.campsi.db.collection('audit').findOne({ user: new ObjectId(entry.user) });
 
-      const theSame = logEntry.user.equals(ObjectId(entry.user));
+      const theSame = logEntry.user.equals(new ObjectId(entry.user));
 
       theSame.should.be.true;
     });
@@ -111,9 +111,9 @@ describe('Audit Service', () => {
       await auditService.createLog(entry);
 
       // check it is in the db
-      const logEntry = await context.campsi.db.collection('audit').findOne({ user: ObjectId(entry.user) });
+      const logEntry = await context.campsi.db.collection('audit').findOne({ user: new ObjectId(entry.user) });
 
-      const theSame = logEntry.user.equals(ObjectId(entry.user));
+      const theSame = logEntry.user.equals(new ObjectId(entry.user));
 
       theSame.should.be.true;
     });

@@ -29,7 +29,7 @@ module.exports = class DocsService extends CampsiService {
       next();
     });
     this.router.param(
-      // #swagger.tags = ['{DOCSERVICE}']
+      // #swagger.tags = ['DOCSERVICE']
       // #swagger.ignore = always
       'resource',
       param.attachResource(service.options)

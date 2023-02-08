@@ -253,7 +253,7 @@ module.exports.getDocuments = function (resource, filter, user, query, state, so
       $sort: sortCursor(
         null,
         sort,
-        (sort.startsWith('data') || sort.startsWith('-data')) ? 'states.{}.data.'.format(state) : '',
+        sort.startsWith('data') || sort.startsWith('-data') ? 'states.{}.data.'.format(state) : '',
         true
       )
     });
@@ -280,7 +280,7 @@ module.exports.getDocuments = function (resource, filter, user, query, state, so
           result.nav.next = info.page + 1;
         }
         if (sort && !aggregate) {
-          sortCursor(cursor, sort, (sort.startsWith('data') || sort.startsWith('-data')) ? 'states.{}.data.'.format(state) : '');
+          sortCursor(cursor, sort, sort.startsWith('data') || sort.startsWith('-data') ? 'states.{}.data.'.format(state) : '');
         }
         return cursor.toArray();
       })
@@ -477,6 +477,9 @@ module.exports.getDocumentLinks = function (resource, filter, query, _user, stat
 module.exports.getDocument = function (resource, filter, query, user, state, resources) {
   const requestedStates = getRequestedStatesFromQuery(resource, query);
   const projection = { _id: 1, states: 1, users: 1, groups: 1 };
+  if (query?.with?.includes('metadata')) {
+    projection.metadata = 1;
+  }
   const match = { ...filter };
   match[`states.${state}`] = { $exists: true };
 
@@ -739,7 +742,7 @@ const prepareGetDocument = settings => {
 
   addVirtualProperties(resource, currentState.data);
 
-  return {
+  const returnedDoc = {
     id: doc._id,
     state,
     createdAt: currentState.createdAt,
@@ -750,6 +753,10 @@ const prepareGetDocument = settings => {
     groups: doc.groups || [],
     states: permissions.filterDocumentStates(doc, allowedStates, requestedStates)
   };
+  if (doc.metadata) {
+    returnedDoc.metadata = doc.metadata;
+  }
+  return returnedDoc;
 };
 
 const removeVirtualProperties = (resource, data) => {

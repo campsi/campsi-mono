@@ -26,23 +26,23 @@ const me = { _id: 'me' };
 
 // Our parent block
 describe('Events', () => {
-  beforeEach(async done => {
-    await emptyDatabase(config);
+  beforeEach(done => {
+    emptyDatabase(config).then(() => {
+      campsi = new CampsiServer(config.campsi);
+      campsi.mount('docs', new services.Docs(config.services.docs));
+      campsi.app.use((req, res, next) => {
+        req.user = me;
+        next();
+      });
 
-    campsi = new CampsiServer(config.campsi);
-    campsi.mount('docs', new services.Docs(config.services.docs));
-    campsi.app.use((req, res, next) => {
-      req.user = me;
-      next();
-    });
+      campsi.on('campsi/ready', () => {
+        server = campsi.listen(config.port);
+        done();
+      });
 
-    campsi.on('campsi/ready', () => {
-      server = campsi.listen(config.port);
-      done();
-    });
-
-    campsi.start().catch(err => {
-      debug('Error: %s', err);
+      campsi.start().catch(err => {
+        debug('Error: %s', err);
+      });
     });
   });
 

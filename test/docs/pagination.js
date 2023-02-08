@@ -56,20 +56,20 @@ function createPizzas() {
 
 // Our parent block
 describe('Pagination', () => {
-  before(async done => {
-    await emptyDatabase(config);
+  before(done => {
+    emptyDatabase(config).then(() => {
+      campsi = new CampsiServer(config.campsi);
+      campsi.mount('docs', new services.Docs(config.services.docs));
 
-    campsi = new CampsiServer(config.campsi);
-    campsi.mount('docs', new services.Docs(config.services.docs));
+      campsi.on('campsi/ready', () => {
+        server = campsi.listen(config.port);
 
-    campsi.on('campsi/ready', () => {
-      server = campsi.listen(config.port);
+        createPizzas().then(() => done());
+      });
 
-      createPizzas().then(() => done());
-    });
-
-    campsi.start().catch(err => {
-      debug('Error: %s', err);
+      campsi.start().catch(err => {
+        debug('Error: %s', err);
+      });
     });
   });
 
@@ -99,13 +99,13 @@ describe('Pagination', () => {
     });
   });
 
-   /*
+  /*
    * Test the /GET docs/pizzas route
    */
-   describe('Test sort', () => {
-    it('it should GET all the pizzas sorted by name in reverse order', async() => {
+  describe('Test sort', () => {
+    it('it should GET all the pizzas sorted by name in reverse order', async () => {
       const res = await chai.request(campsi.app).get('/docs/pizzas/?sort=-data.name');
-    
+
       const pizzas = res?.body;
 
       res.should.have.status(200);
@@ -128,27 +128,27 @@ describe('Pagination', () => {
     });
 
     it('it should GET all the pizzas sorted by name in alphabetical order', async () => {
-        const res = await chai.request(campsi.app).get('/docs/pizzas/?sort=data.name');
-    
-        const pizzas = res?.body;
+      const res = await chai.request(campsi.app).get('/docs/pizzas/?sort=data.name');
 
-        res.should.have.status(200);
-        pizzas.should.be.a('array');
-        pizzas.length.should.be.eq(100);
+      const pizzas = res?.body;
 
-        // check first 5 entries are in the correct order
-        pizzas[0]?.data?.name.should.be.eq('margherita_0');
-        pizzas[1]?.data?.name.should.be.eq('margherita_1');
-        pizzas[2]?.data?.name.should.be.eq('margherita_10');
-        pizzas[3]?.data?.name.should.be.eq('margherita_11');
-        pizzas[4]?.data?.name.should.be.eq('margherita_12');
+      res.should.have.status(200);
+      pizzas.should.be.a('array');
+      pizzas.length.should.be.eq(100);
 
-        // check last 5 entries are in the correct order
-        pizzas[95]?.data?.name.should.be.eq('margherita_95');
-        pizzas[96]?.data?.name.should.be.eq('margherita_96');
-        pizzas[97]?.data?.name.should.be.eq('margherita_97');
-        pizzas[98]?.data?.name.should.be.eq('margherita_98');
-        pizzas[99]?.data?.name.should.be.eq('margherita_99');
+      // check first 5 entries are in the correct order
+      pizzas[0]?.data?.name.should.be.eq('margherita_0');
+      pizzas[1]?.data?.name.should.be.eq('margherita_1');
+      pizzas[2]?.data?.name.should.be.eq('margherita_10');
+      pizzas[3]?.data?.name.should.be.eq('margherita_11');
+      pizzas[4]?.data?.name.should.be.eq('margherita_12');
+
+      // check last 5 entries are in the correct order
+      pizzas[95]?.data?.name.should.be.eq('margherita_95');
+      pizzas[96]?.data?.name.should.be.eq('margherita_96');
+      pizzas[97]?.data?.name.should.be.eq('margherita_97');
+      pizzas[98]?.data?.name.should.be.eq('margherita_98');
+      pizzas[99]?.data?.name.should.be.eq('margherita_99');
     });
   });
 

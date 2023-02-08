@@ -51,8 +51,8 @@ function createUser(campsi, user) {
 
 describe('Auth Local API', async () => {
   const context = {};
-  beforeEach(async () => await setupBeforeEach(config, services, context));
-  afterEach(async () => await context.server.close());
+  beforeEach(setupBeforeEach(config, services, context));
+  afterEach(context.server.close());
 
   describe('/PUT docs as a user', async () => {
     it('it should create 2 users and try to update a doc and get the correct status code', async () => {

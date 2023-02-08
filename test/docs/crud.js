@@ -34,19 +34,19 @@ async function createPizza(data, state) {
 
 // Our parent block
 describe('CRUD', () => {
-  beforeEach(async done => {
-    await emptyDatabase(config);
+  beforeEach(done => {
+    emptyDatabase(config).then(() => {
+      campsi = new CampsiServer(config.campsi);
 
-    campsi = new CampsiServer(config.campsi);
+      campsi.mount('docs', new services.Docs(config.services.docs));
 
-    campsi.mount('docs', new services.Docs(config.services.docs));
-
-    campsi.on('campsi/ready', () => {
-      server = campsi.listen(config.port);
-      done();
-    });
-    campsi.start().catch(err => {
-      debug('Error: %s', err);
+      campsi.on('campsi/ready', () => {
+        server = campsi.listen(config.port);
+        done();
+      });
+      campsi.start().catch(err => {
+        debug('Error: %s', err);
+      });
     });
   });
 

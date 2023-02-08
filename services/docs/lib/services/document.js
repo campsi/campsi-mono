@@ -477,7 +477,7 @@ module.exports.getDocumentLinks = function (resource, filter, query, _user, stat
 module.exports.getDocument = function (resource, filter, query, user, state, resources) {
   const requestedStates = getRequestedStatesFromQuery(resource, query);
   const projection = { _id: 1, states: 1, users: 1, groups: 1 };
-  if (query?.with === 'metadata') {
+  if (query?.with?.includes('metadata')) {
     projection.metadata = 1;
   }
   const match = { ...filter };

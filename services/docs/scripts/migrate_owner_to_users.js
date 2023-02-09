@@ -24,7 +24,7 @@ async function migrate(params, db, collections, done) {
     debug('migrate collection', collection);
     await updateCollection(params, db, collection);
   }
-  return debug('migration complete');
+  debug('migration complete');
 }
 
 async function updateCollection(params, db, collection) {

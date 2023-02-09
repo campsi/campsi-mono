@@ -1,6 +1,5 @@
 /* eslint-disable node/no-unpublished-require */
 const config = require('config');
-const async = require('async');
 const debug = require('debug')('migrate');
 const { MongoClient } = require('mongodb');
 // CLI
@@ -14,38 +13,27 @@ if (!module.parent) {
     return collections.concat(resourcesNames.map(resourceName => `docs.${service}.${resourceName}`));
   }, []);
   const mongoUri = config.campsi.mongo.uri;
-  MongoClient.connect(mongoUri).then(client => {
+  MongoClient.connect(mongoUri).then(async client => {
     const db = client.db(config.campsi.mongo.database);
-    migrate(options.params, db, collections);
+    await migrate(options.params, db, collections);
   });
 }
 
-function migrate(params, db, collections, done) {
-  async.forEachSeries(
-    collections,
-    (collection, cb) => {
-      debug('migrate collection', collection);
-      updateCollection(params, db, collection, cb);
-    },
-    () => {
-      debug('migration complete');
-      if (typeof done === 'function') {
-        done();
-      }
-    }
-  );
+async function migrate(params, db, collections, done) {
+  for (const collection of collections) {
+    debug('migrate collection', collection);
+    await updateCollection(params, db, collection);
+  }
+  return debug('migration complete');
 }
 
-async function updateCollection(params, db, collection, done) {
+async function updateCollection(params, db, collection) {
   const filter = { ownedBy: { $exists: true } };
   if (!params.includes('--all-docs')) {
     filter.users = { $exists: false };
   }
   try {
-    const cursor = await db
-      .collection(collection)
-      .find(filter, { projection: { ownedBy: 1, _id: 1 } })
-      .toArray();
+    const cursor = db.collection(collection).find(filter, { projection: { ownedBy: 1, _id: 1 } });
 
     try {
       let cursorHasNext = await cursor.hasNext();
@@ -85,7 +73,6 @@ async function updateCollection(params, db, collection, done) {
     } catch (err) {
       debug('error occured while fetching hasNext() information', err);
     }
-    return done();
   } catch (err) {
     return debug(`an error occured during the find() from collection ${collection}`, err);
   }

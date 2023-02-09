@@ -326,7 +326,7 @@ module.exports.setState = function setDocState(options) {
   const stateTo = getStateFromOptions(options, 'to');
 
   return new Promise((resolve, reject) => {
-    return validate(options.resource, options.doc, stateTo.validate)
+    return validate(options.resource, options.doc.states[options.from].data, stateTo.validate)
       .catch(reject)
       .then(() => {
         const ops = { $rename: {}, $set: {} };

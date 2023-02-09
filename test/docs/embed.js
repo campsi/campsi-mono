@@ -35,38 +35,27 @@ async function createArticle(title) {
   const category = campsi.services.get('docs').options.resources.categories;
   const article = campsi.services.get('docs').options.resources.articles;
   const ids = {};
-  async.map(
-    ['parent', 'other_1', 'other_2', 'other_3'],
-    async (label, cb) => {
+  await Promise.all(
+    ['parent', 'other_1', 'other_2', 'other_3'].map(async label => {
       const record = await builder.create({ user: owner, data: { label }, resource: category, state: 'published' });
-      try {
-        const result = await category.collection.insertOne(record);
-        ids[label] = result.insertedId;
-        cb();
-      } catch (err) {
-        return cb(null, err);
+      const result = await category.collection.insertOne(record);
+      ids[label] = result.insertedId;
+    })
+  );
+  const record = await builder.create({
+    user: owner,
+    data: {
+      title,
+      rels: {
+        oneToOneRelationship: ids.parent.toString(),
+        oneToManyRelationship: [ids.other_1.toString(), ids.other_2.toString(), ids.other_3.toString()]
       }
     },
-    async err => {
-      if (err) {
-        throw err;
-      }
-      const record = await builder.create({
-        user: owner,
-        data: {
-          title,
-          rels: {
-            oneToOneRelationship: ids.parent.toString(),
-            oneToManyRelationship: [ids.other_1.toString(), ids.other_2.toString(), ids.other_3.toString()]
-          }
-        },
-        resource: article,
-        state: 'published'
-      });
-      const result = await article.collection.insertOne(record);
-      return result.insertedId.toString();
-    }
-  );
+    resource: article,
+    state: 'published'
+  });
+  const result = await article.collection.insertOne(record);
+  return result.insertedId.toString();
 }
 
 async function createEmptyArticle(title) {

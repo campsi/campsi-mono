@@ -39,7 +39,7 @@ async function getPizzaById(id) {
 }
 
 // Our parent block
-describe('CRUD', () => {
+describe('Migrate owner to user', () => {
   beforeEach(done => {
     emptyDatabase(config).then(() => {
       campsi = new CampsiServer(config.campsi);
@@ -64,7 +64,7 @@ describe('CRUD', () => {
     createPizza({ name: 'margarita' }, 'published').then(id => {
       getPizzaById(id).then(pizza => {
         pizza.should.have.property('ownedBy');
-        migrate([], campsi.db, ['docs.docs.pizzas'], () => {
+        migrate([], campsi.db, ['docs.docs.pizzas']).then(() => {
           getPizzaById(id).then(pizza => {
             pizza.should.have.property('users');
             done();
@@ -78,7 +78,7 @@ describe('CRUD', () => {
     createPizza({ name: 'margarita' }, 'published').then(id => {
       getPizzaById(id).then(pizza => {
         pizza.should.have.property('ownedBy');
-        migrate(['--remove-ownedBy'], campsi.db, ['docs.docs.pizzas'], () => {
+        migrate(['--remove-ownedBy'], campsi.db, ['docs.docs.pizzas']).then(() => {
           getPizzaById(id).then(pizza => {
             pizza.should.have.property('users');
             pizza.should.not.have.property('ownedBy');

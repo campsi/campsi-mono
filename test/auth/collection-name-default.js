@@ -21,18 +21,18 @@ chai.should();
 
 describe('Auth API', () => {
   const context = {};
-  beforeEach(async done => {
-    await emptyDatabase(config);
+  beforeEach(done => {
+    emptyDatabase(config).then(() => {
+      context.campsi = new CampsiServer(config.campsi);
+      context.campsi.mount('auth', new AuthService(config.services.auth));
 
-    context.campsi = new CampsiServer(config.campsi);
-    context.campsi.mount('auth', new AuthService(config.services.auth));
-
-    context.campsi.on('campsi/ready', () => {
-      context.server = context.campsi.listen(config.port);
-      done();
-    });
-    context.campsi.start().catch(err => {
-      debug('Error: %s', err);
+      context.campsi.on('campsi/ready', () => {
+        context.server = context.campsi.listen(config.port);
+        done();
+      });
+      context.campsi.start().catch(err => {
+        debug('Error: %s', err);
+      });
     });
   });
 

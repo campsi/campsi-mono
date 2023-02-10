@@ -154,6 +154,30 @@ module.exports = {
         }
       },
       optionsBasePath: path.dirname(path.join(__dirname, '../'))
+    },
+    audit: {
+      title: 'Audit',
+      description: 'Audit Service',
+      options: {
+        roles: {},
+        classes: {},
+        resources: {
+          audit: {
+            label: 'audit',
+            class: 'publicEntry',
+            schema: require('../schemas/log_entry.schema.json')
+          }
+        }
+      },
+      optionsBasePath: path.dirname(path.join(__dirname, '../'))
+    },
+    billing: {
+      title: 'Contents',
+      description: 'Billing Service',
+      options: {
+        secret_key: 'sk_test_TLvEhxPpHyrPhJeyMnJyM9jj',
+        default_tax_percent: 20
+      }
     }
   }
 };

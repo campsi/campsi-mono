@@ -90,6 +90,28 @@ describe('Auth Local API', () => {
           });
       });
     });
+    it('it should return an error, user exists with upper case email', done => {
+      createUser(context.campsi, glenda).then(() => {
+        chai
+          .request(context.campsi.app)
+          .post('/auth/local/signup')
+          .set('content-type', 'application/json')
+          .send({
+            displayName: 'Glenda Bennett 2',
+            email: 'GLENDA@agilitation.fr',
+            username: 'glenda',
+            password: 'signup!'
+          })
+          .end((err, res) => {
+            if (err) debug(`received an error from chai: ${err.message}`);
+            res.should.have.status(400);
+            res.should.be.json;
+            res.body.should.be.a('object');
+            res.body.should.have.property('message');
+            done();
+          });
+      });
+    });
   });
   describe('/POST local/signup [password too long]', () => {
     it('it should do something', done => {

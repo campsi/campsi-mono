@@ -17,6 +17,7 @@
     "test-versioned-docs": "mocha  \"./test/versioned-docs/*.js\" --exit",
     "test-stripe-billing": "mocha \"./test/stripe-billing/*.js\" --exit",
     "test-notifications": "mocha \"./test/notifications/*.js\" --exit",
+    "test-audit": "mocha \"./test/audit/*.js\" --exit",
     "test": "mocha -R dot './test/{,!(launchers)/**/}/*.js' --ignore './test/auth/collection-name*.js' --exit && mocha -R dot './test/auth/collection-name.js' --exit",
     "prepare": "husky install"
   },
@@ -69,6 +70,7 @@
     "mongo-uri-builder": "^1.0.3",
     "mqtt-emitter": "^1.2.4",
     "passport-github2": "^0.1.10",
+    "pino-datadog-transport": "^1.2.2",
     "pino-http": "^7.0.0",
     "request": "^2.88.2",
     "string-format": "^2.0.0",

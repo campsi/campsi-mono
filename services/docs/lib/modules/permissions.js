@@ -46,7 +46,7 @@ module.exports.can = function can(user, resource, method, state) {
   return filter;
 };
 
-module.exports.getAllowedStatesFromDocForUser = function(user, resource, method, doc) {
+module.exports.getAllowedStatesFromDocForUser = function (user, resource, method, doc) {
   const getPublicStates = () => {
     const publicPermissions = resource.permissions.public;
     const publicPermissionsStates = Object.keys(publicPermissions);
@@ -58,6 +58,14 @@ module.exports.getAllowedStatesFromDocForUser = function(user, resource, method,
   if (user.isAdmin) {
     return Object.keys(resource.states);
   }
+
+  if (!Object.keys(doc.users).length) {
+    const userHasCommonGroup = doc.groups?.some(group => user.groups?.includes(group));
+    if (userHasCommonGroup) {
+      return Object.keys(resource.states);
+    }
+  }
+
   const docUser = doc.users[user._id] || { roles: [] };
   if (!Array.isArray(docUser.roles)) {
     return getPublicStates();
@@ -74,7 +82,7 @@ module.exports.getAllowedStatesFromDocForUser = function(user, resource, method,
   return allowedStates;
 };
 
-module.exports.filterDocumentStates = function(document, allowedStates, requestedStates) {
+module.exports.filterDocumentStates = function (document, allowedStates, requestedStates) {
   return Object.keys(document.states || {})
     .filter(docState => requestedStates.includes(docState))
     .filter(docState => allowedStates.includes(docState))

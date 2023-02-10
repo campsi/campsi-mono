@@ -82,7 +82,7 @@ module.exports.getLocks = async function (state, filter, user, editLock, db) {
 };
 
 const getDocumentLock = async function (state, filter, lockCollection) {
-  if (!filter._id) {
+  if (!filter?._id) {
     return undefined;
   }
 
@@ -249,6 +249,16 @@ module.exports.getDocuments = function (resource, filter, user, query, state, so
     $project: dbFields
   });
 
+  if (sort) {
+    pipeline.push({
+      $sort: sortCursor(
+        null,
+        sort,
+        sort.startsWith('data') || sort.startsWith('-data') ? 'states.{}.data.'.format(state) : '',
+        true
+      )
+    });
+  }
   const cursor = !aggregate
     ? resource.collection.find(dbQuery, { projection: dbFields })
     : resource.collection.aggregate(pipeline);
@@ -270,9 +280,8 @@ module.exports.getDocuments = function (resource, filter, user, query, state, so
         if (info.page < info.lastPage) {
           result.nav.next = info.page + 1;
         }
-        if (sort) {
-          // eslint-disable-next-line indexof/no-indexof
-          sortCursor(cursor, sort, sort.indexOf('data') === 0 ? 'states.{}.data.'.format(state) : '');
+        if (sort && !aggregate) {
+          sortCursor(cursor, sort, sort.startsWith('data') || sort.startsWith('-data') ? 'states.{}.data.'.format(state) : '');
         }
         return cursor.toArray();
       })
@@ -469,6 +478,9 @@ module.exports.getDocumentLinks = function (resource, filter, query, _user, stat
 module.exports.getDocument = function (resource, filter, query, user, state, resources) {
   const requestedStates = getRequestedStatesFromQuery(resource, query);
   const projection = { _id: 1, states: 1, users: 1, groups: 1 };
+  if (query?.with?.includes('metadata')) {
+    projection.metadata = 1;
+  }
   const match = { ...filter };
   match[`states.${state}`] = { $exists: true };
 
@@ -736,7 +748,7 @@ const prepareGetDocument = settings => {
 
   addVirtualProperties(resource, currentState.data);
 
-  return {
+  const returnedDoc = {
     id: doc._id,
     state,
     createdAt: currentState.createdAt,
@@ -747,6 +759,10 @@ const prepareGetDocument = settings => {
     groups: doc.groups || [],
     states: permissions.filterDocumentStates(doc, allowedStates, requestedStates)
   };
+  if (doc.metadata) {
+    returnedDoc.metadata = doc.metadata;
+  }
+  return returnedDoc;
 };
 
 const removeVirtualProperties = (resource, data) => {

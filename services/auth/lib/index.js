@@ -46,32 +46,183 @@ module.exports = class AuthService extends CampsiService {
       req.authProvider = providers[id];
       return !req.authProvider ? helpers.notFound(res) : next();
     });
-    router.get('/users', handlers.getUsers);
-    router.get('/users/:userId/extract_personal_data', handlers.extractUserPersonalData);
-    router.get('/users/:userId/access_token', handlers.getAccessTokenForUser);
-    router.get('/providers', handlers.getProviders);
-    router.get('/me', handlers.me);
-    router.put('/me', handlers.updateMe);
-    router.patch('/me', handlers.patchMe);
-    router.post('/me/groups/:groups', handlers.addGroupsToUser);
-    router.delete('/me/groups/:groups', handlers.removeGroupsFromUser);
-    router.get('/anonymous', handlers.createAnonymousUser);
-    router.get('/logout', handlers.logout);
-    router.post('/invitations', handlers.inviteUser);
-    router.post('/invitations/:invitationToken', handlers.acceptInvitation);
-    router.put('/tokens', handlers.tokenMaintenance);
+
+    router.get(
+      // #swagger.ignore = true,
+      '/users',
+      handlers.getUsers
+    );
+    router.get(
+      // #swagger.ignore = true,
+      '/users/:userId/extract_personal_data',
+      handlers.extractUserPersonalData
+    );
+    router.get(
+      // #swagger.ignore = true,
+      '/users/:userId/access_token',
+      handlers.getAccessTokenForUser
+    );
+    router.get(
+      // #swagger.ignore = true,
+      '/providers',
+      handlers.getProviders
+    );
+    router.get(
+      // #swagger.ignore = true,
+      '/me',
+      handlers.me
+    );
+    router.put(
+      // #swagger.ignore = true,
+      '/me',
+      handlers.updateMe
+    );
+    router.patch(
+      // #swagger.ignore = true,
+      '/me',
+      handlers.patchMe
+    );
+    router.post(
+      // #swagger.ignore = true,
+      '/me/groups/:groups',
+      handlers.addGroupsToUser
+    );
+    router.get(
+      // #swagger.ignore = true
+      // #swagger.ignore = true,
+      '/anonymous',
+      handlers.createAnonymousUser
+    );
+    router.get(
+      // #swagger.ignore = true
+      // #swagger.tags = ['Auth service'],
+      '/logout',
+      handlers.logout
+    );
+    router.post(
+      // #swagger.ignore = true
+      // #swagger.tags = ['Auth service'],
+      '/invitations',
+      handlers.inviteUser
+    );
+    router.post(
+      // #swagger.ignore = true
+      // #swagger.tags = ['Auth service'],
+      '/invitations/:invitationToken',
+      handlers.acceptInvitation
+    );
+    router.put(
+      // #swagger.tags = ['Auth service'],
+      // #swagger.ignore = true
+      '/tokens',
+      handlers.tokenMaintenance
+    );
 
     if (providers.local) {
-      router.use('/local', local.middleware(providers.local));
-      router.post('/local/signup', local.signup);
-      router.post('/local/signin', local.signin);
-      router.post('/local/reset-password-token', local.createResetPasswordToken);
-      router.post('/local/reset-password', local.resetPassword);
-      router.get('/local/validate', local.validate);
-      router.put('/local/update-password', local.updatePassword);
+      router.use(
+        // #swagger.ignore = true,
+        '/local',
+        local.middleware(providers.local)
+      );
+      router.post(
+        /*
+        #swagger.tags = ['Auth service'],
+        #swagger.description = 'AUTH_LOCAL_SIGNUP_DESCRIPTION'
+        #swagger.summary = 'AUTH_LOCAL_SIGNUP_SUMMARY'
+        #swagger.parameters['X-Requested-With'] = {
+          in: 'header',
+          schema: {
+            type: 'string',
+            '@enum': ['XMLHttpRequest']
+          }
+        }
+        #swagger.requestBody = {
+            required: true,
+            content: {
+                "application/json": {
+                    schema: { $ref: "#/components/schemas/CreateUserRequest" }
+                }
+            }
+        }
+        #swagger.responses[200] = {
+            description: "Token",
+            content: {
+                "application/json": {
+                    schema:{
+                        $ref: "#/components/schemas/TokenResponse"
+                    }
+                }
+            }
+        }
+        */
+        '/local/signup',
+        local.signup
+      );
+      router.post(
+        /*
+        #swagger.tags = ['Auth service'],
+        #swagger.description = 'AUTH_LOCAL_SIGNIN_DESCRIPTION'
+        #swagger.summary = 'AUTH_LOCAL_SIGNIN_SUMMARY'
+        #swagger.parameters['X-Requested-With'] = {
+          in: 'header',
+          schema: {
+            type: 'string',
+            '@enum': ['XMLHttpRequest']
+          }
+        }
+        #swagger.requestBody = {
+            required: true,
+            content: {
+                "application/json": {
+                    schema: { $ref: "#/components/schemas/CredentialRequest" }
+                }
+            }
+        }
+        #swagger.responses[200] = {
+            description: "Token",
+            content: {
+                "application/json": {
+                    schema:{
+                        $ref: "#/components/schemas/TokenResponse"
+                    }
+                }
+            }
+        }
+        */
+        '/local/signin',
+        local.signin
+      );
+      router.post(
+        // #swagger.ignore = true
+        '/local/reset-password-token',
+        local.createResetPasswordToken
+      );
+      router.post(
+        // #swagger.ignore = true,
+        '/local/reset-password',
+        local.resetPassword
+      );
+      router.get(
+        // #swagger.ignore = true,
+        '/local/validate',
+        local.validate
+      );
+      router.put(
+        // #swagger.ignore = true,
+        '/local/update-password',
+        local.updatePassword
+      );
     }
-    this.router.get('/:provider', handlers.initAuth);
-    this.router.get('/:provider/callback', handlers.callback);
+    this.router.get(
+      // #swagger.ignore = true,
+      '/:provider',
+      handlers.initAuth
+    );
+    this.router.get(
+      // #swagger.ignore = true,
+      '/:provider/callback',
+      handlers.callback
+    );
   }
 
   getMiddlewares() {

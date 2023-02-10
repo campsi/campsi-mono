@@ -10,7 +10,8 @@ const debug = require('debug')('campsi:test');
 const services = {
   Auth: require('../../services/auth/lib'),
   Trace: require('campsi-service-trace'),
-  Assets: require('../../services/assets/lib')
+  Assets: require('../../services/assets/lib'),
+  Audit: require('../../services/audit')
 };
 
 class Test extends CampsiService {
@@ -27,6 +28,7 @@ const campsi = new CampsiServer(config.campsi);
 campsi.mount('test', new Test(config.services.test));
 campsi.mount('assets', new services.Assets(config.services.assets));
 campsi.mount('auth', new services.Auth(config.services.auth));
+campsi.mount('audit', new services.Audit(config.services.auth));
 
 campsi.on('campsi/ready', () => {
   debug('ready');

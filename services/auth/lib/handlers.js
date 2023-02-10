@@ -467,14 +467,6 @@ function acceptInvitation(req, res) {
   );
 }
 
-async function removeGroupsFromUser(filter, update, db) {
-  try {
-    await db.collection(getUsersCollectionName()).updateOne(filter, update);
-  } catch (ex) {
-    debug(ex);
-  }
-}
-
 function addGroupsToUser(req, res) {
   if (!req.user) {
     return helpers.unauthorized(res);
@@ -549,7 +541,6 @@ module.exports = {
   inviteUser,
   acceptInvitation,
   addGroupsToUser,
-  extractUserPersonalData,
-  removeGroupsFromUser,
-  tokenMaintenance
+  tokenMaintenance,
+  extractUserPersonalData
 };

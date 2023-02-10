@@ -4,7 +4,6 @@ const documentService = require('./services/document');
 const userService = require('./services/user');
 const buildLink = require('../../../lib/modules/buildLink');
 const createError = require('http-errors');
-const { getUserService } = require('./services/userService');
 
 const getEmitPayload = (req, additionalProps) => {
   return Object.assign(
@@ -128,7 +127,7 @@ module.exports.delDoc = async (req, res, next) => {
   return req.service.emit('versionedDocument/deleted', getEmitPayload(req));
 };
 
-module.exports.getResources = function (req, res, next) {
+module.exports.getResources = function(req, res, next) {
   return helpers.json(res, resourceService.getResources(req.options));
 };
 
@@ -150,14 +149,7 @@ module.exports.postDocUser = async (req, res, next) => {
 };
 
 module.exports.delDocUser = async (req, res, next) => {
-  const usersId = await documentService.removeUserFromDocument(
-    req.resource,
-    req.filter,
-    req.params.user,
-    req.db,
-    getUserService(req.options, req.service.server)
-  );
-
+  const usersId = await documentService.removeUserFromDocument(req.resource, req.filter, req.params.user, req.db);
   if (!usersId) return next(createError(404, 'Document not found'));
 
   const users = await userService.fetchUsers(usersId, req.options, req.service.server);

@@ -5,7 +5,6 @@ const sortCursor = require('../../../../lib/modules/sortCursor');
 const createObjectId = require('../../../../lib/modules/createObjectId');
 const permissions = require('../modules/permissions');
 const { ObjectId } = require('mongodb');
-const debug = require('debug')('campsi:service:docs');
 
 const createError = require('http-errors');
 const { getDocumentLockServiceOptions } = require('../modules/serviceOptions');
@@ -609,7 +608,7 @@ module.exports.addUserToDocument = function (resource, filter, userDetails) {
   });
 };
 
-module.exports.removeUserFromDocument = function (resource, filter, userId, db, userService) {
+module.exports.removeUserFromDocument = function (resource, filter, userId, db) {
   const removeUserFromDoc = new Promise((resolve, reject) => {
     const ops = { $unset: { [`users.${userId}`]: 1 } };
     const options = { returnDocument: 'after', projection: { users: 1 } };
@@ -625,15 +624,10 @@ module.exports.removeUserFromDocument = function (resource, filter, userId, db, 
   const removeGroupFromUser = new Promise((resolve, reject) => {
     const filter = { _id: createObjectId(userId) };
     const update = { $pull: { groups: { $in: groups } } };
-
-    if (userService) {
-      userService.removeGroupsFromUser(filter, update, db).then(() => {
-        return resolve(null);
-      });
-    } else {
-      debug('userService not defined, in service configuration, not calling removeuserFromGroups function');
+    db.collection('__users__').updateOne(filter, update, (err, _result) => {
+      if (err) return reject(err);
       return resolve(null);
-    }
+    });
   });
 
   return Promise.all([removeUserFromDoc, removeGroupFromUser]).then(values => values[0]);

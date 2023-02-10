@@ -3,9 +3,6 @@ module.exports = {
     new Promise((resolve, reject) => {
       resolve(users.map(user => Object.assign({}, user, { displayName: `External user ${user.userId}` })));
     }),
-  userService: server => {
-    return server.services.get('auth');
-  },
   roles: {
     admin: {
       label: 'Administrateur',

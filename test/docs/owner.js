@@ -22,8 +22,7 @@ format.extend(String.prototype);
 chai.use(chaiHttp);
 
 const services = {
-  Docs: require('../../services/docs/lib'),
-  Auth: require('../../services/auth/lib')
+  Docs: require('../../services/docs/lib')
 };
 
 const me = {
@@ -68,7 +67,6 @@ describe('Owner', () => {
         client.close();
         campsi = new CampsiServer(config.campsi);
         campsi.mount('docs', new services.Docs(config.services.docs));
-        campsi.mount('auth', new services.Auth(config.services.auth));
         campsi.app.use((req, res, next) => {
           req.user = me;
           next();

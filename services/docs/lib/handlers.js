@@ -7,7 +7,7 @@ const buildSingleDocumentLink = require('../../../lib/modules/buildSingleDocumen
 const { ObjectId } = require('mongodb');
 const ValidationError = require('../../../lib/errors/ValidationError');
 const { getDocumentLockServiceOptions } = require('./modules/serviceOptions');
-const { getUserService } = require('./services/userService');
+
 const getEmitPayload = (req, additionalProps) => {
   return Object.assign(
     {
@@ -228,7 +228,7 @@ module.exports.postDocUser = function (req, res) {
 
 module.exports.delDocUser = function (req, res) {
   documentService
-    .removeUserFromDocument(req.resource, req.filter, req.params.user, req.db, getUserService(req.options, req.service.server))
+    .removeUserFromDocument(req.resource, req.filter, req.params.user, req.db)
     .then(users => userService.fetchUsers(users, req.options, req.service.server))
     .then(result => helpers.json(res, result))
     .then(() => req.service.emit('document/users/removed', getEmitPayload(req, { removedUserId: req.params.user })))

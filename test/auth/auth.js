@@ -25,7 +25,6 @@ const glenda = {
   password: 'signup!'
 };
 
-
 const robert = {
   displayName: 'Robert Bennett',
   email: 'robert@agilitation.fr',
@@ -93,7 +92,6 @@ const expiredTokens2 = {
     grantedByProvider: 'local'
   }
 };
-
 const bob = {
   displayName: 'Bobby baton',
   email: 'b.baton@donuts.fr',

@@ -19,7 +19,7 @@
     "test-notifications": "mocha \"./test/notifications/*.js\" --exit",
     "test-audit": "mocha \"./test/audit/*.js\" --exit",
     "test": "mocha -R dot './test/{,!(launchers)/**/}/*.js' --ignore './test/auth/collection-name*.js' --exit && mocha -R dot './test/auth/collection-name.js' --exit",
-    "prepare": "husky install"
+    "prepare": ""
   },
   "eslintIgnore": [
     "test/data/*",

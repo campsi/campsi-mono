@@ -1,6 +1,7 @@
 /* eslint-disable no-prototype-builtins */
 const CampsiService = require('../../../lib/service');
 const helpers = require('../../../lib/modules/responseHelpers');
+const crypto = require('crypto');
 
 const subscriptionExpand = ['latest_invoice', 'latest_invoice.payment_intent', 'pending_setup_intent'];
 const customerExpand = ['tax_ids'];
@@ -22,6 +23,7 @@ const buildExpandFromQuery = (query, defaultExpand) => {
 };
 
 const bodyToCustomer = (body, sourcePropertyName, user) => {
+
   return {
     name: String(body.name),
     description: String(body.description),
@@ -47,14 +49,7 @@ const optionsFromQuery = query => {
   return options;
 };
 
-const defaultHandler = res => (err, obj) => {
-  if (err) {
-    helpers.error(res, err);
-    console.error(err);
-  } else {
-    helpers.json(res, obj);
-  }
-};
+
 
 module.exports = class StripeBillingService extends CampsiService {
   initialize() {
@@ -68,13 +63,31 @@ module.exports = class StripeBillingService extends CampsiService {
       next();
     });
 
+    const defaultHandler = (res) => (err, obj) => {
+      if (err) {
+        helpers.error(res, err);
+        console.error(err);
+        this.server.logger.error(err);
+      } else {
+        helpers.json(res, obj);
+      }
+    };
+
     this.router.post('/webhook', (req, res) => {
       res.send('OK');
       this.emit('webhook', req.body);
     });
 
     this.router.post('/customers', (req, res) => {
-      stripe.customers.create(bodyToCustomer(req.body, 'source', req.user), defaultHandler(res));
+      try {
+        this.checkEmailValidity(req.body?.email);
+        const params = bodyToCustomer(req.body, 'source', req.user);
+        const idempotencyKey = this.createIdempotencyKey(params, 'customers.create');
+        stripe.customers.create(params, { idempotencyKey }, defaultHandler(res));
+      }
+      catch (ex) {
+        res.status(400).json(ex);
+      }
     });
 
     this.router.get('/customers/:id', (req, res) => {
@@ -83,7 +96,13 @@ module.exports = class StripeBillingService extends CampsiService {
     });
 
     this.router.put('/customers/:id', (req, res) => {
-      stripe.customers.update(req.params.id, bodyToCustomer(req.body, 'default_source'), defaultHandler(res));
+      try {
+        this.checkEmailValidity(req?.body.email);
+        stripe.customers.update(req.params.id, bodyToCustomer(req.body, 'default_source'), defaultHandler(res));
+      }
+      catch(err) {
+        res.status(400).json(err);
+      }
     });
 
     this.router.patch('/customers/:id', (req, res) => {
@@ -116,19 +135,19 @@ module.exports = class StripeBillingService extends CampsiService {
     });
 
     this.router.post('/subscriptions', (req, res) => {
-      stripe.subscriptions.create(
-        {
-          customer: req.body.customer,
-          collection_method: 'charge_automatically',
-          items: req.body.items,
-          metadata: req.body.metadata,
-          coupon: req.body.coupon,
-          promotion_code: req.body.promotion_code,
-          expand: buildExpandFromBody(req.body, subscriptionExpand),
-          default_tax_rates: req.body.default_tax_rates,
-          default_source: req.body.default_source
-        },
-        defaultHandler(res)
+      const params = {
+        customer: req.body.customer,
+        collection_method: 'charge_automatically',
+        items: req.body.items,
+        metadata: req.body.metadata,
+        coupon: req.body.coupon,
+        promotion_code: req.body.promotion_code,
+        expand: buildExpandFromBody(req.body, subscriptionExpand),
+        default_tax_rates: req.body.default_tax_rates,
+        default_source: req.body.default_source
+      };
+      const idempotencyKey = this.createIdempotencyKey(params, 'subscriptions.create');
+      stripe.subscriptions.create(params, { idempotencyKey }, defaultHandler(res)
       );
     });
 
@@ -190,19 +209,18 @@ module.exports = class StripeBillingService extends CampsiService {
     });
 
     this.router.postAsync('/subscription-schedules', (req, res) => {
-      stripe.subscriptionSchedules.create(
-        {
-          customer: req.body.customer,
-          metadata: req.body.metadata,
-          phases: req.body.phases,
-          start_date: req.body.start_date,
-          default_settings: req.body.default_settings,
-          end_behavior: req.body.end_behavior,
-          from_subscription: req.body.from_subscription,
-          expand: buildExpandFromBody(req.body)
-        },
-        defaultHandler(res)
-      );
+      const params = {
+        customer: req.body.customer,
+        metadata: req.body.metadata,
+        phases: req.body.phases,
+        start_date: req.body.start_date,
+        default_settings: req.body.default_settings,
+        end_behavior: req.body.end_behavior,
+        from_subscription: req.body.from_subscription,
+        expand: buildExpandFromBody(req.body)
+      };
+      const idempotencyKey = this.createIdempotencyKey(params, 'subscriptionSchedules.create');
+      stripe.subscriptionSchedules.create(params, { idempotencyKey }, defaultHandler(res));
     });
 
     this.router.putAsync('/subscription-schedules/:id', (req, res) => {
@@ -267,17 +285,18 @@ module.exports = class StripeBillingService extends CampsiService {
     });
 
     this.router.post('/setup_intents', (req, res) => {
-      stripe.setupIntents.create(
-        {
-          confirm: true,
-          payment_method: req.body.payment_method,
-          customer: req.body.customer,
-          payment_method_types: ['card', 'sepa_debit'],
-          metadata: req.body.metadata
-        },
-        defaultHandler(res)
+      const params = {
+        confirm: true,
+        payment_method: req.body.payment_method,
+        customer: req.body.customer,
+        payment_method_types: ['card', 'sepa_debit'],
+        metadata: req.body.metadata
+      };
+      const idempotencyKey = this.createIdempotencyKey(params, 'setupIntents.create');
+      stripe.setupIntents.create(params, { idempotencyKey }, defaultHandler(res)
       );
     });
+
     this.router.get('/coupons/:code[:]check-validity', this.checkCouponCodeValidity);
 
     this.router.get('/payment_intents/:id', (req, res) => {
@@ -287,7 +306,7 @@ module.exports = class StripeBillingService extends CampsiService {
       stripe.paymentIntents.confirm(req.params.id, defaultHandler(res));
     });
     this.router.post('/payment_intents', (req, res) => {
-      const payload = {
+      const params = {
         confirm: req.body.confirm || true,
         amount: req.body.amount,
         currency: req.body.currency || 'eur',
@@ -296,9 +315,10 @@ module.exports = class StripeBillingService extends CampsiService {
         customer: req.body.customer
       };
       if (req.body.payment_method) {
-        payload.payment_method = req.body.payment_method;
+        params.payment_method = req.body.payment_method;
       }
-      stripe.paymentIntents.create(payload, defaultHandler(res));
+      const idempotencyKey = this.createIdempotencyKey(params, 'paymentIntents.create');
+      stripe.paymentIntents.create(params,{ idempotencyKey }, defaultHandler(res));
     });
     this.router.patch('/payment_intents/:id', (req, res) => {
       const payload = {
@@ -318,6 +338,18 @@ module.exports = class StripeBillingService extends CampsiService {
 
   fetchSubscription(subscriptionId, cb) {
     this.stripe.subscriptions.retrieve(subscriptionId, cb);
+  }
+
+  /**
+   * Create idempotency key to avoid creating a stripe resource multiple time within the same second
+   * @param params
+   * @returns {string}
+   */
+  createIdempotencyKey(params, method) {
+    return crypto
+      .createHash('sha256')
+      .update(JSON.stringify({ ...params, method, now: new Date().toISOString().slice(0,-6) }))
+      .digest('base64')
   }
 
   /**
@@ -348,6 +380,15 @@ module.exports = class StripeBillingService extends CampsiService {
       creditNotes.push(creditNote);
     }
     return creditNotes;
+  };
+
+  checkEmailValidity (email) {
+    const regex = new RegExp(
+      /^(([^<>()[\].,;:\s@"]+(\.[^<>()[\].,;:\s@"]+)*)|(".+"))@(([^<>()[\].,;:\s@"]+\.)+[^<>()[\].,;:\s@"]{2,})$/i
+    );
+    if (!regex.test(email)) {
+      throw new Error('Invalid Email');
+    }
   };
 
   // eslint-disable-next-line

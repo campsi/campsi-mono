@@ -113,6 +113,13 @@ module.exports.createRandomToken = function (username, salt) {
 
 module.exports.signup = function (req, res) {
   const salt = req.authProvider.options.salt;
+  const passwordRegex = new RegExp(req.authProvider.options.passwordRegex ?? '.*');
+  if (!passwordRegex.test(req.body.password)) {
+    return helpers.error(
+      res,
+      new Error(`Invalid password, please respect this regex : ${req.authProvider.options.passwordRegex}`)
+    );
+  }
   const users = req.db.collection(getUsersCollectionName());
   const missingParameters = ['password', 'displayName', 'username'].filter(prop => {
     return typeof req.body[prop] === 'undefined' || req.body.prop === '';
@@ -167,6 +174,11 @@ module.exports.signup = function (req, res) {
     });
   };
 
+  if (req.body.email) {
+    if (!/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(req.body.email)) {
+      return helpers.error(res, new Error('Invalid email'));
+    }
+  }
   const email = String(req.body.email || req.body.username).toLowerCase();
   module.exports
     .encryptPassword(req.body.password)
@@ -330,6 +342,13 @@ module.exports.createResetPasswordToken = function (req, res) {
  */
 module.exports.resetPassword = function (req, res) {
   const missingParams = getMissingParameters(req.body, ['password', 'token']);
+  const passwordRegex = new RegExp(req.authProvider.options.passwordRegex ?? '.*');
+  if (!passwordRegex.test(req.body.password)) {
+    return helpers.error(
+      res,
+      new Error(`Invalid password, please respect this regex : ${req.authProvider.options.passwordRegex}`)
+    );
+  }
   if (missingParams.length > 0) {
     return helpers.error(res, new Error(`missing parameter(s) : ${missingParams.join(', ')}`));
   }
@@ -382,6 +401,13 @@ module.exports.resetPassword = function (req, res) {
  */
 module.exports.updatePassword = function (req, res) {
   const missingParams = getMissingParameters(req.body, ['new', 'confirm']);
+  const passwordRegex = new RegExp(req.authProvider.options.passwordRegex ?? '.*');
+  if (!passwordRegex.test(req.body.new)) {
+    return helpers.error(
+      res,
+      new Error(`Invalid password, please respect this regex : ${req.authProvider.options.passwordRegex}`)
+    );
+  }
   if (missingParams.length > 0) {
     return helpers.error(res, new Error(`missing parameter(s) : ${missingParams.join(', ')}`));
   }

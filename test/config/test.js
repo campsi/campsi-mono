@@ -86,6 +86,9 @@ module.exports = {
       title: 'Versioned docs',
       description: 'Versioned docs db structure',
       options: {
+        userService: server => {
+          return server.services.get('auth');
+        },
         usersFetcher: async (usersId, server) => {
           const users = await server.services.get('auth').fetchUsers(usersId.map(u => u.userId));
           return users.map(u => {

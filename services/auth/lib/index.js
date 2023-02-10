@@ -46,6 +46,7 @@ module.exports = class AuthService extends CampsiService {
       req.authProvider = providers[id];
       return !req.authProvider ? helpers.notFound(res) : next();
     });
+
     router.get(
       // #swagger.ignore = true,
       '/users',
@@ -246,5 +247,9 @@ module.exports = class AuthService extends CampsiService {
       return map;
     }, {});
     return userIds.map(userId => map[userId] || userId);
+  }
+
+  async removeGroupsFromUser(filter, update, db) {
+    return handlers.removeGroupsFromUser(filter, update, db);
   }
 };

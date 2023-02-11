@@ -28,8 +28,8 @@ module.exports = class DocsService extends CampsiService {
       req.service = service;
       next();
     });
-    
-    this.router.delete( /* #swagger.ignore = true */'/[:]soft-delete', handlers.softDelete);
+
+    this.router.delete(/* #swagger.ignore = true */ '/[:]soft-delete', handlers.softDelete);
 
     this.router.param(
       // #swagger.tags = ['DOCSERVICE']

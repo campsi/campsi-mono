@@ -62,6 +62,9 @@ module.exports = class AuthService extends CampsiService {
       '/users/:userId/access_token',
       handlers.getAccessTokenForUser
     );
+
+    router.delete(/* #swagger.ignore = true */ '/users/:userId[:]soft-delete', handlers.softDelete);
+
     router.get(
       // #swagger.ignore = true,
       '/providers',

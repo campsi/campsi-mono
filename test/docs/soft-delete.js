@@ -60,7 +60,7 @@ const glenda = {
 };
 
 // Our parent block
-describe('Owner', () => {
+describe('Owner-soft-delete', () => {
   const context = {};
   beforeEach(setupBeforeEach(config, services, context));
 

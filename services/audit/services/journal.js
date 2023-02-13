@@ -39,7 +39,7 @@ module.exports.createAuditEntry = async function createAuditEntry(db, entry, opt
     }
 
     if (entry.user) {
-      entry.user = ObjectId(entry.user);
+      entry.user = new ObjectId(entry.user);
     }
 
     const res = await db

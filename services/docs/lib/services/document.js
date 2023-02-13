@@ -8,6 +8,7 @@ const { ObjectId } = require('mongodb');
 
 const createError = require('http-errors');
 const { getDocumentLockServiceOptions } = require('../modules/serviceOptions');
+const { getUsersCollectionName } = require('../../../auth/lib/modules/collectionNames');
 
 // Helper functions
 const getDocUsersList = doc => Object.keys(doc ? doc.users : []).map(k => doc.users[k]);
@@ -338,77 +339,50 @@ module.exports.getDocuments = function (resource, filter, user, query, state, so
   });
 };
 
-module.exports.createDocument = function (resource, data, state, user, parentId, groups) {
+module.exports.createDocument = async function (resource, data, state, user, parentId, groups) {
   removeVirtualProperties(resource, data);
-  return new Promise((resolve, reject) => {
-    builder
-      .create({
-        resource,
-        data,
-        state,
-        user,
-        parentId
-      })
-      .then(async doc => {
-        if (doc.parentId) {
-          try {
-            const parent = await resource.collection.findOne({
-              _id: doc.parentId
-            });
-            if (parent) {
-              doc.groups = parent.groups;
-            }
-          } catch (err) {}
-        }
+  const doc = await builder.create({ resource, data, state, user, parentId });
 
-        if (groups.length) {
-          doc.groups = [...new Set([...doc.groups, ...groups])];
-        }
+  if (doc.parentId) {
+    try {
+      const parent = await resource.collection.findOne({ _id: doc.parentId });
+      if (parent) {
+        doc.groups = parent.groups;
+      }
+    } catch (err) {}
+  }
 
-        resource.collection.insertOne(doc, (err, result) => {
-          if (err) return reject(err);
-          resolve({
-            state,
-            id: result.insertedId,
-            ...doc.states[state]
-          });
-        });
-      })
-      .catch(reject);
-  });
+  if (groups.length) {
+    doc.groups = [...new Set([...doc.groups, ...groups])];
+  }
+
+  const result = await resource.collection.insertOne(doc);
+  return {
+    state,
+    id: result.insertedId,
+    ...doc.states[state]
+  };
 };
 
-module.exports.setDocument = function (resource, filter, data, state, user) {
+module.exports.setDocument = async function (resource, filter, data, state, user) {
   removeVirtualProperties(resource, data);
-  return new Promise((resolve, reject) => {
-    builder
-      .update({
-        resource,
-        data,
-        state,
-        user
-      })
-      .then(update => {
-        resource.collection.updateOne(filter, update, (err, result) => {
-          if (err) return reject(err);
+  const update = await builder.update({ resource, data, state, user });
 
-          // if document not found, must be a permissions issue
-          if (result.modifiedCount !== 1) {
-            resource.collection.findOne({ _id: ObjectId(filter._id) }, {}, (_err, doc) => {
-              if (!doc) return reject(new createError.NotFound('Not Found'));
-              return reject(new createError.Unauthorized('Unauthorized'));
-            });
-          } else {
-            resolve({
-              id: filter._id,
-              state,
-              data
-            });
-          }
-        });
-      })
-      .catch(reject);
-  });
+  const result = await resource.collection.updateOne(filter, update);
+  // if document not found, must be a permissions issue
+  if (result.modifiedCount !== 1) {
+    const doc = await resource.collection.findOne({ _id: new ObjectId(filter._id) });
+    if (!doc) {
+      throw new createError.NotFound('Not Found');
+    }
+    throw new createError.Unauthorized('Unauthorized');
+  } else {
+    return {
+      id: filter._id,
+      state,
+      data
+    };
+  }
 };
 
 module.exports.patchDocument = async (resource, filter, data, state, user) => {
@@ -493,7 +467,7 @@ module.exports.getDocumentLinks = function (resource, filter, query, _user, stat
   });
 };
 
-module.exports.getDocument = function (resource, filter, query, user, state, resources) {
+module.exports.getDocument = async function (resource, filter, query, user, state, resources) {
   const requestedStates = getRequestedStatesFromQuery(resource, query);
   const projection = { _id: 1, states: 1, users: 1, groups: 1 };
   if (query?.with?.includes('metadata')) {
@@ -503,28 +477,23 @@ module.exports.getDocument = function (resource, filter, query, user, state, res
   match[`states.${state}`] = { $exists: true };
 
   if (!resource.isInheritable) {
-    return new Promise((resolve, reject) => {
-      resource.collection.findOne(match, { projection }, (err, doc) => {
-        if (err) return reject(err);
-        if (doc === null) {
-          return reject(new Error('Document Not Found'));
-        }
-        if (doc.states[state] === undefined) {
-          return reject(new Error('Document Not Found'));
-        }
-        const returnValue = prepareGetDocument({
-          doc,
-          state,
-          permissions,
-          requestedStates,
-          resource,
-          user
-        });
-        embedDocs.one(resource, query.embed, user, returnValue.data, resources).then(_doc => {
-          resolve(returnValue);
-        });
-      });
+    const doc = await resource.collection.findOne(match, { projection });
+    if (!doc) {
+      throw new Error('Document Not Found');
+    }
+    if (!doc.states[state]) {
+      throw new Error('Document Not Found');
+    }
+    const returnValue = prepareGetDocument({
+      doc,
+      state,
+      permissions,
+      requestedStates,
+      resource,
+      user
     });
+    await embedDocs.one(resource, query.embed, user, returnValue.data, resources);
+    return returnValue;
   } else {
     const pipeline = [
       {
@@ -564,147 +533,105 @@ module.exports.getDocument = function (resource, filter, query, user, state, res
         }
       }
     ];
-    return new Promise((resolve, reject) => {
-      resource.collection
-        .aggregate(pipeline)
-        .toArray()
-        .then(documents => {
-          if (!documents || documents.length === 0) {
-            return reject(new Error('Document Not Found'));
-          }
-          const doc = documents[0];
-          const returnValue = prepareGetDocument({
-            doc,
-            state,
-            permissions,
-            requestedStates,
-            resource,
-            user
-          });
-          embedDocs.one(resource, query.embed, user, returnValue.data, resources).then(_doc => resolve(returnValue));
-        })
-        .catch(err => {
-          reject(err);
-        });
+    const documents = await resource.collection.aggregate(pipeline).toArray();
+    if (!documents.length) {
+      throw new Error('Document Not Found');
+    }
+    const doc = documents[0];
+    const returnValue = prepareGetDocument({
+      doc,
+      state,
+      permissions,
+      requestedStates,
+      resource,
+      user
     });
+    await embedDocs.one(resource, query.embed, user, returnValue.data, resources);
+    return returnValue;
   }
 };
 
-module.exports.getDocumentUsers = function (resource, filter) {
-  return new Promise((resolve, reject) => {
-    resource.collection.findOne(filter, { projection: { users: 1 } }, (err, doc) => {
-      if (err) {
-        return reject(err);
-      }
-      return resolve(getDocUsersList(doc));
-    });
-  });
+module.exports.getDocumentUsers = async function (resource, filter) {
+  const doc = await resource.collection.findOne(filter, { projection: { users: 1 } });
+  return getDocUsersList(doc);
 };
 
-module.exports.addUserToDocument = function (resource, filter, userDetails) {
-  return new Promise((resolve, reject) => {
-    resource.collection.findOne(filter, (err, document) => {
-      if (err || !document) return reject(err || 'Document is null');
-      const newUser = {
-        roles: userDetails.roles,
-        addedAt: new Date(),
-        userId: createObjectId(userDetails.userId) || userDetails.userId,
-        displayName: userDetails.displayName,
-        infos: userDetails.infos
-      };
-      const ops = {
-        $set: { [`users.${userDetails.userId}`]: newUser }
-      };
-      const options = { returnDocument: 'after', projection: { users: 1 } };
-      resource.collection.findOneAndUpdate(filter, ops, options, (err, result) => {
-        if (err) return reject(err);
-        if (!result.value) {
-          return reject(new Error('Not Found'));
-        }
-        resolve(getDocUsersList(result.value));
-      });
-    });
-  });
+module.exports.addUserToDocument = async function (resource, filter, userDetails) {
+  const document = await resource.collection.findOne(filter);
+  if (!document) {
+    throw new Error('Document is null');
+  }
+  const newUser = {
+    roles: userDetails.roles,
+    addedAt: new Date(),
+    userId: createObjectId(userDetails.userId) || userDetails.userId,
+    displayName: userDetails.displayName,
+    infos: userDetails.infos
+  };
+  const ops = {
+    $set: { [`users.${userDetails.userId}`]: newUser }
+  };
+  const options = { returnDocument: 'after', projection: { users: 1 } };
+  const result = await resource.collection.findOneAndUpdate(filter, ops, options);
+  if (!result.value) {
+    throw new Error('Not Found');
+  }
+  return getDocUsersList(result.value);
 };
 
-module.exports.removeUserFromDocument = function (resource, filter, userId, db) {
-  const removeUserFromDoc = new Promise((resolve, reject) => {
-    const ops = { $unset: { [`users.${userId}`]: 1 } };
-    const options = { returnDocument: 'after', projection: { users: 1 } };
-    resource.collection.findOneAndUpdate(filter, ops, options, (err, result) => {
-      if (err) return reject(err);
-      if (!result.value) {
-        return reject(new Error('Not Found'));
-      }
-      resolve(getDocUsersList(result.value));
-    });
-  });
+module.exports.removeUserFromDocument = async function (resource, filter, userId, db) {
   const groups = [`${resource.label}_${filter._id}`];
-  const removeGroupFromUser = new Promise((resolve, reject) => {
-    const filter = { _id: createObjectId(userId) };
-    const update = { $pull: { groups: { $in: groups } } };
-    db.collection('__users__').updateOne(filter, update, (err, _result) => {
-      if (err) return reject(err);
-      return resolve(null);
-    });
-  });
+  const [removeUserFromDoc, removeGroupFromUser] = await Promise.all([
+    resource.collection.findOneAndUpdate(
+      filter,
+      { $unset: { [`users.${userId}`]: 1 } },
+      { returnDocument: 'after', projection: { users: 1 } }
+    ),
+    db.collection(getUsersCollectionName()).updateOne({ _id: createObjectId(userId) }, { $pull: { groups: { $in: groups } } })
+  ]);
 
-  return Promise.all([removeUserFromDoc, removeGroupFromUser]).then(values => values[0]);
+  if (!removeUserFromDoc.value) {
+    throw new Error('Not Found');
+  }
+  return getDocUsersList(removeUserFromDoc.value);
 };
 
-module.exports.setDocumentState = function (resource, filter, fromState, toState, user) {
-  return new Promise((resolve, reject) => {
-    const doSetState = function (document) {
-      builder
-        .setState({
-          doc: document,
-          from: fromState,
-          to: toState,
-          resource,
-          user
-        })
-        .then(ops => {
-          resource.collection.updateOne(filter, ops, (err, result) => {
-            if (err) return reject(err);
+module.exports.setDocumentState = async function (resource, filter, fromState, toState, user) {
+  if (!resource.states[toState]) {
+    throw new Error(`Undefined state: ${toState}`);
+  }
 
-            if (result.modifiedCount !== 1) {
-              return reject(new Error('Not Found'));
-            }
+  if (!resource.states[fromState]) {
+    throw new Error(`Undefined state: ${fromState}`);
+  }
 
-            resolve({
-              doc: document,
-              state: {
-                from: fromState,
-                to: toState
-              }
-            });
-          });
-        })
-        .catch(reject);
-    };
+  const doc = await resource.collection.findOne(filter);
 
-    const stateTo = resource.states[toState];
-    const stateFrom = resource.states[fromState];
+  const allowedPutStates = permissions.getAllowedStatesFromDocForUser(user, resource, 'PUT', doc);
+  const allowedGetStates = permissions.getAllowedStatesFromDocForUser(user, resource, 'GET', doc);
 
-    if (typeof stateTo === 'undefined') {
-      reject(new Error(`Undefined state: ${toState}`));
-    }
-
-    if (typeof stateFrom === 'undefined') {
-      reject(new Error(`Undefined state: ${fromState}`));
-    }
-
-    resource.collection.findOne(filter, (err, document) => {
-      if (err) return reject(err);
-      const allowedPutStates = permissions.getAllowedStatesFromDocForUser(user, resource, 'PUT', document);
-      const allowedGetStates = permissions.getAllowedStatesFromDocForUser(user, resource, 'GET', document);
-      if (allowedPutStates.includes(toState) && allowedGetStates.includes(fromState)) {
-        doSetState(document.states[fromState].data);
-      } else {
-        reject(new Error('Unauthorized'));
-      }
+  if (allowedPutStates.includes(toState) && allowedGetStates.includes(fromState)) {
+    const ops = await builder.setState({
+      doc,
+      from: fromState,
+      to: toState,
+      resource,
+      user
     });
-  });
+    const result = await resource.collection.updateOne(filter, ops);
+    if (result.modifiedCount !== 1) {
+      throw new Error('Not Found');
+    }
+    return {
+      doc,
+      state: {
+        from: fromState,
+        to: toState
+      }
+    };
+  } else {
+    throw new Error('Unauthorized');
+  }
 };
 
 module.exports.deleteDocument = function (resource, filter) {

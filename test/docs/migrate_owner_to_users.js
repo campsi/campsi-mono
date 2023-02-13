@@ -3,8 +3,6 @@ process.env.NODE_CONFIG_DIR = './test/docs/config';
 process.env.NODE_ENV = 'test';
 
 // Require the dev-dependencies
-const { MongoClient } = require('mongodb');
-const mongoUriBuilder = require('mongo-uri-builder');
 const debug = require('debug')('campsi:test');
 const chai = require('chai');
 const chaiHttp = require('chai-http');
@@ -13,6 +11,7 @@ const CampsiServer = require('campsi');
 const config = require('config');
 const builder = require('../../services/docs/lib/modules/queryBuilder');
 const migrate = require('../../services/docs/scripts/migrate_owner_to_users');
+const { emptyDatabase } = require('../helpers/emptyDatabase');
 
 chai.should();
 let campsi;
@@ -25,60 +24,34 @@ const services = {
 };
 
 // Helpers
-function createPizza(data, state, ownerId) {
-  return new Promise(function(resolve, reject) {
-    const resource = campsi.services.get('docs').options.resources.pizzas;
-    builder
-      .create({
-        user: null,
-        data,
-        resource,
-        state
-      })
-      .then(doc => {
-        doc.ownedBy = ownerId;
-        delete doc.users;
-        resource.collection.insertOne(doc, (err, result) => {
-          if (err) return reject(err);
-          resolve(result.insertedId);
-        });
-      })
-      .catch(error => {
-        reject(error);
-      });
-  });
+async function createPizza(data, state, ownerId) {
+  const resource = campsi.services.get('docs').options.resources.pizzas;
+  const doc = await builder.create({ user: null, data, resource, state });
+  doc.ownedBy = ownerId;
+  delete doc.users;
+  const result = await resource.collection.insertOne(doc);
+  return result.insertedId;
 }
 
-function getPizzaById(id) {
-  return new Promise(function(resolve, reject) {
-    const resource = campsi.services.get('docs').options.resources.pizzas;
-    resource.collection.findOne({ _id: id }, (err, pizza) => {
-      return err ? reject(err) : resolve(pizza);
-    });
-  });
+async function getPizzaById(id) {
+  const resource = campsi.services.get('docs').options.resources.pizzas;
+  return await resource.collection.findOne({ _id: id });
 }
 
 // Our parent block
-describe('CRUD', () => {
+describe('Migrate owner to user', () => {
   beforeEach(done => {
-    // Empty the database
-    const mongoUri = mongoUriBuilder(config.campsi.mongo);
-    MongoClient.connect(mongoUri, (err, client) => {
-      if (err) throw err;
-      const db = client.db(config.campsi.mongo.database);
-      db.dropDatabase(() => {
-        client.close();
-        campsi = new CampsiServer(config.campsi);
-        campsi.mount('docs', new services.Docs(config.services.docs));
+    emptyDatabase(config).then(() => {
+      campsi = new CampsiServer(config.campsi);
+      campsi.mount('docs', new services.Docs(config.services.docs));
 
-        campsi.on('campsi/ready', () => {
-          server = campsi.listen(config.port);
-          done();
-        });
+      campsi.on('campsi/ready', () => {
+        server = campsi.listen(config.port);
+        done();
+      });
 
-        campsi.start().catch(err => {
-          debug('Error: %s', err);
-        });
+      campsi.start().catch(err => {
+        debug('Error: %s', err);
       });
     });
   });
@@ -91,7 +64,7 @@ describe('CRUD', () => {
     createPizza({ name: 'margarita' }, 'published').then(id => {
       getPizzaById(id).then(pizza => {
         pizza.should.have.property('ownedBy');
-        migrate([], campsi.db, ['docs.docs.pizzas'], () => {
+        migrate([], campsi.db, ['docs.docs.pizzas']).then(() => {
           getPizzaById(id).then(pizza => {
             pizza.should.have.property('users');
             done();
@@ -105,7 +78,7 @@ describe('CRUD', () => {
     createPizza({ name: 'margarita' }, 'published').then(id => {
       getPizzaById(id).then(pizza => {
         pizza.should.have.property('ownedBy');
-        migrate(['--remove-ownedBy'], campsi.db, ['docs.docs.pizzas'], () => {
+        migrate(['--remove-ownedBy'], campsi.db, ['docs.docs.pizzas']).then(() => {
           getPizzaById(id).then(pizza => {
             pizza.should.have.property('users');
             pizza.should.not.have.property('ownedBy');

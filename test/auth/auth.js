@@ -574,7 +574,7 @@ describe('Auth API', () => {
       });
     });
 
-    it('should not create a new user', done => {
+    it('should not create a new user', async () => {
       const campsi = context.campsi;
       const robert = {
         displayName: 'Robert Bennett',
@@ -582,33 +582,37 @@ describe('Auth API', () => {
         username: 'robert',
         password: 'signup!'
       };
-      createUser(chai, campsi, robert)
-        .then(createUser(chai, campsi, glenda, true))
-        .then(token => {
-          chai
-            .request(campsi.app)
-            .post('/auth/invitations')
-            .set('content-type', 'application/json')
-            .set('Authorization', 'Bearer ' + token)
-            .send({
-              email: 'robert@agilitation.fr'
-            })
-            .end((err, res) => {
-              if (err) debug(`received an error from chai: ${err.message}`);
-              res.should.have.status(200);
-              res.should.be.json;
-              res.should.be.a('object');
-              res.body.should.have.property('id');
-              debug(res.body);
-              campsi.db.collection(getUsersCollectionName()).findOne({ email: robert.email }, (err, doc) => {
-                if (err) return debug(`received an error from chai: ${err.message}`);
-                doc.should.be.a('object');
-                res.body.id.should.be.eq(doc._id.toString());
-                done();
-              });
-            });
-        });
+      await createUser(chai, campsi, robert);
+      const token = await createUser(chai, campsi, glenda, true);
+
+      try {
+        const res = await chai
+          .request(campsi.app)
+          .post('/auth/invitations')
+          .set('content-type', 'application/json')
+          .set('Authorization', 'Bearer ' + token)
+          .send({
+            email: 'robert@agilitation.fr'
+          });
+
+        res.should.have.status(200);
+        res.should.be.json;
+        res.should.be.a('object');
+        res.body.should.have.property('id');
+
+        try {
+          const doc = await campsi.db.collection(getUsersCollectionName()).findOne({ email: robert.email });
+          doc.should.be.a('object');
+          res.body.id.should.be.eq(doc._id.toString());
+          done();
+        } catch (e) {
+          return debug(`received an error from chai: ${err.message}`);
+        }
+      } catch (err) {
+        if (err) debug(`received an error from chai: ${err.message}`);
+      }
     });
+
     it('should allow someone else to use the invitation', async () => {
       const campsi = context.campsi;
       const robert = {

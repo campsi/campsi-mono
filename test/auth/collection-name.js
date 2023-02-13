@@ -16,6 +16,7 @@ const chaiHttp = require('chai-http');
 const format = require('string-format');
 const { getUsersCollectionName, getSessionCollectionName } = require('../../services/auth/lib/modules/collectionNames');
 const AuthService = require('../../services/auth/lib');
+const { emptyDatabase } = require('../helpers/emptyDatabase');
 const expect = chai.expect;
 format.extend(String.prototype);
 chai.use(chaiHttp);
@@ -24,22 +25,16 @@ chai.should();
 describe('Auth API', () => {
   const context = {};
   beforeEach(done => {
-    const mongoUri = mongoUriBuilder(config.campsi.mongo);
-    MongoClient.connect(mongoUri, (err, client) => {
-      if (err) throw err;
-      const db = client.db(config.campsi.mongo.database);
-      db.dropDatabase(() => {
-        client.close();
-        context.campsi = new CampsiServer(config.campsi);
-        context.campsi.mount('auth', new AuthService(config.services.auth));
+    emptyDatabase(config).then(() => {
+      context.campsi = new CampsiServer(config.campsi);
+      context.campsi.mount('auth', new AuthService(config.services.auth));
 
-        context.campsi.on('campsi/ready', () => {
-          context.server = context.campsi.listen(config.port);
-          done();
-        });
-        context.campsi.start().catch(err => {
-          debug('Error: %s', err);
-        });
+      context.campsi.on('campsi/ready', () => {
+        context.server = context.campsi.listen(config.port);
+        done();
+      });
+      context.campsi.start().catch(err => {
+        debug('Error: %s', err);
       });
     });
   });

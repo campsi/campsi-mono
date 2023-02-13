@@ -1,28 +1,20 @@
 const CampsiServer = require('campsi');
-const { MongoClient } = require('mongodb');
-const mongoUriBuilder = require('mongo-uri-builder');
+const { emptyDatabase } = require('./emptyDatabase');
 const debug = require('debug')('campsi:test');
 
 module.exports = (config, services, context) => done => {
-  const mongoUri = mongoUriBuilder(config.campsi.mongo);
-  MongoClient.connect(mongoUri, (err, client) => {
-    if (err) throw err;
-    const db = client.db(config.campsi.mongo.database);
-    db.dropDatabase(() => {
-      client.close();
-      context.campsi = new CampsiServer(config.campsi);
-      Object.entries(services).map(([name, service]) => {
-        // eslint-disable-next-line new-cap
-        return context.campsi.mount(name.toLowerCase(), new service(config.services[name.toLowerCase()]));
-      });
-
-      context.campsi.on('campsi/ready', () => {
-        context.server = context.campsi.listen(config.port);
-        done();
-      });
-      context.campsi.start().catch(err => {
-        debug('Error: %s', err);
-      });
+  emptyDatabase(config).then(() => {
+    context.campsi = new CampsiServer(config.campsi);
+    Object.entries(services).map(([name, service]) => {
+      // eslint-disable-next-line new-cap
+      return context.campsi.mount(name.toLowerCase(), new service(config.services[name.toLowerCase()]));
     });
+
+    context.campsi.on('campsi/ready', () => {
+      context.server = context.campsi.listen(config.port);
+      done();
+    });
+
+    context.campsi.start();
   });
 };

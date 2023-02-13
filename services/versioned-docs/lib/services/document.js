@@ -394,30 +394,23 @@ module.exports.addUserToDocument = async (resource, filter, userDetails) => {
 };
 
 module.exports.removeUserFromDocument = async (resource, filter, userId, db) => {
-  const removeUserFromDoc = new Promise((resolve, reject) => {
-    const ops = { $unset: { [`users.${userId}`]: 1 } };
-    const options = { returnDocument: 'after', projection: { users: 1 } };
-    resource.currentCollection.findOneAndUpdate(filter, ops, options, (err, result) => {
-      if (err) return reject(err);
-      if (!result.value) {
-        return reject(new createError.NotFound('Document not found'));
-      }
-      resolve(getDocUsersList(result.value));
-    });
-  });
+  // remove user from doc
+  const [removeUserFromDoc, removeGroupFromUser] = await Promise.all([
+    resource.currentCollection.findOneAndUpdate(
+      filter,
+      { $unset: { [`users.${userId}`]: 1 } },
+      { returnDocument: 'after', projection: { users: 1 } }
+    ),
+    db
+      .collection('__users__')
+      .updateOne({ _id: createObjectId(userId) }, { $pull: { groups: { $in: [`${resource.label}_${filter._id}`] } } })
+  ]);
 
-  const removeGroupFromUser = new Promise((resolve, reject) => {
-    const filter = { _id: createObjectId(userId) };
-    const update = {
-      $pull: { groups: { $in: [`${resource.label}_${filter._id}`] } }
-    };
-    db.collection('__users__').updateOne(filter, update, (err, result) => {
-      if (err) return reject(err);
-      return resolve(null);
-    });
-  });
+  if (!removeUserFromDoc.value) {
+    throw new createError.NotFound('Document not found');
+  }
 
-  return await Promise.all([removeUserFromDoc, removeGroupFromUser]).then(values => values[0]);
+  return removeUserFromDoc.value;
 };
 
 module.exports.deleteDocument = async (resource, filter, query) => {

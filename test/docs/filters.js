@@ -3,8 +3,6 @@ process.env.NODE_CONFIG_DIR = './config';
 process.env.NODE_ENV = 'test';
 
 // Require the dev-dependencies
-const { MongoClient } = require('mongodb');
-const mongoUriBuilder = require('mongo-uri-builder');
 const debug = require('debug')('campsi:test');
 const chai = require('chai');
 const chaiHttp = require('chai-http');
@@ -12,8 +10,8 @@ const format = require('string-format');
 const CampsiServer = require('campsi');
 const config = require('config');
 const builder = require('../../services/docs/lib/modules/queryBuilder');
-const async = require('async');
 const fakeId = require('fake-object-id');
+const { emptyDatabase } = require('../helpers/emptyDatabase');
 
 chai.should();
 let campsi;
@@ -61,27 +59,20 @@ function testDocument(document, index) {
 // Our parent block
 describe('Filter Documents', () => {
   beforeEach(done => {
-    // Empty the database
-    const mongoUri = mongoUriBuilder(config.campsi.mongo);
-    MongoClient.connect(mongoUri, (err, client) => {
-      if (err) throw err;
-      const db = client.db(config.campsi.mongo.database);
-      db.dropDatabase(() => {
-        client.close();
-        campsi = new CampsiServer(config.campsi);
-        campsi.mount('docs', new services.Docs(config.services.docs));
-        campsi.app.use((req, res, next) => {
-          req.user = owner;
-          next();
-        });
+    emptyDatabase(config).then(() => {
+      campsi = new CampsiServer(config.campsi);
+      campsi.mount('docs', new services.Docs(config.services.docs));
+      campsi.app.use((req, res, next) => {
+        req.user = owner;
+        next();
+      });
 
-        campsi.on('campsi/ready', () => {
-          server = campsi.listen(config.port);
-          done();
-        });
-        campsi.start().catch(err => {
-          debug('Error: %s', err);
-        });
+      campsi.on('campsi/ready', () => {
+        server = campsi.listen(config.port);
+        done();
+      });
+      campsi.start().catch(err => {
+        debug('Error: %s', err);
       });
     });
   });

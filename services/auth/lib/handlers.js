@@ -493,6 +493,35 @@ function addGroupsToUser(req, res) {
     .catch(error => helpers.error(res, error));
 }
 
+function softDelete(req, res) {
+  if (req.user && req.user.isAdmin) {
+    let userId;
+    try {
+      userId = new ObjectId(req.params.userId);
+
+      // set email, displayName, picture, data, identities to empty
+      // add deletedAt date
+      const update = { $set: { email: '', displayName: '', picture: '', data: {}, identities: {}, deletedAt: new Date() } };
+      req.db
+        .collection('__users__')
+        .findOneAndUpdate({ _id: userId, deletedAt: { $exists: false } }, update, { returnDocument: 'after' })
+        .then(result => {
+          // also anonymize additional field if passed in
+          if (result && result.value) {
+            res.json(result.value);
+          } else {
+            helpers.notFound(res, new Error('User not found or already soft deleted'));
+          }
+        })
+        .catch(error => helpers.error(res, error));
+    } catch (e) {
+      return redirectWithError(req, res, new Error('Erroneous userId'));
+    }
+  } else {
+    return helpers.unauthorized(res);
+  }
+}
+
 function extractUserPersonalData(req, res) {
   if (req.user && req.user?.isAdmin) {
     let userId;
@@ -541,6 +570,7 @@ module.exports = {
   inviteUser,
   acceptInvitation,
   addGroupsToUser,
+  softDelete,
   tokenMaintenance,
   extractUserPersonalData
 };

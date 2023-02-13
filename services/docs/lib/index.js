@@ -28,6 +28,9 @@ module.exports = class DocsService extends CampsiService {
       req.service = service;
       next();
     });
+
+    this.router.delete(/* #swagger.ignore = true */ '/[:]soft-delete', handlers.softDelete);
+
     this.router.param(
       // #swagger.tags = ['DOCSERVICE']
       // #swagger.ignore = always
@@ -213,6 +216,7 @@ module.exports = class DocsService extends CampsiService {
       // #swagger.ignore = true
       handlers.deleteLock
     );
+
     return new Promise(resolve => {
       const ajvWriter = new Ajv({ useAssign: true, strictTuples: false, strict: false });
       addFormats(ajvWriter);

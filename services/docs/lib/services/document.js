@@ -16,6 +16,25 @@ const getRequestedStatesFromQuery = (resource, query) => {
   return query.states ? query.states.split(',') : Object.keys(resource.states);
 };
 
+module.exports.anonymizePersonalData = async function (user, db, collection, field) {
+  if (user && user?.isAdmin) {
+    try {
+      const result = await db.collection(collection).findOneAndUpdate({ [field]: { $exists: true } }, { $set: { [field]: '' } });
+
+      // also anonymize additional field if passed in
+      if (result && result.value) {
+        return result.value;
+      } else {
+        throw new createError.NotFound('resource not found or already soft deleted');
+      }
+    } catch (e) {
+      return createError.BadRequest(e);
+    }
+  } else {
+    throw new createError.Unauthorized('Need to be admin to call this route');
+  }
+};
+
 module.exports.deleteLock = async function deleteLocks(id, user, editLock, db, surrogateId) {
   let ownerId;
 
@@ -451,6 +470,9 @@ module.exports.getDocumentLinks = function (resource, filter, query, _user, stat
 module.exports.getDocument = async function (resource, filter, query, user, state, resources) {
   const requestedStates = getRequestedStatesFromQuery(resource, query);
   const projection = { _id: 1, states: 1, users: 1, groups: 1 };
+  if (query?.with?.includes('metadata')) {
+    projection.metadata = 1;
+  }
   const match = { ...filter };
   match[`states.${state}`] = { $exists: true };
 
@@ -666,7 +688,7 @@ const prepareGetDocument = settings => {
 
   addVirtualProperties(resource, currentState.data);
 
-  return {
+  const returnedDoc = {
     id: doc._id,
     state,
     createdAt: currentState.createdAt,
@@ -677,6 +699,10 @@ const prepareGetDocument = settings => {
     groups: doc.groups || [],
     states: permissions.filterDocumentStates(doc, allowedStates, requestedStates)
   };
+  if (doc.metadata) {
+    returnedDoc.metadata = doc.metadata;
+  }
+  return returnedDoc;
 };
 
 const removeVirtualProperties = (resource, data) => {

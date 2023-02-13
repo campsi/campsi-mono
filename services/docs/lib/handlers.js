@@ -235,6 +235,13 @@ module.exports.delDocUser = function (req, res) {
     .catch(err => helpers.notFound(res, err));
 };
 
+module.exports.softDelete = function (req, res) {
+  documentService
+    .anonymizePersonalData(req.user, req.db, req.body?.collection, req.body?.field)
+    .then(helpers.json(res))
+    .catch(err => helpers.notFound(res, err));
+};
+
 module.exports.getLocks = async function (req, res) {
   try {
     const locks = await documentService.getLocks(req.state, req.filter, req.user, getDocumentLockServiceOptions(req), req.db);

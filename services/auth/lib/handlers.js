@@ -543,7 +543,6 @@ module.exports = {
   inviteUser,
   acceptInvitation,
   addGroupsToUser,
-  softDelete,
   tokenMaintenance,
   extractUserPersonalData
 };

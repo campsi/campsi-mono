@@ -8,6 +8,7 @@ const debug = require('debug')('campsi:service:auth');
 const { ObjectId } = require('mongodb');
 const { deleteExpiredTokens } = require('./tokens');
 const { getUsersCollectionName } = require('./modules/collectionNames');
+const createObjectId = require('../../../lib/modules/createObjectId');
 
 async function tokenMaintenance(req, res) {
   if (!req?.user?.isAdmin) {
@@ -528,6 +529,32 @@ async function extractUserPersonalData(req, res) {
   }
 }
 
+async function softDelete(req, res) {
+  if (req.user && req.user.isAdmin) {
+    let userId;
+    try {
+      userId = createObjectId(req.params.userId);
+      if (!userId) {
+        return redirectWithError(req, res, new Error('Erroneous userId'));
+      }
+
+      const update = { $set: { email: '', displayName: '', picture: '', data: {}, identities: {}, deletedAt: new Date() } };
+      const result = await req.db
+        .collection('__users__')
+        .findOneAndUpdate({ _id: userId, deletedAt: { $exists: false } }, update, { returnDocument: 'after' });
+
+      if (result && result.value) {
+        return res.json(result.value);
+      }
+      helpers.notFound(res, new Error('User not found or already soft deleted'));
+    } catch (err) {
+      helpers.error(res, err);
+    }
+  } else {
+    return helpers.unauthorized(res);
+  }
+}
+
 module.exports = {
   initAuth,
   redirectWithError,
@@ -544,5 +571,6 @@ module.exports = {
   acceptInvitation,
   addGroupsToUser,
   tokenMaintenance,
-  extractUserPersonalData
+  extractUserPersonalData,
+  softDelete
 };

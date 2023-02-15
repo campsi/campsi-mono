@@ -11,9 +11,7 @@ module.exports = class TraceService extends CampsiService {
       next();
     });
     this.router.all('*', handlers.traceRequest);
-    return new Promise(resolve => {
-      resolve();
-    });
+    return super.initialize();
   }
 
   describe() {

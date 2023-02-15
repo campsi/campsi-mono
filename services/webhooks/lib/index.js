@@ -7,23 +7,22 @@ const request = require('request');
 
 class WebhooksService extends CampsiService {
   initialize() {
-    return new Promise(resolve => {
-      this.options = Object.assign(WebhooksService.defaults, this.options);
-      this.collection = this.db.collection(`webhooks.${this.path}`);
-      this.router.use((req, res, next) => {
-        if (!req.user) {
-          res.status(403).json({ message: 'webhooks require a valid auth token' });
-        }
-        req.service = this;
-        next();
-      });
-      this.router.get('/', this.getWebhooks.bind(this));
-      this.router.post('/', this.createWebhook.bind(this));
-      this.router.delete('/:id', this.deleteWebhook.bind(this));
-      this.server.on(`${this.options.channel || 'webhooks'}/#`, this.handleEvent.bind(this));
-      debug(`service initialized, listening to channel "${this.options.channel}"`);
-      this.collection.createIndex({ uri: 1, event: 1 }, { unique: true }, resolve);
+    this.options = Object.assign(WebhooksService.defaults, this.options);
+    this.collection = this.db.collection(`webhooks.${this.path}`);
+    this.router.use((req, res, next) => {
+      if (!req.user) {
+        res.status(403).json({ message: 'webhooks require a valid auth token' });
+      }
+      req.service = this;
+      next();
     });
+    this.router.get('/', this.getWebhooks.bind(this));
+    this.router.post('/', this.createWebhook.bind(this));
+    this.router.delete('/:id', this.deleteWebhook.bind(this));
+    this.server.on(`${this.options.channel || 'webhooks'}/#`, this.handleEvent.bind(this));
+    debug(`service initialized, listening to channel "${this.options.channel}"`);
+    this.collection.createIndex({ uri: 1, event: 1 }, { unique: true });
+    return super.initialize();
   }
 
   handleEvent(payload, params, event) {

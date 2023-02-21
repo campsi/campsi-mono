@@ -2,40 +2,38 @@
 /* eslint-disable node/no-unpublished-require */
 const async = require('async');
 const debug = require('debug')('campsi:service:assets');
-const paginateCursor = require('../../../../lib/modules/paginateCursor');
+const { paginateWithCount } = require('../../../../lib/modules/paginateCursor');
 const sortCursor = require('../../../../lib/modules/sortCursor');
 const { ObjectId } = require('mongodb');
 
-module.exports.getAssets = function (service, pagination, sort) {
-  return new Promise((resolve, reject) => {
-    const cursor = service.collection.find({});
+module.exports.getAssets = async function (service, pagination, sort) {
+  try {
+    const docsCount = await service.collection.countDocuments({});
     const result = {};
-    paginateCursor(cursor, pagination)
-      .then(info => {
-        result.count = info.count;
-        result.page = info.page;
-        result.perPage = info.perPage;
-        result.nav = {};
-        result.nav.first = 1;
-        result.nav.last = info.lastPage;
-        if (info.page > 1) {
-          result.nav.previous = info.page - 1;
-        }
-        if (info.page < info.lastPage) {
-          result.nav.next = info.page + 1;
-        }
-        sortCursor(cursor, sort);
-        return cursor.toArray();
-      })
-      .then(docs => {
-        result.assets = docs;
-        resolve(result);
-      })
-      .catch(err => {
-        debug('Get assets error: %s', err.message);
-        reject(err);
-      });
-  });
+
+    const info = paginateWithCount(docsCount, pagination);
+    result.count = info.count;
+    result.page = info.page;
+    result.perPage = info.perPage;
+    result.nav = {};
+    result.nav.first = 1;
+    result.nav.last = info.lastPage;
+    if (info.page > 1) {
+      result.nav.previous = info.page - 1;
+    }
+    if (info.page < info.lastPage) {
+      result.nav.next = info.page + 1;
+    }
+    const findOptions = { limit: info.limit, skip: info.skip };
+    if (sort) {
+      findOptions.sort = sortCursor(undefined, sort, undefined, true);
+    }
+    result.assets = await service.collection.find({}, findOptions).toArray();
+    return result;
+  } catch (err) {
+    debug('Get assets error: %s', err.message);
+    throw err;
+  }
 };
 
 module.exports.createAsset = function (service, files, user, headers) {

@@ -8,14 +8,8 @@ const { ObjectId } = require('mongodb');
 
 module.exports.getAssets = async function (service, pagination, sort) {
   try {
-    const { count, page, perPage, skip, limit, lastPage } = await paginateQuery(service.collection, {}, pagination);
-    const result = { count, page, perPage, nav: { first: 1, last: lastPage } };
-    if (page > 1) {
-      result.nav.previous = page - 1;
-    }
-    if (page < lastPage) {
-      result.nav.next = page + 1;
-    }
+    const { skip, limit, ...result } = await paginateQuery(service.collection, {}, pagination);
+
     const findOptions = { limit, skip };
     if (sort) {
       findOptions.sort = sortCursor(undefined, sort, undefined, true);

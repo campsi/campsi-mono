@@ -1,6 +1,5 @@
 const builder = require('../modules/queryBuilder');
 const embedDocs = require('../modules/embedDocs');
-const paginateCursor = require('../../../../lib/modules/paginateCursor');
 const sortCursor = require('../../../../lib/modules/sortCursor');
 const createObjectId = require('../../../../lib/modules/createObjectId');
 const permissions = require('../modules/permissions');
@@ -248,18 +247,8 @@ module.exports.getDocuments = async function (resource, filter, user, query, sta
     $project: dbFields
   });
 
-  const { count, page, perPage, skip, limit, lastPage } = await paginateQuery(
-    resource.collection,
-    aggregate ? pipeline : dbQuery,
-    pagination
-  );
-  const result = { count, page, perPage, nav: { first: 1, last: lastPage }, label: resource.label };
-  if (page > 1) {
-    result.nav.previous = page - 1;
-  }
-  if (page < lastPage) {
-    result.nav.next = page + 1;
-  }
+  const { skip, limit, ...result } = await paginateQuery(resource.collection, aggregate ? pipeline : dbQuery, pagination);
+  result.label = resource.label;
 
   if (sort) {
     sort = sortCursor(

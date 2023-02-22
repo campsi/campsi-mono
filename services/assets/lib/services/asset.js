@@ -2,29 +2,21 @@
 /* eslint-disable node/no-unpublished-require */
 const async = require('async');
 const debug = require('debug')('campsi:service:assets');
-const { paginateWithCount } = require('../../../../lib/modules/paginateCursor');
+const { paginateQuery } = require('../../../../lib/modules/paginateCursor');
 const sortCursor = require('../../../../lib/modules/sortCursor');
 const { ObjectId } = require('mongodb');
 
 module.exports.getAssets = async function (service, pagination, sort) {
   try {
-    const docsCount = await service.collection.countDocuments({});
-    const result = {};
-
-    const info = paginateWithCount(docsCount, pagination);
-    result.count = info.count;
-    result.page = info.page;
-    result.perPage = info.perPage;
-    result.nav = {};
-    result.nav.first = 1;
-    result.nav.last = info.lastPage;
-    if (info.page > 1) {
-      result.nav.previous = info.page - 1;
+    const { count, page, perPage, skip, limit, lastPage } = await paginateQuery(service.collection, {}, pagination);
+    const result = { count, page, perPage, nav: { first: 1, last: lastPage } };
+    if (page > 1) {
+      result.nav.previous = page - 1;
     }
-    if (info.page < info.lastPage) {
-      result.nav.next = info.page + 1;
+    if (page < lastPage) {
+      result.nav.next = page + 1;
     }
-    const findOptions = { limit: info.limit, skip: info.skip };
+    const findOptions = { limit, skip };
     if (sort) {
       findOptions.sort = sortCursor(undefined, sort, undefined, true);
     }

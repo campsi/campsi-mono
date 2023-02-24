@@ -81,7 +81,7 @@ module.exports.getDocuments = function (req, res) {
 
       return helpers.json(res, data.docs, headers);
     })
-    .catch(() => {
+    .catch(err => {
       helpers.notFound(res);
     });
 };

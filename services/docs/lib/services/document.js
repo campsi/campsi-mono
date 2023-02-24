@@ -1,6 +1,5 @@
 const builder = require('../modules/queryBuilder');
 const embedDocs = require('../modules/embedDocs');
-const paginateCursor = require('../../../../lib/modules/paginateCursor');
 const sortCursor = require('../../../../lib/modules/sortCursor');
 const createObjectId = require('../../../../lib/modules/createObjectId');
 const permissions = require('../modules/permissions');
@@ -9,6 +8,7 @@ const { ObjectId } = require('mongodb');
 const createError = require('http-errors');
 const { getDocumentLockServiceOptions } = require('../modules/serviceOptions');
 const { getUsersCollectionName } = require('../../../auth/lib/modules/collectionNames');
+const { paginateQuery } = require('../../../../lib/modules/paginateCursor');
 
 // Helper functions
 const getDocUsersList = doc => Object.keys(doc ? doc.users : []).map(k => doc.users[k]);
@@ -176,28 +176,15 @@ module.exports.lockDocument = async function (resource, state, filter, tokenTime
   }
 };
 
-module.exports.getDocuments = function (resource, filter, user, query, state, sort, pagination, resources) {
-  const queryBuilderOptions = {
-    resource,
-    user,
-    query,
-    state
-  };
+module.exports.getDocuments = async function (resource, filter, user, query, state, sort, pagination, resources) {
+  const queryBuilderOptions = { resource, user, query, state };
   const filterState = {};
   filterState[`states.${state}`] = { $exists: true };
   const dbQuery = Object.assign(filterState, filter, builder.find(queryBuilderOptions));
 
-  const dbFields = {
-    _id: 1,
-    states: 1,
-    users: 1,
-    groups: 1
-  };
+  const dbFields = { _id: 1, states: 1, users: 1, groups: 1 };
 
-  let aggregate = false;
-  if (resource.isInheritable || query?.with?.includes('creator')) {
-    aggregate = true;
-  }
+  const aggregate = !!resource.isInheritable || query?.with?.includes('creator');
 
   const pipeline = [{ $match: dbQuery }];
 
@@ -225,11 +212,7 @@ module.exports.getDocuments = function (resource, filter, user, query, state, so
                 }
               }
             }
-          }
-        }
-      },
-      {
-        $addFields: {
+          },
           [`states.${state}.data`]: {
             $mergeObjects: [`$parent.states.${state}.data`, `$$ROOT.states.${state}.data`]
           }
@@ -239,11 +222,7 @@ module.exports.getDocuments = function (resource, filter, user, query, state, so
   }
 
   if (query?.with?.includes('creator')) {
-    dbFields.creator = {
-      _id: 1,
-      displayName: 1,
-      email: 1
-    };
+    dbFields.creator = { _id: 1, displayName: 1, email: 1 };
 
     pipeline.push(
       {
@@ -268,75 +247,55 @@ module.exports.getDocuments = function (resource, filter, user, query, state, so
     $project: dbFields
   });
 
+  const { skip, limit, ...result } = await paginateQuery(resource.collection, aggregate ? pipeline : dbQuery, pagination);
+  result.label = resource.label;
+
   if (sort) {
-    pipeline.push({
-      $sort: sortCursor(
-        null,
-        sort,
-        sort.startsWith('data') || sort.startsWith('-data') ? 'states.{}.data.'.format(state) : '',
-        true
-      )
-    });
+    sort = sortCursor(
+      undefined,
+      sort,
+      sort.startsWith('data') || sort.startsWith('-data') ? 'states.{}.data.'.format(state) : '',
+      true
+    );
   }
-  const cursor = !aggregate
-    ? resource.collection.find(dbQuery, { projection: dbFields })
-    : resource.collection.aggregate(pipeline);
+
   const requestedStates = getRequestedStatesFromQuery(resource, query);
-  const result = {};
-  return new Promise((resolve, reject) => {
-    paginateCursor(cursor, pagination)
-      .then(info => {
-        result.count = info.count;
-        result.label = resource.label;
-        result.page = info.page;
-        result.perPage = info.perPage;
-        result.nav = {};
-        result.nav.first = 1;
-        result.nav.last = info.lastPage;
-        if (info.page > 1) {
-          result.nav.previous = info.page - 1;
-        }
-        if (info.page < info.lastPage) {
-          result.nav.next = info.page + 1;
-        }
-        if (sort && !aggregate) {
-          sortCursor(cursor, sort, sort.startsWith('data') || sort.startsWith('-data') ? 'states.{}.data.'.format(state) : '');
-        }
-        return cursor.toArray();
-      })
-      .then(docs => {
-        result.docs = docs.map(doc => {
-          const currentState = doc.states[state] || {};
-          const allowedStates = permissions.getAllowedStatesFromDocForUser(user, resource, 'GET', doc);
-          const states = permissions.filterDocumentStates(doc, allowedStates, requestedStates);
-          const returnData = {
-            id: doc._id,
-            state,
-            states,
-            createdAt: currentState.createdAt,
-            createdBy: currentState.createdBy,
-            data: currentState.data || {}
-          };
-          if (resource.isInheritable && query?.with?.includes('parentId')) {
-            returnData.parentId = doc.parentId;
-          }
-          if (query?.with?.includes('creator')) {
-            returnData.creator = doc.creator;
-          }
 
-          addVirtualProperties(resource, returnData.data);
+  let docsQuery = (
+    aggregate ? resource.collection.aggregate(pipeline) : resource.collection.find(dbQuery, { projection: dbFields })
+  )
+    .skip(skip)
+    .limit(limit);
+  if (sort) {
+    docsQuery = docsQuery.sort(sort);
+  }
 
-          return returnData;
-        });
-        return embedDocs.many(resource, query.embed, user, result.docs, resources);
-      })
-      .then(() => {
-        return resolve(result);
-      })
-      .catch(err => {
-        return reject(err);
-      });
+  const docs = await docsQuery.toArray();
+  result.docs = docs.map(doc => {
+    const currentState = doc.states[state] || {};
+    const allowedStates = permissions.getAllowedStatesFromDocForUser(user, resource, 'GET', doc);
+    const states = permissions.filterDocumentStates(doc, allowedStates, requestedStates);
+    const returnData = {
+      id: doc._id,
+      state,
+      states,
+      createdAt: currentState.createdAt,
+      createdBy: currentState.createdBy,
+      data: currentState.data || {}
+    };
+    if (resource.isInheritable && query?.with?.includes('parentId')) {
+      returnData.parentId = doc.parentId;
+    }
+    if (query?.with?.includes('creator')) {
+      returnData.creator = doc.creator;
+    }
+
+    addVirtualProperties(resource, returnData.data);
+
+    return returnData;
   });
+  await embedDocs.many(resource, query.embed, user, result.docs, resources);
+  return result;
 };
 
 module.exports.createDocument = async function (resource, data, state, user, parentId, groups) {

@@ -176,7 +176,7 @@ module.exports.lockDocument = async function (resource, state, filter, tokenTime
   }
 };
 
-module.exports.getDocuments = async function (resource, filter, user, query, state, sort, pagination, resources) {
+module.exports.getDocuments = async function (resource, filter, user, query, state, sort, pagination = {}, resources) {
   const queryBuilderOptions = { resource, user, query, state };
   const filterState = {};
   filterState[`states.${state}`] = { $exists: true };
@@ -261,11 +261,12 @@ module.exports.getDocuments = async function (resource, filter, user, query, sta
 
   const requestedStates = getRequestedStatesFromQuery(resource, query);
 
-  let docsQuery = (
-    aggregate ? resource.collection.aggregate(pipeline) : resource.collection.find(dbQuery, { projection: dbFields })
-  )
-    .skip(skip)
-    .limit(limit);
+  let docsQuery = aggregate
+    ? resource.collection.aggregate(pipeline)
+    : resource.collection.find(dbQuery, { projection: dbFields });
+  if (!pagination.infinite) {
+    docsQuery = docsQuery.skip(skip).limit(limit);
+  }
   if (sort) {
     docsQuery = docsQuery.sort(sort);
   }

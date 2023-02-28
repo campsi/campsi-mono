@@ -199,6 +199,7 @@ module.exports.getDocuments = async (resource, filter, user, query, sort, pagina
   let docsQuery = aggregate ? resource.currentCollection.aggregate(pipeline) : resource.currentCollection.find(dbQuery);
   if (!pagination.infinite) {
     docsQuery = docsQuery.skip(skip).limit(limit);
+  }
   if (sort) {
     docsQuery = docsQuery.sort(sort);
   }

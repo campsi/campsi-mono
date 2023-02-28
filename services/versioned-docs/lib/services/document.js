@@ -172,7 +172,7 @@ const getDocumentVersionsPipeline = (resource, filter) => {
   ];
 };
 
-module.exports.getDocuments = async (resource, filter, user, query, sort, pagination) => {
+module.exports.getDocuments = async (resource, filter, user, query, sort, pagination = {}) => {
   const queryBuilderOptions = {
     resource,
     user,
@@ -196,12 +196,13 @@ module.exports.getDocuments = async (resource, filter, user, query, sort, pagina
   const { skip, limit, ...result } = await paginateQuery(resource.currentCollection, aggregate ? pipeline : dbQuery, pagination);
   result.label = resource.label;
 
-  let docsQuery = (aggregate ? resource.currentCollection.aggregate(pipeline) : resource.currentCollection.find(dbQuery))
-    .skip(skip)
-    .limit(limit);
+  let docsQuery = aggregate ? resource.currentCollection.aggregate(pipeline) : resource.currentCollection.find(dbQuery);
+  if (!pagination.infinite) {
+    docsQuery = docsQuery.skip(skip).limit(limit);
   if (sort) {
     docsQuery = docsQuery.sort(sort);
   }
+
   result.docs = await docsQuery.toArray();
 
   return result;

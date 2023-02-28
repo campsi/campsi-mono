@@ -6,15 +6,21 @@ const { paginateQuery } = require('../../../../lib/modules/paginateCursor');
 const sortCursor = require('../../../../lib/modules/sortCursor');
 const { ObjectId } = require('mongodb');
 
-module.exports.getAssets = async function (service, pagination, sort) {
+module.exports.getAssets = async function (service, pagination = {}, sort) {
   try {
     const { skip, limit, ...result } = await paginateQuery(service.collection, {}, pagination);
 
-    const findOptions = { limit, skip };
-    if (sort) {
-      findOptions.sort = sortCursor(undefined, sort, undefined, true);
+    let assets = service.collection.find({});
+
+    if (!pagination.infinite) {
+      assets = assets.skip(skip).limit(limit);
     }
-    result.assets = await service.collection.find({}, findOptions).toArray();
+    if (sort) {
+      sort = sortCursor(undefined, sort, undefined, true);
+      assets = assets.sort(sort);
+    }
+
+    result.assets = await assets.toArray();
     return result;
   } catch (err) {
     debug('Get assets error: %s', err.message);

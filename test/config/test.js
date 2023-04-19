@@ -162,7 +162,7 @@ module.exports = {
           audit: {
             label: 'audit',
             class: 'publicEntry',
-            schema: require('../schemas/log_entry.schema.json')
+            schema: {}
           }
         }
       },

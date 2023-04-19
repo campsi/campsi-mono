@@ -16,25 +16,15 @@ module.exports = class AuditService extends CampsiService {
 
     const service = this;
 
-    const schema = utils.validationSchema();
-
     this._journalService = JournalService;
 
-    const ret = new Promise((resolve, reject) => {
-      try {
-        for (const [key, resource] of Object.entries(service.options.resources)) {
-          this.setupSchemaValidation(resource, schema);
-        }
+    return Promise.all(
+      Object.entries(service.options.resources).map(async ([key, resource]) => {
+        const schema = await utils.validationSchema(service, resource);
 
-        this.setupRoutes(service);
-
-        resolve();
-      } catch (ex) {
-        reject(ex);
-      }
-    });
-
-    return ret;
+        this.setupSchemaValidation(resource, schema);
+      })
+    ).then(() => this.setupRoutes(service));
   }
 
   setupSchemaValidation(resource, schema) {
@@ -60,7 +50,7 @@ module.exports = class AuditService extends CampsiService {
     this.router.post('/log', handlers.createLogEntry);
   }
 
-  createLog(body) {
-    JournalService.createAuditEntry(this.server.db, body, this.options);
+  async createLog(body) {
+    await JournalService.createAuditEntry(this.server.db, body, this.options);
   }
 };

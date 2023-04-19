@@ -14,8 +14,7 @@ chai.use(chaiHttp);
 chai.should();
 
 const services = {
-  Audit: require('../../services/audit'),
-  Docs: require('../../services/docs/lib')
+  Audit: require('../../services/audit')
 };
 
 describe('Audit Service', () => {
@@ -31,7 +30,7 @@ describe('Audit Service', () => {
   describe('/POST', () => {
     it('should create a journal entry via a REST call', async () => {
       const entry = {
-        action: 'CREATE',
+        action: 'CREATED',
         data: {
           id: fakeObjectId()
         },
@@ -98,7 +97,7 @@ describe('Audit Service', () => {
   describe('Test direct library usage', () => {
     it('should create a journal entry via the audit lib', async () => {
       const entry = {
-        action: 'CREATE',
+        action: 'CREATED',
         data: {
           name: 'james'
         },

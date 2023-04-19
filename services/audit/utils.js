@@ -1,3 +1,5 @@
+const $RefParser = require('json-schema-ref-parser');
+
 // base validation schema, can be overriden in the service options
 const defaultSchema = {
   type: 'object',
@@ -5,7 +7,7 @@ const defaultSchema = {
   properties: {
     action: {
       type: 'string',
-      enum: ['CREATE', 'DELETE', 'UPDATE', 'READ']
+      enum: ['CREATED', 'DELETED', 'UPDATED', 'READ']
     },
     data: {
       type: 'object'
@@ -27,6 +29,12 @@ module.exports.getCollectionName = function getCollectionName(options) {
   return options?.collectionName ?? 'audit';
 };
 
-module.exports.validationSchema = function validationSchema(options) {
-  return options?.schema ?? defaultSchema;
+module.exports.validationSchema = async function validationSchema(service, resource) {
+  if (!service || !resource) {
+    return defaultSchema;
+  }
+
+  const schema = await $RefParser.dereference(service.config.optionsBasePath + '/', resource.schema, {});
+
+  return schema;
 };

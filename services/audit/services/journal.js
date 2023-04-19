@@ -6,11 +6,13 @@ const createObjectId = require('../../../lib/modules/createObjectId');
 module.exports.createAuditEntry = async function createAuditEntry(db, entry, options) {
   if (!entry || !db || !options || Object.keys(entry).length === 0 || Object.keys(options).length === 0) {
     debug('Missing one or empty of this ["entry", "db", "option"]');
+
     return undefined;
   }
 
   if (!entry.date || !entry.user || !entry.action || !entry.data) {
     debug('Missing one of this ["entry.date", "entry.user", "entry.action", "entry.data"]');
+
     return undefined;
   }
 
@@ -27,11 +29,13 @@ module.exports.createAuditEntry = async function createAuditEntry(db, entry, opt
 
     if (!validator) {
       debug('validator object resource is not setup');
+
       return undefined;
     }
 
     if (!validator(entry)) {
       debug('schema validation failed ' + validator.errors.map(e => `${e.instancePath} ${e.message}`).join(', '));
+
       return undefined;
     }
 

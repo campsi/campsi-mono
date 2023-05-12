@@ -8,18 +8,19 @@
  * @param {String} [options.order]
  * @returns AuthProviderConfig
  */
-module.exports = function(options) {
+module.exports = function (options) {
   return {
     Strategy: require('@passport-next/passport-google-oauth2').Strategy,
     order: options.order,
     options: {
       clientID: options.clientID,
       clientSecret: options.clientSecret,
-      callbackURL: options.baseUrl + '/google/callback'
+      callbackURL: options.baseUrl + '/google/callback',
+      validateRedirectURI: options.validateRedirectURI
     },
     title: options.title || 'Google',
     scope: ['profile', 'email'],
-    callback: function(req, accessToken, refreshToken, profile, done) {
+    callback: function (req, accessToken, refreshToken, profile, done) {
       // noinspection JSUnresolvedVariable
       done(null, {
         displayName: profile._json.name,

@@ -74,55 +74,38 @@ async function tokenMaintenance(req, res) {
   }
 }
 
-function logout(req, res) {
+async function logout(req, res) {
   if (!req.user) {
     return helpers.unauthorized(res);
   }
+  try {
+    const usersCollection = req.db.collection(getUsersCollectionName());
+    const token = req.authBearerToken;
+    const user = req.user;
 
-  const update = { $unset: { token: '' } };
+    const result = await usersCollection.findOneAndUpdate(
+      { _id: user._id, [`tokens.${token}.doNotDelete`]: { $exists: false } },
+      { $unset: { [`tokens.${token}`]: '', token: '' } },
+      { returnDocument: 'before' }
+    );
 
-  const usersCollection = req.db.collection(getUsersCollectionName());
-  const token = req.authBearerToken;
-  const user = req.user;
+    if (!result?.value) {
+      return res.json({ message: 'user not signed out' });
+    }
 
-  usersCollection
-    .findOneAndUpdate({ _id: user._id }, update)
-    .then(result => {
-      // move current token from tokens and archive it
-      // except if marked "doNotDelete".
-      usersCollection
-        .findOneAndUpdate(
-          { _id: user._id, [`tokens.${token}.doNotDelete`]: { $exists: false } },
-          { $unset: { [`tokens.${token}`]: '' } },
-          { returnDocument: 'before' }
-        )
-        .then(result => {
-          // move old token to __users__.tokens_log
-          if (result && result.value) {
-            const tokenToArchive = {
-              [`${token}`]: {
-                userId: user._id,
-                ...result.value.tokens[token]
-              }
-            };
+    res.json({ message: 'signed out' });
 
-            req.db
-              .collection(`${getUsersCollectionName()}.tokens_log`)
-              .insertOne(tokenToArchive)
-              .then(() => {
-                return res.json({ message: 'signed out' });
-              })
-              .catch(err => {
-                return res.status(500).json({ message: err });
-              });
-          } else {
-            return res.json({ message: 'user not signed out' });
-          }
-        });
-    })
-    .catch(error => {
-      return helpers.error(res, error);
-    });
+    const tokenToArchive = {
+      userId: user._id,
+      token,
+      ...result.value.tokens[token]
+    };
+    await req.db.collection(`${getUsersCollectionName()}.tokens_log`).insertOne(tokenToArchive);
+    delete result.value.tokens[token];
+    return deleteExpiredTokens(result.value.tokens, user._id, req.db);
+  } catch (e) {
+    return helpers.internalServerError(res, e);
+  }
 }
 
 function me(req, res) {

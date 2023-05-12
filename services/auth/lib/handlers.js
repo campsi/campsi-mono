@@ -100,9 +100,7 @@ async function logout(req, res) {
       token,
       ...result.value.tokens[token]
     };
-    await req.db.collection(`${getUsersCollectionName()}.tokens_log`).insertOne(tokenToArchive);
-    delete result.value.tokens[token];
-    return deleteExpiredTokens(result.value.tokens, user._id, req.db);
+    return req.db.collection(`${getUsersCollectionName()}.tokens_log`).insertOne(tokenToArchive);
   } catch (e) {
     return helpers.internalServerError(res, e);
   }
@@ -236,6 +234,7 @@ function callback(req, res) {
         debug('session destroyed');
       });
     }
+    return deleteExpiredTokens(req.user.tokens, req.user._id, req.db);
   });
 }
 

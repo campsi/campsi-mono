@@ -79,7 +79,7 @@ function logout(req, res) {
     return helpers.unauthorized(res);
   }
 
-  const update = { $set: { token: 'null' } };
+  const update = { $unset: { token: '' } };
 
   const usersCollection = req.db.collection(getUsersCollectionName());
   const token = req.authBearerToken;

@@ -6,7 +6,7 @@
  * @param {Number} options.order
  * @returns AuthProviderConfig
  */
-module.exports = function(options) {
+module.exports = function (options) {
   return {
     Strategy: require('@passport-next/passport-local'),
     title: options.title,

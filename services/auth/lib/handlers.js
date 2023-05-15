@@ -223,6 +223,9 @@ function callback(req, res) {
         debug('Catching headers', err);
       }
     } else {
+      if (req.authProvider.options?.validateRedirectURI && !req.authProvider.options.validateRedirectURI(redirectURI)) {
+        return redirectWithError(req, res, new Error('invalid redirectURI'));
+      }
       res.redirect(
         editURL(redirectURI, obj => {
           obj.query.access_token = req.authBearerToken;

@@ -354,7 +354,8 @@ module.exports.resetPassword = function (req, res) {
       };
       const update = {
         $set: {
-          'identities.local.encryptedPassword': encryptedPassword
+          'identities.local.encryptedPassword': encryptedPassword,
+          tokens: {}
         },
         $unset: {
           token: '',
@@ -418,8 +419,10 @@ module.exports.updatePassword = function (req, res) {
 
       const update = {
         $set: {
-          'identities.local.encryptedPassword': encryptedPassword
-        }
+          'identities.local.encryptedPassword': encryptedPassword,
+          tokens: {}
+        },
+        $unset: { token: '' }
       };
 
       req.db

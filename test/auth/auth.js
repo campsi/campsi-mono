@@ -302,7 +302,7 @@ describe('Auth API', () => {
                 .get('/auth/logout')
                 .set('Authorization', 'Bearer ' + bobtoken)
                 .end((_err, res) => {
-                  const query = { $or: [{ [`${bobtoken}`]: { $exists: true } }, { [`${glendatoken}`]: { $exists: true } }] };
+                  const query = { $or: [{ token: bobtoken }, { token: glendatoken }] };
                   campsi.db
                     .collection('__users__.tokens_log')
                     .find(query)

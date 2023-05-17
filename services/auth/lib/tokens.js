@@ -11,32 +11,30 @@ async function deleteExpiredTokens(tokens, userId, db, providersToRemove = []) {
     }
 
     // iterate over users tokens
-    if (Object.entries(tokens)) {
-      for (const [key, token] of Object.entries(tokens)) {
-        if (token.expiration > new Date() && !providersToRemove.includes(token.provider)) {
-          validTokens[`${key}`] = token;
-        } else {
-          expiredTokensLog.push({
-            userId,
-            token: key,
-            ...token
-          });
-        }
+    for (const [key, token] of Object.entries(tokens)) {
+      if (token.expiration > new Date() && !providersToRemove.includes(token.provider)) {
+        validTokens[`${key}`] = token;
+      } else {
+        expiredTokensLog.push({
+          userId,
+          token: key,
+          ...token
+        });
       }
+    }
 
-      if (expiredTokensLog.length) {
-        try {
-          await db.collection(`${getUsersCollectionName()}.tokens_log`).insertMany(expiredTokensLog);
-        } catch (ex) {
-          debug(ex);
-        }
+    if (expiredTokensLog.length) {
+      try {
+        await db.collection(`${getUsersCollectionName()}.tokens_log`).insertMany(expiredTokensLog);
+      } catch (ex) {
+        debug(ex);
       }
+    }
 
-      if (Object.entries(tokens.length !== Object.entries(validTokens).length)) {
-        await db
-          .collection(getUsersCollectionName())
-          .updateOne({ _id: userId }, { $set: { tokens: validTokens } }, { returnDocument: 'after' });
-      }
+    if (Object.entries(tokens).length !== Object.entries(validTokens).length) {
+      await db
+        .collection(getUsersCollectionName())
+        .updateOne({ _id: userId }, { $set: { tokens: validTokens } }, { returnDocument: 'after' });
     }
   } catch (e) {
     debug(e);

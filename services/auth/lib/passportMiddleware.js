@@ -1,4 +1,5 @@
 const { getUsersCollectionName } = require('./modules/collectionNames');
+const { deleteExpiredTokens } = require('./tokens');
 const findCallback = require('./modules/findCallback');
 const builder = require('./modules/queryBuilder');
 /**
@@ -22,6 +23,7 @@ function proxyVerifyCallback(fn, args, done) {
  * @param req
  */
 module.exports = function passportMiddleware(req) {
+  const db = req.db;
   const users = req.db.collection(getUsersCollectionName());
   const provider = req.authProvider;
   const availableProviders = req.authProviders;
@@ -62,6 +64,12 @@ module.exports = function passportMiddleware(req) {
           }
           return acc;
         }, {});
+        await deleteExpiredTokens(
+          existingUser.tokens,
+          existingUser._id,
+          db,
+          existingProvidersIdentities.filter(providerName => providerName !== provider.name)
+        );
       }
       /*
        *  2 other cases:

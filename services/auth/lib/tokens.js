@@ -34,7 +34,7 @@ async function deleteExpiredTokens(tokens, userId, db, providersToRemove = []) {
 
       if (Object.entries(tokens.length !== Object.entries(validTokens).length)) {
         await db
-          .collection('__users__')
+          .collection(getUsersCollectionName())
           .updateOne({ _id: userId }, { $set: { tokens: validTokens } }, { returnDocument: 'after' });
       }
     }

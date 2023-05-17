@@ -54,7 +54,7 @@ const optionsFromQuery = query => {
 module.exports = class StripeBillingService extends CampsiService {
   initialize() {
     this.stripe = require('stripe')(this.options.secret_key, {
-      maxNetworkRetries: 3
+      maxNetworkRetries: this.options.maxNetworkRetries || 3
     });
     const stripe = this.stripe;
 

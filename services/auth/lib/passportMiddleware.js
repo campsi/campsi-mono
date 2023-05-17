@@ -52,12 +52,12 @@ module.exports = function passportMiddleware(req) {
         .filter(([key, value]) => !!availableProviders[key] && !!value.id)
         .map(([key, value]) => key);
       if (existingProvidersIdentities.length === 1 && existingProvidersIdentities[0] !== provider.name) {
-        // user exists, has one identity, but not the one we are trying to login with: we return an error with the provider it should login with
+        // user exists, has one identity, but not the one we are trying to login with: we return an error with the provider the user should login with
         return passportCallback(
           'user exists, has one identity, but not the one we are trying to login with: we return an error with the provider it should login with'
         );
       } else if (existingProvidersIdentities.length > 1) {
-        // user exists and has multiple identities: we update it by removing the other ones, to keep only the one we are trying to login
+        // user exists and has multiple identities: we update it by removing the other ones, to keep only the one the user is trying to login with
         update.$unset = existingProvidersIdentities.reduce((acc, key) => {
           if (key !== provider.name) {
             acc[`identities.${key}`] = '';

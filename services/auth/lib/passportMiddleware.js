@@ -24,38 +24,58 @@ function proxyVerifyCallback(fn, args, done) {
 module.exports = function passportMiddleware(req) {
   const users = req.db.collection(getUsersCollectionName());
   const provider = req.authProvider;
-  proxyVerifyCallback(provider.callback, arguments, function (err, profile, passportCallback) {
+  const availableProviders = req.authProviders;
+  return proxyVerifyCallback(provider.callback, arguments, async function (err, profile, passportCallback) {
     if (!profile || err) {
       return passportCallback('cannot find user');
     }
     const filter = builder.filterUserByEmailOrProviderId(provider, profile);
-    const { update, updateToken } = builder.genUpdate(provider, profile);
-    users
-      .findOneAndUpdate(filter, update, {
-        returnDocument: 'after'
-      })
-      .then(result => {
-        if (result.value) {
-          req.authBearerToken = updateToken.value;
-          passportCallback(null, result.value);
-          // We dispatch an event here to be able to execute side effects
-          // when a user log in, i.e. send the event to a 3rd party CRM
-          req.service.emit('login', result.value);
-          return;
-        }
+
+    try {
+      const existingUser = await users.findOne(filter);
+      if (!existingUser) {
+        // user doesn't exists: we create it
         const { insert, insertToken } = builder.genInsert(provider, profile);
         req.authBearerToken = insertToken.value;
-        return users.insertOne(insert).then(insertResult => {
-          const payload = { _id: insertResult.insertedId, ...insert };
-          passportCallback(null, payload);
+        const insertResult = await users.insertOne(insert);
+        const payload = { _id: insertResult.insertedId, ...insert };
+        passportCallback(null, payload);
 
-          // We dispatch an event here to be able to execute side effects
-          // i.e. create a lead in a 3rd party CRM
-          req.service.emit('signup', payload);
-        });
-      })
-      .catch(() => {
-        passportCallback();
-      });
+        // We dispatch an event here to be able to execute side effects, i.e. create a lead in a 3rd party CRM
+        return req.service.emit('signup', payload);
+      }
+      const { update, updateToken } = builder.genUpdate(provider, profile);
+
+      const existingProvidersIdentities = Object.entries(existingUser.identities)
+        .filter(([key, value]) => !!availableProviders[key] && !!value.id)
+        .map(([key, value]) => key);
+      if (existingProvidersIdentities.length === 1 && existingProvidersIdentities[0] !== provider.name) {
+        // user exists, has one identity, but not the one we are trying to login with: we return an error with the provider it should login with
+        return passportCallback(
+          'user exists, has one identity, but not the one we are trying to login with: we return an error with the provider it should login with'
+        );
+      } else if (existingProvidersIdentities.length > 1) {
+        // user exists and has multiple identities: we update it by removing the other ones, to keep only the one we are trying to login
+        update.$unset = existingProvidersIdentities.reduce((acc, key) => {
+          if (key !== provider.name) {
+            acc[`identities.${key}`] = '';
+          }
+          return acc;
+        }, {});
+      }
+      /*
+       *  2 other cases:
+       * user exists, but has no identities (for instance: invitation): we update it
+       * user exists, has only one identity: the one we are trying to login with: we update it too
+       */
+
+      const result = await users.findOneAndUpdate(filter, update, { returnDocument: 'after' });
+      req.authBearerToken = updateToken.value;
+      passportCallback(null, result.value);
+      // We dispatch an event here to be able to execute side effects when a user log in, i.e. send the event to a 3rd party CRM
+      req.service.emit('login', result.value);
+    } catch (e) {
+      passportCallback();
+    }
   });
 };

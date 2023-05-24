@@ -161,7 +161,7 @@ module.exports = class AuthService extends CampsiService {
         '/local/signup',
         local.signup
       );
-      router.postAsync(
+      router.post(
         /*
         #swagger.tags = ['Auth service'],
         #swagger.description = 'AUTH_LOCAL_SIGNIN_DESCRIPTION'
@@ -221,7 +221,7 @@ module.exports = class AuthService extends CampsiService {
       '/:provider',
       handlers.initAuth
     );
-    this.router.getAsync(
+    this.router.get(
       // #swagger.ignore = true,
       '/:provider/callback',
       handlers.callback

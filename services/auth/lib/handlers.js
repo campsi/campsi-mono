@@ -540,6 +540,20 @@ async function softDelete(req, res) {
   }
 }
 
+async function getUserByInvitationToken(req, res, next) {
+  const invitationToken = req.params.invitationToken;
+  if (!invitationToken) {
+    return helpers.missingParameters(res, new Error('invitationToken must be specified'));
+  }
+  const user = await req.db
+    .collection(getUsersCollectionName())
+    .findOne({ [`identities.invitation-${invitationToken}`]: { $exists: true } });
+  if (!user) {
+    return helpers.notFound(res, new Error('No user was found with this invitation token'));
+  }
+  res.json(user);
+}
+
 module.exports = {
   initAuth,
   redirectWithError,
@@ -557,5 +571,6 @@ module.exports = {
   addGroupsToUser,
   tokenMaintenance,
   extractUserPersonalData,
-  softDelete
+  softDelete,
+  getUserByInvitationToken
 };

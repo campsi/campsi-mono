@@ -2,6 +2,7 @@ const { getUsersCollectionName } = require('./modules/collectionNames');
 const { deleteExpiredTokens } = require('./tokens');
 const findCallback = require('./modules/findCallback');
 const builder = require('./modules/queryBuilder');
+const createError = require('http-errors');
 /**
  * Intercepts passport callback
  * @param fn
@@ -29,7 +30,7 @@ module.exports = function passportMiddleware(req) {
   const availableProviders = req.authProviders;
   return proxyVerifyCallback(provider.callback, arguments, async function (err, profile, passportCallback) {
     if (!profile || err) {
-      return passportCallback('cannot find user');
+      return passportCallback(createError(401, 'cannot find user'));
     }
     const filter = builder.filterUserByEmailOrProviderId(provider, profile);
 
@@ -55,9 +56,7 @@ module.exports = function passportMiddleware(req) {
 
       if (existingProvidersIdentities.length === 1 && existingProvidersIdentities[0] !== provider.name) {
         // user exists, has one identity, but not the one we are trying to login with: we return an error with the provider the user should login with
-        return passportCallback(
-          'user exists, has one identity, but not the one we are trying to login with: we return an error with the provider it should login with'
-        );
+        return passportCallback(createError(409, `user already exists with identity provider ${existingProvidersIdentities[0]}`));
       } else if (existingProvidersIdentities.length > 1) {
         // user exists and has multiple identities: we update it by removing the other ones, to keep only the one the user is trying to login with
         update.$unset = existingProvidersIdentities.reduce((acc, key) => {

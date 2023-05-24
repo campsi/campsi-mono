@@ -51,6 +51,8 @@ module.exports = function passportMiddleware(req) {
       const existingProvidersIdentities = Object.entries(existingUser.identities)
         .filter(([key, value]) => !!availableProviders[key] && !!value.id)
         .map(([key, value]) => key);
+      let providersToRemove = [];
+
       if (existingProvidersIdentities.length === 1 && existingProvidersIdentities[0] !== provider.name) {
         // user exists, has one identity, but not the one we are trying to login with: we return an error with the provider the user should login with
         return passportCallback(
@@ -64,12 +66,7 @@ module.exports = function passportMiddleware(req) {
           }
           return acc;
         }, {});
-        await deleteExpiredTokens(
-          existingUser.tokens,
-          existingUser._id,
-          db,
-          existingProvidersIdentities.filter(providerName => providerName !== provider.name)
-        );
+        providersToRemove = existingProvidersIdentities.filter(providerName => providerName !== provider.name);
       }
       /*
        *  2 other cases:
@@ -80,6 +77,7 @@ module.exports = function passportMiddleware(req) {
       const result = await users.findOneAndUpdate(filter, update, { returnDocument: 'after' });
       req.authBearerToken = updateToken.value;
       passportCallback(null, result.value);
+      await deleteExpiredTokens(existingUser.tokens, existingUser._id, db, providersToRemove);
       // We dispatch an event here to be able to execute side effects when a user log in, i.e. send the event to a 3rd party CRM
       req.service.emit('login', result.value);
     } catch (e) {

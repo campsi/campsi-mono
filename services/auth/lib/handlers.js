@@ -237,7 +237,6 @@ function callback(req, res) {
         debug('session destroyed');
       });
     }
-    return deleteExpiredTokens(req.user.tokens, req.user._id, req.db);
   });
 }
 

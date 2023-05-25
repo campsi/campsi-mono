@@ -6,6 +6,7 @@ const editURL = require('edit-url');
 const state = require('./state');
 const debug = require('debug')('campsi:service:auth');
 const { ObjectId } = require('mongodb');
+const createError = require('http-errors');
 const { deleteExpiredTokens } = require('./tokens');
 const { getUsersCollectionName } = require('./modules/collectionNames');
 const createObjectId = require('../../../lib/modules/createObjectId');
@@ -206,15 +207,18 @@ function getProviders(req, res) {
   res.json(ret);
 }
 
-function callback(req, res) {
+async function callback(req, res, next) {
   const { redirectURI } = state.get(req);
   // noinspection JSUnresolvedFunction
-  passport.authenticate(req.authProvider.name, {
+  await passport.authenticate(req.authProvider.name, {
     session: false,
     failWithError: true
-  })(req, res, () => {
+  })(req, res, err => {
+    if (err) {
+      return redirectWithError(req, res, err, next);
+    }
     if (!req.user) {
-      return redirectWithError(req, res, new Error('unable to authentify user'));
+      return redirectWithError(req, res, createError(401, 'unable to authentify user'), next);
     }
     if (!redirectURI) {
       try {
@@ -224,7 +228,7 @@ function callback(req, res) {
       }
     } else {
       if (req.authProvider.options?.validateRedirectURI && !req.authProvider.options.validateRedirectURI(redirectURI)) {
-        return redirectWithError(req, res, new Error('invalid redirectURI'));
+        return redirectWithError(req, res, createError(400, 'invalid redirectURI'), next);
       }
       res.redirect(
         editURL(redirectURI, obj => {
@@ -237,18 +241,17 @@ function callback(req, res) {
         debug('session destroyed');
       });
     }
-    return deleteExpiredTokens(req.user.tokens, req.user._id, req.db);
   });
 }
 
-function redirectWithError(req, res, err) {
+function redirectWithError(req, res, err, next) {
   const { redirectURI } = state.get(req);
   if (!redirectURI) {
-    helpers.error(res, err);
+    next ? next(err) : helpers.error(res, err);
   } else {
     res.redirect(
       editURL(redirectURI, obj => {
-        obj.query.error = true;
+        obj.query.error = err.message || err;
       })
     );
   }

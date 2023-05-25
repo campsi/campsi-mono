@@ -31,10 +31,10 @@ module.exports.middleware = function (localProvider) {
   };
 };
 
-module.exports.signin = function (req, res) {
+module.exports.signin = function (req, res, next) {
   // could be a one-liner, but I find this more explicit
   // the real signin method is the callback below
-  return handlers.callback(req, res);
+  return handlers.callback(req, res, next);
 };
 
 /**

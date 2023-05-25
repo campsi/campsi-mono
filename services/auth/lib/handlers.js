@@ -9,6 +9,7 @@ const { ObjectId } = require('mongodb');
 const { deleteExpiredTokens } = require('./tokens');
 const { getUsersCollectionName } = require('./modules/collectionNames');
 const createObjectId = require('../../../lib/modules/createObjectId');
+const disposableDomains = require('disposable-email-domains');
 
 async function tokenMaintenance(req, res) {
   if (!req?.user?.isAdmin) {
@@ -540,8 +541,14 @@ async function softDelete(req, res) {
   }
 }
 
+function checkDisposableEmail(email) {
+  const domain = email.split('@')[1];
+  return disposableDomains.includes(domain);
+}
+
 module.exports = {
   initAuth,
+  checkDisposableEmail,
   redirectWithError,
   callback,
   getProviders,

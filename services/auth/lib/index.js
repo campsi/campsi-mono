@@ -46,6 +46,7 @@ module.exports = class AuthService extends CampsiService {
       req.authProvider = providers[id];
       return !req.authProvider ? helpers.notFound(res) : next();
     });
+    const limiter = this.server.limiter || ((req, res, next) => next());
 
     router.get(
       // #swagger.ignore = true,
@@ -108,6 +109,7 @@ module.exports = class AuthService extends CampsiService {
       '/invitations',
       handlers.inviteUser
     );
+    router.get(/* #swagger.ignore = true */ '/invitations/:invitationToken', limiter, handlers.getUserByInvitationToken);
     router.post(
       // #swagger.ignore = true
       // #swagger.tags = ['Auth service'],

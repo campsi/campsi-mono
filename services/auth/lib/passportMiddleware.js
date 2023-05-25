@@ -54,9 +54,11 @@ module.exports = function passportMiddleware(req) {
         .map(([key, value]) => key);
       let providersToRemove = [];
 
-      if (existingProvidersIdentities.length === 1 && existingProvidersIdentities[0] !== provider.name) {
-        // user exists, has one identity, but not the one we are trying to login with: we return an error with the provider the user should login with
-        return passportCallback(createError(409, `user already exists with identity provider ${existingProvidersIdentities[0]}`));
+      if (existingProvidersIdentities.length >= 1 && !existingProvidersIdentities.includes(provider.name)) {
+        // user exists, has one on more identities, but not the one we are trying to login with: we return an error with providers the user should login with
+        return passportCallback(
+          createError(409, `user already exists with identity providers ${existingProvidersIdentities.split(', ')}`)
+        );
       } else if (existingProvidersIdentities.length > 1) {
         // user exists and has multiple identities: we update it by removing the other ones, to keep only the one the user is trying to login with
         update.$unset = existingProvidersIdentities.reduce((acc, key) => {

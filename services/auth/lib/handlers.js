@@ -541,6 +541,13 @@ async function softDelete(req, res) {
   }
 }
 
+/**
+ * The function checks if an email address belongs to a disposable email domain.
+ * @param email - The email parameter is a string representing an email address.
+ * @returns a boolean value indicating whether the domain of the given email is included in the `disposableDomains` array. If the
+ * domain is included, the function will return `true`, indicating that the email is a disposable email. If the domain is not
+ * included, the function will return `false`, indicating that the email is not a disposable email.
+ */
 function checkDisposableEmail(email) {
   const domain = email.split('@')[1];
   return disposableDomains.includes(domain);

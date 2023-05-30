@@ -294,7 +294,7 @@ module.exports.createResetPasswordToken = async function (req, res) {
       return helpers.notFound(res, new Error('User not found'));
     }
 
-    if (!user?.identities?.local?.id) {
+    if (!user.identities?.local?.id) {
       return helpers.forbidden(res, new Error('user does not have a local identity provider'));
     }
     const opts = req.authProvider.options;

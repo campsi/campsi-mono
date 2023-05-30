@@ -281,25 +281,32 @@ module.exports.validate = function (req, res) {
  * @param res
  * @return {*}
  */
-module.exports.createResetPasswordToken = function (req, res) {
+module.exports.createResetPasswordToken = async function (req, res) {
   const missingParams = getMissingParameters(req.body, ['email']);
   if (missingParams.length > 0) {
     return helpers.error(res, new Error(`missing parameter(s) : ${missingParams.join(', ')}`));
   }
-  const opts = req.authProvider.options;
+  try {
+    const user = await req.db.collection(getUsersCollectionName()).findOne({
+      email: new RegExp('^' + req.body.email.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$', 'i')
+    });
+    if (!user) {
+      return helpers.notFound(res, new Error('User not found'));
+    }
 
-  const expirationDate = new Date();
-  const exp = opts.resetPasswordTokenExpiration || 10;
-  expirationDate.setTime(expirationDate.getTime() + exp * 86400000);
+    if (!user.identities?.local?.id) {
+      return helpers.forbidden(res, new Error('user does not have a local identity provider'));
+    }
+    const opts = req.authProvider.options;
 
-  const token = module.exports.createRandomToken(req.body.email, opts.salt);
+    const expirationDate = new Date();
+    const exp = opts.resetPasswordTokenExpiration || 10;
+    expirationDate.setTime(expirationDate.getTime() + exp * 86400000);
 
-  req.db
-    .collection(getUsersCollectionName())
-    .findOneAndUpdate(
-      {
-        email: new RegExp('^' + req.body.email.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$', 'i')
-      },
+    const token = module.exports.createRandomToken(req.body.email, opts.salt);
+
+    const out = await req.db.collection(getUsersCollectionName()).findOneAndUpdate(
+      { _id: user._id },
       {
         $set: {
           'identities.local.passwordResetToken': {
@@ -311,18 +318,16 @@ module.exports.createResetPasswordToken = function (req, res) {
       {
         returnDocument: 'after'
       }
-    )
-    .then(out => {
-      req.service.emit('local/passwordResetTokenCreated', {
-        user: out.value,
-        requestBody: req.body,
-        requestHeaders: req.headers
-      });
-      return res.json({ success: true });
-    })
-    .catch(() => {
-      return res.json({ success: true });
+    );
+    req.service.emit('local/passwordResetTokenCreated', {
+      user: out.value,
+      requestBody: req.body,
+      requestHeaders: req.headers
     });
+    return res.json({ success: true });
+  } catch (e) {
+    return helpers.internalServerError(res, e);
+  }
 };
 
 /**

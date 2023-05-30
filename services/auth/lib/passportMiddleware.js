@@ -61,12 +61,7 @@ module.exports = function passportMiddleware(req) {
         );
       } else if (existingProvidersIdentities.length > 1) {
         // user exists and has multiple identities: we update it by removing the other ones, to keep only the one the user is trying to login with
-        update.$unset = existingProvidersIdentities.reduce((acc, key) => {
-          if (key !== provider.name) {
-            acc[`identities.${key}`] = '';
-          }
-          return acc;
-        }, {});
+        update.$set.identities = { [provider.name]: profile.identity };
         providersToRemove = existingProvidersIdentities.filter(providerName => providerName !== provider.name);
       }
       /*

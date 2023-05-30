@@ -57,7 +57,7 @@ module.exports = function passportMiddleware(req) {
       if (existingProvidersIdentities.length >= 1 && !existingProvidersIdentities.includes(provider.name)) {
         // user exists, has one on more identities, but not the one we are trying to login with: we return an error with providers the user should login with
         return passportCallback(
-          createError(409, `user already exists with identity providers ${existingProvidersIdentities.split(', ')}`)
+          createError(409, `user already exists with identity providers ${existingProvidersIdentities.join(', ')}`)
         );
       } else if (existingProvidersIdentities.length > 1) {
         // user exists and has multiple identities: we update it by removing the other ones, to keep only the one the user is trying to login with

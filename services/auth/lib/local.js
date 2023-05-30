@@ -281,10 +281,20 @@ module.exports.validate = function (req, res) {
  * @param res
  * @return {*}
  */
-module.exports.createResetPasswordToken = function (req, res) {
+module.exports.createResetPasswordToken = async function (req, res) {
   const missingParams = getMissingParameters(req.body, ['email']);
   if (missingParams.length > 0) {
     return helpers.error(res, new Error(`missing parameter(s) : ${missingParams.join(', ')}`));
+  }
+  const user = await req.db.collection(getUsersCollectionName()).findOne({
+    email: new RegExp('^' + req.body.email.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$', 'i')
+  });
+  if (!user) {
+    return helpers.notFound(res, new Error('User not found'));
+  }
+
+  if (!user?.identities?.local?.id) {
+    return helpers.conflict(res, new Error('User does not have a local identity'));
   }
   const opts = req.authProvider.options;
 

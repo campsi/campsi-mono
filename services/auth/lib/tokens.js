@@ -12,9 +12,16 @@ async function deleteExpiredTokens(tokens, userId, db, providersToRemove = []) {
 
     // iterate over users tokens
     for (const [key, token] of Object.entries(tokens)) {
-      if (token.expiration > new Date() && !providersToRemove.includes(token.provider)) {
+      if (token.expiration > new Date() && !providersToRemove.includes(token.grantedByProvider)) {
         validTokens[`${key}`] = token;
       } else {
+        expiredTokensLog.push({
+          userId,
+          token: key,
+          ...token
+        });
+      }
+      if (providersToRemove.includes(token.grantedByProvider)) {
         expiredTokensLog.push({
           userId,
           token: key,

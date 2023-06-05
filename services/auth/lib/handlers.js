@@ -10,6 +10,7 @@ const createError = require('http-errors');
 const { deleteExpiredTokens } = require('./tokens');
 const { getUsersCollectionName } = require('./modules/collectionNames');
 const createObjectId = require('../../../lib/modules/createObjectId');
+const disposableDomains = require('disposable-email-domains');
 
 async function tokenMaintenance(req, res) {
   if (!req?.user?.isAdmin) {
@@ -543,6 +544,18 @@ async function softDelete(req, res) {
   }
 }
 
+/**
+ * The function checks if an email address belongs to a disposable email domain.
+ * @param email - The email parameter is a string representing an email address.
+ * @returns a boolean value indicating whether the domain of the given email is included in the `disposableDomains` array. If the
+ * domain is included, the function will return `true`, indicating that the email is a disposable email. If the domain is not
+ * included, the function will return `false`, indicating that the email is not a disposable email.
+ */
+function checkDisposableEmail(email) {
+  const domain = email.split('@')[1];
+  return disposableDomains.includes(domain);
+}
+
 async function getUserByInvitationToken(req, res, next) {
   const invitationToken = req.params.invitationToken;
   if (!invitationToken) {
@@ -560,6 +573,7 @@ async function getUserByInvitationToken(req, res, next) {
 
 module.exports = {
   initAuth,
+  checkDisposableEmail,
   redirectWithError,
   callback,
   getProviders,

@@ -542,15 +542,15 @@ async function softDelete(req, res) {
 }
 
 /**
- * The function checks if an email address belongs to a disposable email domain.
- * @param email - The email parameter is a string representing an email address.
- * @returns a boolean value indicating whether the domain of the given email is included in the `disposableDomains` array. If the
- * domain is included, the function will return `true`, indicating that the email is a disposable email. If the domain is not
- * included, the function will return `false`, indicating that the email is not a disposable email.
+ * The function checks if an email is valid and not from a disposable domain.
+ * @param email - The email parameter is a string representing an email address that needs to be validated.
+ * @returns The function `isEmailValid` returns a boolean value indicating whether the input email
+ * is valid or not. It checks if the email matches the regular expression for a valid email format
+ * and if the domain is not included in the `disposableDomains` array.
  */
-function checkDisposableEmail(email) {
+function isEmailValid(email) {
   const domain = email.split('@')[1];
-  return (
+  return !(
     !/^(([^<>()[\].,;:\s@"]+(\.[^<>()[\].,;:\s@"]+)*)|(".+"))@(([^<>()[\].,;:\s@"]+\.)+[^<>()[\].,;:\s@"]{2,})$/i.test(email) ||
     disposableDomains.includes(domain)
   );
@@ -558,7 +558,7 @@ function checkDisposableEmail(email) {
 
 module.exports = {
   initAuth,
-  checkDisposableEmail,
+  isEmailValid,
   redirectWithError,
   callback,
   getProviders,

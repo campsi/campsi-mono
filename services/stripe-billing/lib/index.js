@@ -2,6 +2,7 @@
 const CampsiService = require('../../../lib/service');
 const helpers = require('../../../lib/modules/responseHelpers');
 const crypto = require('crypto');
+const { checkDisposableEmail } = require("../../auth/lib/handlers");
 
 const subscriptionExpand = ['latest_invoice', 'latest_invoice.payment_intent', 'pending_setup_intent'];
 const customerExpand = ['tax_ids'];
@@ -382,12 +383,8 @@ module.exports = class StripeBillingService extends CampsiService {
     return creditNotes;
   };
 
-  // TODO: change by checkDisposableEmail function
   checkEmailValidity (email) {
-    const regex = new RegExp(
-      /^(([^<>()[\].,;:\s@"]+(\.[^<>()[\].,;:\s@"]+)*)|(".+"))@(([^<>()[\].,;:\s@"]+\.)+[^<>()[\].,;:\s@"]{2,})$/i
-    );
-    if (!regex.test(email)) {
+    if (checkDisposableEmail(email)) {
       throw new Error('Invalid Email');
     }
   };

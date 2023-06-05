@@ -2,7 +2,6 @@ const helpers = require('../../../lib/modules/responseHelpers');
 const createObjectId = require('../../../lib/modules/createObjectId');
 const { can } = require('./modules/permissions');
 const documentService = require('./services/document');
-const { getValidGroupsFromString } = require('../../../lib/modules/groupsHelpers');
 const createError = require('http-errors');
 const { getDocumentLockServiceOptions } = require('./modules/serviceOptions');
 

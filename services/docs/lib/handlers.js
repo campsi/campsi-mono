@@ -97,7 +97,7 @@ module.exports.postDoc = function (req, res) {
     return helpers.badRequest(res, new Error('Invalid parent id'));
   }
   documentService
-    .createDocument(req.resource, req.body, req.state, req.user, req?.query?.parentId, req.groups)
+    .createDocument(req.resource, req.body, req.state, req.user, req?.query?.parentId)
     .then(data => {
       helpers.json(res, data);
       return data;

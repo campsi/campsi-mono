@@ -1,5 +1,4 @@
 const helpers = require('../../../lib/modules/responseHelpers');
-const { getValidGroupsFromString } = require('../../../lib/modules/groupsHelpers');
 const builder = require('./modules/queryBuilder');
 const passport = require('@passport-next/passport');
 const editURL = require('edit-url');
@@ -356,12 +355,6 @@ async function inviteUser(req, res) {
     email: new RegExp('^' + req.body.email.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$', 'i')
   };
   const update = { $set: { updatedAt: new Date() } };
-
-  const groups = req?.query?.groups ? getValidGroupsFromString(req.query.groups) : [];
-
-  if (groups.length) {
-    update.$addToSet = { groups: { $each: groups } };
-  }
   // if user exists with the given email, we return the id
   try {
     const result = await req.db
@@ -395,9 +388,6 @@ async function inviteUser(req, res) {
       };
 
       const { insert, insertToken } = builder.genInsert(provider, profile);
-      if (groups.length) {
-        insert.groups = groups;
-      }
 
       const result = await req.db.collection(getUsersCollectionName()).insertOne(insert);
       res.json({ id: result.insertedId, insertToken, invitationToken });
@@ -546,7 +536,6 @@ module.exports = {
   logout,
   inviteUser,
   acceptInvitation,
-  addGroupsToUser,
   tokenMaintenance,
   extractUserPersonalData,
   softDelete,

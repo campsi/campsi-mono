@@ -454,32 +454,6 @@ async function acceptInvitation(req, res) {
   }
 }
 
-function addGroupsToUser(req, res) {
-  if (!req.user) {
-    return helpers.unauthorized(res);
-  }
-
-  if (!req?.params?.groups) {
-    return helpers.missingParameters(res, new Error('groups must be specified'));
-  }
-
-  const groups = getValidGroupsFromString(req.params.groups);
-
-  if (!groups.length) {
-    return helpers.badRequest(res, new Error('groups contain invalid object Id(s)'));
-  }
-
-  const update = { $addToSet: { groups: { $each: groups } } };
-
-  req.db
-    .collection(getUsersCollectionName())
-    .findOneAndUpdate({ _id: req.user._id }, update, {
-      returnDocument: 'after'
-    })
-    .then(result => res.json(result.value))
-    .catch(error => helpers.error(res, error));
-}
-
 async function extractUserPersonalData(req, res) {
   if (req.user && req.user?.isAdmin) {
     let userId;

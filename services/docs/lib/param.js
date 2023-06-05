@@ -40,8 +40,6 @@ module.exports.attach = (req, res, next, options) => {
       }
     }
 
-    req.groups = req.query?.groups ? getValidGroupsFromString(req.query.groups) : [];
-
     // check if the document is locked by someone else if we are trying to modify it
     const lockChek = new Promise((resolve, reject) => {
       if (['PUT', 'POST', 'PATCH', 'DELETE'].some(method => req.method.includes(method))) {

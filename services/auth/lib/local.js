@@ -4,6 +4,7 @@ const helpers = require('../../../lib/modules/responseHelpers');
 const state = require('./state');
 const bcrypt = require('bcryptjs');
 const { getUsersCollectionName } = require('./modules/collectionNames');
+const { checkDisposableEmail } = require('./handlers');
 const debug = require('debug')('campsi:auth:local');
 
 function getMissingParameters(payload, parameters) {
@@ -168,7 +169,7 @@ module.exports.signup = function (req, res) {
   };
 
   if (req.body.email) {
-    if (!/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(req.body.email)) {
+    if (checkDisposableEmail(req.body.email)) {
       return helpers.error(res, new Error('Invalid email'));
     }
   }

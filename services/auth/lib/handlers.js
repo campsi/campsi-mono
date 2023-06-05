@@ -550,7 +550,10 @@ async function softDelete(req, res) {
  */
 function checkDisposableEmail(email) {
   const domain = email.split('@')[1];
-  return disposableDomains.includes(domain);
+  return (
+    !/^(([^<>()[\].,;:\s@"]+(\.[^<>()[\].,;:\s@"]+)*)|(".+"))@(([^<>()[\].,;:\s@"]+\.)+[^<>()[\].,;:\s@"]{2,3})$/i.test(email) ||
+    disposableDomains.includes(domain)
+  );
 }
 
 module.exports = {

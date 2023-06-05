@@ -382,6 +382,7 @@ module.exports = class StripeBillingService extends CampsiService {
     return creditNotes;
   };
 
+  // TODO: change by checkDisposableEmail function
   checkEmailValidity (email) {
     const regex = new RegExp(
       /^(([^<>()[\].,;:\s@"]+(\.[^<>()[\].,;:\s@"]+)*)|(".+"))@(([^<>()[\].,;:\s@"]+\.)+[^<>()[\].,;:\s@"]{2,})$/i

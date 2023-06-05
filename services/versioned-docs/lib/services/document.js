@@ -209,12 +209,11 @@ module.exports.getDocuments = async (resource, filter, user, query, sort, pagina
   return result;
 };
 
-module.exports.createDocument = async (resource, data, user, groups) => {
+module.exports.createDocument = async (resource, data, user) => {
   const doc = await builder.create({
     resource,
     data,
     user,
-    groups,
     revision: 1
   });
 

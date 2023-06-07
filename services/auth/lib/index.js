@@ -9,6 +9,7 @@ const authUser = require('./middleware/authUser');
 const session = require('./middleware/session');
 const createObjectId = require('../../../lib/modules/createObjectId');
 const { getUsersCollectionName } = require('./modules/collectionNames');
+const createError = require('http-errors');
 
 module.exports = class AuthService extends CampsiService {
   initialize() {
@@ -47,6 +48,13 @@ module.exports = class AuthService extends CampsiService {
       return !req.authProvider ? helpers.notFound(res) : next();
     });
     const limiter = this.server.limiter || ((req, res, next) => next());
+
+    const validatePasswordResetUrl = (req, res, next) => {
+      if (typeof this.options.validatePasswordResetUrl !== 'function') {
+        return next();
+      }
+      return next(this.options.validatePasswordResetUrl(req.body) ? null : createError(400, 'Invalid reset URL'));
+    };
 
     router.get(
       // #swagger.ignore = true,
@@ -192,9 +200,10 @@ module.exports = class AuthService extends CampsiService {
         '/local/signin',
         local.signin
       );
-      router.post(
+      router.postAsync(
         // #swagger.ignore = true
         '/local/reset-password-token',
+        validatePasswordResetUrl,
         local.createResetPasswordToken
       );
       router.post(

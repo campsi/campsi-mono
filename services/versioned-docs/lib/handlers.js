@@ -66,7 +66,7 @@ module.exports.getDocuments = async (req, res, next) => {
 };
 
 module.exports.postDoc = async (req, res, next) => {
-  const doc = await documentService.createDocument(req.resource, req.body, req.user, req.groups);
+  const doc = await documentService.createDocument(req.resource, req.body, req.user);
   res.set('ETag', doc.revision);
   helpers.json(res, doc);
   return req.service.emit('versionedDocument/created', getEmitPayload(req, { doc }));
@@ -127,7 +127,7 @@ module.exports.delDoc = async (req, res, next) => {
   return req.service.emit('versionedDocument/deleted', getEmitPayload(req));
 };
 
-module.exports.getResources = function(req, res, next) {
+module.exports.getResources = function (req, res, next) {
   return helpers.json(res, resourceService.getResources(req.options));
 };
 

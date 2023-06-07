@@ -1,9 +1,8 @@
 const createObjectId = require('../../../lib/modules/createObjectId');
 const { can } = require('./modules/permissions');
-const { getValidGroupsFromString } = require('../../../lib/modules/groupsHelpers');
 const createError = require('http-errors');
 
-module.exports.attachResource = function(options) {
+module.exports.attachResource = function (options) {
   return (req, res, next) => {
     this.attach(req, res, next, options);
   };
@@ -21,8 +20,6 @@ module.exports.attach = (req, res, next, options) => {
         throw new createError.BadRequest("Can't recognize proper id");
       }
     }
-
-    req.groups = req.query?.groups ? getValidGroupsFromString(req.query.groups) : [];
 
     // USER can access RESOURCE/FILTER with METHOD?
     try {

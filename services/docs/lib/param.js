@@ -2,7 +2,6 @@ const helpers = require('../../../lib/modules/responseHelpers');
 const createObjectId = require('../../../lib/modules/createObjectId');
 const { can } = require('./modules/permissions');
 const documentService = require('./services/document');
-const { getValidGroupsFromString } = require('../../../lib/modules/groupsHelpers');
 const createError = require('http-errors');
 const { getDocumentLockServiceOptions } = require('./modules/serviceOptions');
 
@@ -39,8 +38,6 @@ module.exports.attach = (req, res, next, options) => {
         throw new createError.BadRequest("Can't recognize proper id");
       }
     }
-
-    req.groups = req.query?.groups ? getValidGroupsFromString(req.query.groups) : [];
 
     // check if the document is locked by someone else if we are trying to modify it
     const lockChek = new Promise((resolve, reject) => {

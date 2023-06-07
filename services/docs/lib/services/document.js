@@ -299,7 +299,7 @@ module.exports.getDocuments = async function (resource, filter, user, query, sta
   return result;
 };
 
-module.exports.createDocument = async function (resource, data, state, user, parentId, groups) {
+module.exports.createDocument = async function (resource, data, state, user, parentId) {
   removeVirtualProperties(resource, data);
   const doc = await builder.create({ resource, data, state, user, parentId });
 
@@ -310,10 +310,6 @@ module.exports.createDocument = async function (resource, data, state, user, par
         doc.groups = parent.groups;
       }
     } catch (err) {}
-  }
-
-  if (groups.length) {
-    doc.groups = [...new Set([...doc.groups, ...groups])];
   }
 
   const result = await resource.collection.insertOne(doc);

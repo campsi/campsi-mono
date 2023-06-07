@@ -86,11 +86,6 @@ module.exports = class AuthService extends CampsiService {
       '/me',
       handlers.patchMe
     );
-    router.post(
-      // #swagger.ignore = true,
-      '/me/groups/:groups',
-      handlers.addGroupsToUser
-    );
     router.get(
       // #swagger.ignore = true
       // #swagger.ignore = true,

@@ -361,9 +361,27 @@ async function inviteUser(req, res) {
     const result = await req.db
       .collection(getUsersCollectionName())
       .findOneAndUpdate(filter, update, { returnDocument: 'after' });
+
+    const provider = {
+      name: `invitation-${invitationToken.value}`,
+      expiration: 20
+    };
+    const profile = {
+      email: req.body.email,
+      displayName: req.body.displayName,
+      identity: {
+        invitedBy: req.user._id,
+        token: invitationToken,
+        data: req.body.data
+      }
+    };
+
     if (result.value) {
       const doc = result.value;
+      const { update } = builder.genUpdate(provider, profile);
+      await req.db.collection(getUsersCollectionName()).updateOne({ _id: doc._id }, update);
       res.json({ id: doc._id.toString(), invitationToken });
+
       return dispatchInvitationEvent({
         id: doc._id,
         email: doc.email,
@@ -373,21 +391,6 @@ async function inviteUser(req, res) {
         requestHeaders: req.headers
       });
     } else {
-      const invitationToken = builder.genBearerToken(100);
-      const provider = {
-        name: `invitation-${invitationToken.value}`,
-        expiration: 20
-      };
-      const profile = {
-        email: req.body.email,
-        displayName: req.body.displayName,
-        identity: {
-          invitedBy: req.user._id,
-          token: invitationToken,
-          data: req.body.data
-        }
-      };
-
       const { insert, insertToken } = builder.genInsert(provider, profile);
 
       const result = await req.db.collection(getUsersCollectionName()).insertOne(insert);

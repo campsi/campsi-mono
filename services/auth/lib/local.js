@@ -144,6 +144,7 @@ module.exports.signup = function (req, res) {
         $set: {
           'identities.local': user.identities.local,
           email: user.email,
+          displayName: user.displayName,
           data: user.data,
           updatedAt: new Date()
         }

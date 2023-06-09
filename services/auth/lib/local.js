@@ -158,20 +158,6 @@ module.exports.signup = function (req, res) {
     }
   };
 
-  const acceptInvitation = async function (user, invitationToken, req) {
-    const invitation = doc.identities[`invitation-${req.params.invitationToken}`];
-    const payload = {
-      userId: req.user._id,
-      invitedUserId: doc._id,
-      invitedBy: invitation.invitedBy,
-      data: invitation.data,
-      requestBody: req.body,
-      requestHeaders: req.headers
-    };
-    res.json(payload);
-    req.service.emit('invitation/accepted', payload);
-  };
-
   const doesUserExist = async function (user) {
     try {
       return await users.findOne({ email: user.email });

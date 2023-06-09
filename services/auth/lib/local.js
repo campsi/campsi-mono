@@ -138,22 +138,21 @@ module.exports.signup = function (req, res) {
         });
     });
   };
-  const updateInvitedUser = async function (user) {
+  const updateInvitedUser = async function (user, invitationToken) {
     try {
-      const result = await users.findOneAndUpdate(
-        {
-          email: user.email
-        },
-        {
-          $set: {
-            'identities.local': user.identities.local,
-            email: user.email,
-            data: user.data,
-            updatedAt: new Date()
-          }
-        },
-        { returnDocument: 'after' }
-      );
+      const update = {
+        $set: {
+          'identities.local': user.identities.local,
+          email: user.email,
+          displayName: user.displayName,
+          data: user.data,
+          updatedAt: new Date()
+        }
+      };
+      if (invitationToken) {
+        update.$unset = { [`identities.invitation-${invitationToken}`]: true };
+      }
+      const result = await users.findOneAndUpdate({ email: user.email }, update, { returnDocument: 'after' });
       return result.value;
     } catch (err) {
       throw new Error('could not perform findOneAndUpdate');
@@ -197,14 +196,29 @@ module.exports.signup = function (req, res) {
         let insertedOrUpdatedUser;
         const existingUser = await doesUserExist(user);
         if (existingUser) {
-          if (
-            existingUser.identities?.[`invitation-${req.body.invitationToken}`] &&
-            Object.keys(existingUser.identities).length === 1
-          ) {
-            // if user exists due to invitation and without any other provider, then we can update it
-            insertedOrUpdatedUser = await updateInvitedUser(user);
-          } else {
+          const availableProviders = req.authProviders;
+          const existingProvidersIdentities = Object.entries(existingUser.identities)
+            .filter(([key, value]) => !!availableProviders[key] && !!value.id)
+            .map(([key, value]) => key);
+
+          if (existingProvidersIdentities.length) {
             return helpers.badRequest(res, new Error('A user already exists with that email'));
+          }
+
+          // user has been created, through invitation, but doesn't have any identity provider => we can update it
+          const invitationToken = req.body.invitationToken;
+          insertedOrUpdatedUser = await updateInvitedUser(user, invitationToken);
+
+          if (existingUser.identities?.[`invitation-${invitationToken}`]) {
+            const invitation = existingUser.identities[`invitation-${invitationToken}`];
+            const payload = {
+              userId: insertedOrUpdatedUser._id,
+              invitedUserId: insertedOrUpdatedUser._id,
+              invitedBy: invitation.invitedBy,
+              data: invitation.data,
+              requestHeaders: req.headers
+            };
+            req.service.emit('invitation/accepted', payload);
           }
         } else {
           insertedOrUpdatedUser = await insertUser(user);

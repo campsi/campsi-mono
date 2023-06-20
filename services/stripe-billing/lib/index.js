@@ -64,6 +64,18 @@ module.exports = class StripeBillingService extends CampsiService {
       next();
     });
 
+    const validateRequestAccess = (req, res, next) => {
+      if(req.url === '/webhook') {
+        return next();
+      }
+      if(!!this.options.validateRequestAccess) {
+        return this.options.validateRequestAccess(req, res, next);
+      }
+      return next();
+    }
+
+    this.router.all('*', validateRequestAccess);
+
     const defaultHandler = (res) => (err, obj) => {
       if (err) {
         helpers.error(res, err);

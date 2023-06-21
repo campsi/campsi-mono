@@ -538,6 +538,7 @@ async function getUserByInvitationToken(req, res, next) {
     return helpers.notFound(res, new Error('No user was found with this invitation token'));
   }
   const redactedUser = (({ _id, email, displayName }) => ({ _id, email, displayName }))(user);
+  redactedUser.identityProviders = Object.keys(user.identities).filter(provider => !!req.authProviders[provider]);
   res.json(redactedUser);
 }
 

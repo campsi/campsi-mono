@@ -414,6 +414,7 @@ async function acceptInvitation(req, res) {
     return helpers.unauthorized(res, new Error('You must be authentified to accept an invitation'));
   }
   const query = {
+    _id: req.user._id,
     [`identities.invitation-${req.params.invitationToken}.token.expiration`]: {
       $gt: new Date()
     }
@@ -443,10 +444,71 @@ async function acceptInvitation(req, res) {
     };
     res.json(payload);
     req.service.emit('invitation/accepted', payload);
+    await cleanupExpiredInvitations(req.user, req.db);
   } catch (err) {
     return helpers.error(res, err);
   }
 }
+
+async function deleteInvitation(req, res) {
+  if (!req.user) {
+    return helpers.unauthorized(res, new Error('You must be authentified to delete an invitation'));
+  }
+  const query = {
+    _id: req.user._id,
+    [`identities.invitation-${req.params.invitationToken}`]: { $exists: true }
+  };
+  try {
+    const updateResult = await req.db
+      .collection(getUsersCollectionName())
+      .findOneAndUpdate(
+        query,
+        { $unset: { [`identities.invitation-${req.params.invitationToken}`]: true } },
+        { returnDocument: 'before' }
+      );
+
+    const doc = updateResult.value;
+    if (!doc) {
+      debug('No user was found nor updated in query', query);
+      return helpers.notFound(res, new Error('No user was found with this invitation token'));
+    }
+    const invitation = doc.identities[`invitation-${req.params.invitationToken}`];
+    const payload = {
+      userId: req.user._id,
+      invitedUserId: doc._id,
+      invitedBy: invitation.invitedBy,
+      data: invitation.data,
+      requestBody: req.body,
+      requestHeaders: req.headers
+    };
+    res.json(payload);
+    req.service.emit('invitation/deleted', payload);
+    await cleanupExpiredInvitations(req.user, req.db);
+  } catch (err) {
+    return helpers.error(res, err);
+  }
+}
+
+const cleanupExpiredInvitations = async (user, db) => {
+  const expiredInvitations = Object.entries(user.identities || {})
+    .map(([provider, identity]) => {
+      if (!provider.startsWith('invitation')) {
+        return false;
+      }
+      if (identity.token?.expiration && new Date() < new Date(identity.token.expiration)) {
+        return false;
+      }
+      return provider;
+    })
+    .filter(Boolean);
+  if (expiredInvitations.length) {
+    const update = { $unset: {} };
+    expiredInvitations.forEach(key => {
+      update.$unset[`identities.${key}`] = true;
+    });
+    await db.collection(getUsersCollectionName()).updateOne({ _id: user._id }, update);
+  }
+};
 
 async function extractUserPersonalData(req, res) {
   if (req.user && req.user?.isAdmin) {
@@ -556,6 +618,7 @@ module.exports = {
   logout,
   inviteUser,
   acceptInvitation,
+  deleteInvitation,
   tokenMaintenance,
   extractUserPersonalData,
   softDelete,

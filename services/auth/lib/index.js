@@ -119,6 +119,12 @@ module.exports = class AuthService extends CampsiService {
       '/invitations/:invitationToken',
       handlers.acceptInvitation
     );
+    router.deleteAsync(
+      // #swagger.ignore = true
+      // #swagger.tags = ['Auth service'],
+      '/invitations/:invitationToken',
+      handlers.deleteInvitation
+    );
     router.put(
       // #swagger.tags = ['Auth service'],
       // #swagger.ignore = true

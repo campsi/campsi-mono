@@ -151,7 +151,10 @@ module.exports.patchDoc = async (req, res) => {
     );
     const result = await documentService.patchDocument(req.resource, req.filter, req.body, req.state, req.user);
     helpers.json(res, result);
-    req.service.emit('document/patched', getEmitPayload(req, { data: req.body, originalDocData: originalDoc.data }));
+    req.service.emit(
+      'document/patched',
+      getEmitPayload(req, { data: req.body, originalDocData: originalDoc.data, newDocData: result.data })
+    );
   } catch (error) {
     return dispatchError(res, error);
   }

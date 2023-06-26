@@ -120,14 +120,23 @@ module.exports.putDocState = function (req, res) {
 };
 
 // modify a doc
-module.exports.putDoc = function (req, res) {
-  documentService
-    .setDocument(req.resource, req.filter, req.body, req.state, req.user)
-    .then(result => helpers.json(res, result))
-    .then(() => req.service.emit('document/updated', getEmitPayload(req, { data: req.body })))
-    .catch(error => {
-      return dispatchError(res, error);
-    });
+module.exports.putDoc = async (req, res) => {
+  try {
+    const originalDoc = await documentService.getDocument(
+      req.resource,
+      req.filter,
+      req.query,
+      req.user,
+      req.state,
+      req.options.resources
+    );
+
+    const result = await documentService.setDocument(req.resource, req.filter, req.body, req.state, req.user);
+    helpers.json(res, result);
+    req.service.emit('document/updated', getEmitPayload(req, { data: req.body, originalDocData: originalDoc.data }));
+  } catch (error) {
+    return dispatchError(res, error);
+  }
 };
 
 module.exports.patchDoc = async (req, res) => {
@@ -142,7 +151,10 @@ module.exports.patchDoc = async (req, res) => {
     );
     const result = await documentService.patchDocument(req.resource, req.filter, req.body, req.state, req.user);
     helpers.json(res, result);
-    req.service.emit('document/patched', getEmitPayload(req, { data: req.body, originalDocData: originalDoc.data }));
+    req.service.emit(
+      'document/patched',
+      getEmitPayload(req, { data: req.body, originalDocData: originalDoc.data, newDocData: result.data })
+    );
   } catch (error) {
     return dispatchError(res, error);
   }

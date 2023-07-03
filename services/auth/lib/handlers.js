@@ -10,6 +10,7 @@ const { deleteExpiredTokens } = require('./tokens');
 const { getUsersCollectionName } = require('./modules/collectionNames');
 const createObjectId = require('../../../lib/modules/createObjectId');
 const disposableDomains = require('disposable-email-domains');
+const sanitizeHtml = require('sanitize-html');
 
 async function tokenMaintenance(req, res) {
   if (!req?.user?.isAdmin) {
@@ -588,6 +589,21 @@ function isEmailValid(email) {
   );
 }
 
+function sanitizeHTMLFromXSS(obj) {
+  if (!obj) return obj;
+  switch (typeof obj) {
+    case 'string':
+      return sanitizeHtml(obj);
+    case 'object':
+      return Object.entries(obj).reduce((acc, [key, value]) => {
+        acc[key] = sanitizeHTMLFromXSS(value);
+        return acc;
+      }, obj);
+    default:
+      return obj;
+  }
+}
+
 async function getUserByInvitationToken(req, res, next) {
   const invitationToken = req.params.invitationToken;
   if (!invitationToken) {
@@ -612,6 +628,7 @@ module.exports = {
   redirectWithError,
   callback,
   getProviders,
+  sanitizeHTMLFromXSS,
   getUsers,
   getAccessTokenForUser,
   me,

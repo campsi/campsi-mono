@@ -1,6 +1,7 @@
 /* eslint-disable array-callback-return */
 const debug = require('debug')('campsi:service:versioned-docs');
 const createObjectId = require('../../../../lib/modules/createObjectId');
+const { sanitizeHTMLFromXSS } = require('../../../auth/lib/handlers');
 /**
  * Validate a document against its resource
  * @param {object} resource
@@ -60,11 +61,12 @@ module.exports.find = function find(options) {
  */
 module.exports.create = async options => {
   await validate(options.resource, options.data);
-  const relsId = buildRelsId(options.resource, options.data);
+  const sanitizedData = sanitizeHTMLFromXSS(options.data);
+  const relsId = buildRelsId(options.resource, sanitizedData);
 
   const doc = {
     revision: options.revision || 1,
-    ...options.data,
+    ...sanitizedData,
     ...relsId,
     users: {},
     groups: options.groups || [],
@@ -83,11 +85,12 @@ module.exports.create = async options => {
 
 module.exports.replace = async options => {
   await validate(options.resource, options.data);
-  const relsId = buildRelsId(options.resource, options.data);
+  const sanitizedData = sanitizeHTMLFromXSS(options.data);
+  const relsId = buildRelsId(options.resource, sanitizedData);
 
   return {
     ...options.originalDoc,
-    ...options.data,
+    ...sanitizedData,
     ...relsId,
     revision: options.originalDoc.revision + 1,
     updatedAt: new Date(),

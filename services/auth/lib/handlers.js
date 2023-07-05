@@ -433,6 +433,17 @@ async function acceptInvitation(req, res) {
       debug('No user was found nor updated in query', query);
       return helpers.notFound(res, new Error('No user was found with this invitation token'));
     }
+    if (doc.identities?.local?.validationToken) {
+      const updatedUser = await req.db.collection(getUsersCollectionName()).findOneAndUpdate(
+        { _id: doc._id },
+        {
+          $set: { 'identities.local.validated': true },
+          $unset: { 'identities.local.validationToken': '' }
+        },
+        { returnDocument: 'after' }
+      );
+      req.user = updatedUser.value;
+    }
     const invitation = doc.identities[`invitation-${req.params.invitationToken}`];
     const payload = {
       userId: req.user._id,

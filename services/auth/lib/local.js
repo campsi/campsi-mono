@@ -219,7 +219,8 @@ module.exports.signup = function (req, res) {
               invitedUserId: insertedOrUpdatedUser._id,
               invitedBy: invitation.invitedBy,
               data: invitation.data,
-              requestHeaders: req.headers
+              requestHeaders: req.headers,
+              validated: true
             };
             req.service.emit('invitation/accepted', payload);
           }

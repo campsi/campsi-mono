@@ -16,7 +16,7 @@ function dispatchUserSignupEvent(req, user) {
   req.service.emit('signup', {
     id: user._id,
     email: user.email,
-    username: user.username,
+    username: user.displayName,
     token: user.identities.local.validationToken,
     data: user.data,
     authProvider: 'local',

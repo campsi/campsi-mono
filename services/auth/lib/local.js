@@ -255,7 +255,14 @@ module.exports.validate = async function (req, res) {
   }
 
   try {
-    const result = await validateUserLocalIdentity(req.query.token, req.db);
+    const result = await req.db.collection(getUsersCollectionName()).findOneAndUpdate(
+      { 'identities.local.validationToken': req.query.token },
+      {
+        $set: { 'identities.local.validated': true },
+        $unset: { 'identities.local.validationToken': '' }
+      },
+      { returnDocument: 'after' }
+    );
     const redirectURI = req.query.redirectURI;
     if (result.value) {
       req.service.emit('local/validated', {
@@ -283,22 +290,6 @@ module.exports.validate = async function (req, res) {
     helpers.error(res, err);
   }
 };
-
-/**
- * valide the user that matches the token, if any
- * @param {string}  token
- * @param {Object}  db
- * @returns {Promise<ModifyResult<Document>>}
- */
-const validateUserLocalIdentity = async (token, db) =>
-  db.collection(getUsersCollectionName()).findOneAndUpdate(
-    { 'identities.local.validationToken': token },
-    {
-      $set: { 'identities.local.validated': true },
-      $unset: { 'identities.local.validationToken': '' }
-    },
-    { returnDocument: 'after' }
-  );
 
 /**
  * For the record that matches identities.local.username for the given "email" in request body,

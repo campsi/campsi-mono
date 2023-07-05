@@ -140,6 +140,8 @@ module.exports.signup = function (req, res) {
   };
   const updateInvitedUser = async function (user, invitationToken) {
     try {
+      delete user.identities.local.validationToken;
+      user.identities.local.validated = true;
       const update = {
         $set: {
           'identities.local': user.identities.local,

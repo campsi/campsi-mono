@@ -5,6 +5,7 @@ const state = require('./state');
 const bcrypt = require('bcryptjs');
 const { getUsersCollectionName } = require('./modules/collectionNames');
 const { isEmailValid } = require('./handlers');
+const editURL = require('edit-url');
 const debug = require('debug')('campsi:auth:local');
 
 function getMissingParameters(payload, parameters) {
@@ -248,45 +249,56 @@ module.exports.signup = function (req, res) {
  * @param {string} req.query.redirectURI
  * @param {*} res
  */
-module.exports.validate = function (req, res) {
+module.exports.validate = async function (req, res) {
   if (!req.query.token) {
     return helpers.error(res, new Error('you must provide a validation token'));
   }
 
-  req.db
-    .collection(getUsersCollectionName())
-    .findOneAndUpdate(
-      { 'identities.local.validationToken': req.query.token },
-      {
-        $set: { 'identities.local.validated': true },
-        $unset: { 'identities.local.validationToken': '' }
-      },
-      {
-        returnDocument: 'after'
+  try {
+    const result = await validateUserLocalIdentity(req.query.token, req.db);
+    const redirectURI = req.query.redirectURI;
+    if (result.value) {
+      req.service.emit('local/validated', {
+        user: result.value,
+        requestBody: req.body,
+        requestHeaders: req.headers
+      });
+      req.user = result.value;
+      debug('user validated', result.value);
+      if (redirectURI) {
+        return res.redirect(301, redirectURI);
       }
-    )
-    .then(result => {
-      if (result.value) {
-        req.service.emit('local/validated', {
-          user: result.value,
-          requestBody: req.body,
-          requestHeaders: req.headers
-        });
-        req.user = result.value;
-        debug('user validated', result.value);
-        if (req.query.redirectURI) {
-          res.redirect(301, req.query.redirectURI);
-        } else {
-          res.json({ error: false, message: 'User is validated' });
-        }
-      } else {
-        helpers.notFound(res, new Error('Validation Token not found'));
+      res.json({ error: false, message: 'User is validated' });
+    } else {
+      if (redirectURI) {
+        return res.redirect(
+          editURL(redirectURI, obj => {
+            obj.query.error = 'Validation Token not found';
+          })
+        );
       }
-    })
-    .catch(err => {
-      helpers.error(res, err);
-    });
+      helpers.notFound(res, new Error('Validation Token not found'));
+    }
+  } catch (err) {
+    helpers.error(res, err);
+  }
 };
+
+/**
+ * valide the user that matches the token, if any
+ * @param {string}  token
+ * @param {Object}  db
+ * @returns {Promise<ModifyResult<Document>>}
+ */
+const validateUserLocalIdentity = async (token, db) =>
+  db.collection(getUsersCollectionName()).findOneAndUpdate(
+    { 'identities.local.validationToken': token },
+    {
+      $set: { 'identities.local.validated': true },
+      $unset: { 'identities.local.validationToken': '' }
+    },
+    { returnDocument: 'after' }
+  );
 
 /**
  * For the record that matches identities.local.username for the given "email" in request body,

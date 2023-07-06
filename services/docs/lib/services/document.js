@@ -312,6 +312,13 @@ module.exports.createDocument = async function (resource, data, state, user, par
     } catch (err) {}
   }
 
+  if (resource.defaultGroup) {
+    if (!doc.groups) {
+      doc.groups = [];
+    }
+    doc.groups.push(resource.defaultGroup);
+  }
+
   const result = await resource.collection.insertOne(doc);
   return {
     state,

@@ -1,7 +1,7 @@
 /* eslint-disable array-callback-return */
 const debug = require('debug')('campsi:service:versioned-docs');
 const createObjectId = require('../../../../lib/modules/createObjectId');
-const { sanitizeHTMLFromXSS } = require('../../../../lib/modules/sanitize');
+const sanitizeHTMLFromXSS = require('../../../../lib/modules/sanitize');
 /**
  * Validate a document against its resource
  * @param {object} resource

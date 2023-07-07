@@ -133,7 +133,10 @@ module.exports.putDoc = async (req, res) => {
 
     const result = await documentService.setDocument(req.resource, req.filter, req.body, req.state, req.user);
     helpers.json(res, result);
-    req.service.emit('document/updated', getEmitPayload(req, { data: req.body, originalDocData: originalDoc.data }));
+    req.service.emit(
+      'document/updated',
+      getEmitPayload(req, { data: req.body, originalDocData: originalDoc.data, newDocData: result.data })
+    );
   } catch (error) {
     return dispatchError(res, error);
   }

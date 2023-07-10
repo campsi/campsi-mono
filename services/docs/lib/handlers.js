@@ -6,6 +6,7 @@ const buildLink = require('../../../lib/modules/buildLink');
 const buildSingleDocumentLink = require('../../../lib/modules/buildSingleDocumentLink');
 const { ObjectId } = require('mongodb');
 const ValidationError = require('../../../lib/errors/ValidationError');
+const createError = require('http-errors');
 const { getDocumentLockServiceOptions } = require('./modules/serviceOptions');
 
 const getEmitPayload = (req, additionalProps) => {
@@ -92,20 +93,22 @@ Object.defineProperty(module.exports.getDocuments, 'apidoc', {
   }
 });
 
-module.exports.postDoc = function (req, res) {
+module.exports.postDoc = async function (req, res, next) {
   if (!!req.query?.parentId && !ObjectId.isValid(req.query.parentId)) {
     return helpers.badRequest(res, new Error('Invalid parent id'));
   }
-  documentService
-    .createDocument(req.resource, req.body, req.state, req.user, req?.query?.parentId)
-    .then(data => {
-      helpers.json(res, data);
-      return data;
-    })
-    .then(body => req.service.emit('document/created', getEmitPayload(req, { documentId: body.id, data: body.data })))
-    .catch(error => {
-      return dispatchError(res, error);
-    });
+
+  try {
+    await req.service.emit('document/creating', getEmitPayload(req, { body: req.body, user: req.user }));
+    const doc = await documentService.createDocument(req.resource, req.body, req.state, req.user, req?.query?.parentId);
+    helpers.json(res, doc);
+    req.service.emit('document/created', getEmitPayload(req, { documentId: doc.id, data: doc.data }));
+  } catch (err) {
+    if (createError.isHttpError(err)) {
+      return next(err);
+    }
+    return dispatchError(res, err);
+  }
 };
 
 // modify the state of a doc

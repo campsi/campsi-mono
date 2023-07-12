@@ -1,7 +1,7 @@
 const debug = require('debug')('campsi:service:docs');
 const { ObjectId } = require('mongodb');
 const ValidationError = require('../../../../lib/errors/ValidationError');
-const sanitizeHTMLFromXSS = require("../../../../lib/modules/sanitize");
+const sanitizeHTMLFromXSS = require('../../../../lib/modules/sanitize');
 
 /**
  * Simple utility function that converts a list of arguments

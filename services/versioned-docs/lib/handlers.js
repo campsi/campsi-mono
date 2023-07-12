@@ -16,6 +16,11 @@ const getEmitPayload = (req, additionalProps) => {
   );
 };
 
+const getDocumentData = doc => {
+  const { _id, createdAt, createdBy, updatedAt, updatedBy, users, groups, publishedAt, publishedBy, ...data } = doc;
+  return data;
+};
+
 const getETagFromIfMatch = req => {
   const etag = req.headers['if-match'];
   if (!etag) {
@@ -73,10 +78,15 @@ module.exports.postDoc = async (req, res, next) => {
 };
 
 module.exports.updateDoc = async (req, res, next) => {
+  const originalDoc = await documentService.getDocument(req.resource, req.filter);
   const result = await documentService.updateDocument(req.resource, req.filter, req.body, req.user, getETagFromIfMatch(req));
   res.set('ETag', result.revision);
   helpers.json(res, result);
-  return req.service.emit('versionedDocument/updated', getEmitPayload(req, { data: req.body }));
+
+  return req.service.emit(
+    'versionedDocument/updated',
+    getEmitPayload(req, { data: req.body, originalDocData: getDocumentData(originalDoc), newDocData: getDocumentData(result) })
+  );
 };
 
 module.exports.getDoc = async (req, res, next) => {
@@ -98,6 +108,7 @@ module.exports.getDocRevision = async (req, res, next) => {
 };
 
 module.exports.setDocVersion = async (req, res, next) => {
+  const lastVersionDoc = await req.resource.versionCollection.findOne({ currentId: req.filter._id }, { sort: { version: -1 } });
   const version = await documentService.setDocumentVersion(
     req.resource,
     req.filter,
@@ -107,7 +118,15 @@ module.exports.setDocVersion = async (req, res, next) => {
     req.user
   );
   helpers.json(res, version);
-  req.service.emit('version-created', getEmitPayload(req, { documentId: req.filter._id, version }));
+  req.service.emit(
+    'versionedDocument/version-created',
+    getEmitPayload(req, {
+      documentId: req.filter._id,
+      version,
+      originalDocData: getDocumentData(lastVersionDoc),
+      newDocData: getDocumentData(version)
+    })
+  );
 };
 
 module.exports.getDocVersions = async (req, res, next) => {

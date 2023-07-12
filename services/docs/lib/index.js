@@ -110,7 +110,7 @@ module.exports = class DocsService extends CampsiService {
       '/:resource/:id',
       handlers.getDoc
     );
-    this.router.post(
+    this.router.postAsync(
       // #swagger.tags = ['DOCSERVICE'],
       // #swagger.ignore = true
       '/:resource/:state',

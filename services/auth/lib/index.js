@@ -252,6 +252,12 @@ module.exports = class AuthService extends CampsiService {
         debug("Can't apply unique index on users collection");
         debug(err);
       });
+    if (this.options.providers.local) {
+      this.db
+        .collection(getUsersCollectionName())
+        .createIndex({ 'identities.local.validationToken': 1 })
+        .catch(err => debug(err));
+    }
   }
 
   async fetchUsers(userIds) {

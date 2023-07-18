@@ -1,6 +1,7 @@
 const debug = require('debug')('campsi:service:docs');
 const { ObjectId } = require('mongodb');
 const ValidationError = require('../../../../lib/errors/ValidationError');
+const sanitizeHTMLFromXSS = require('../../../../lib/modules/sanitize');
 
 /**
  * Simple utility function that converts a list of arguments
@@ -256,7 +257,7 @@ module.exports.create = function createDoc(options) {
         doc.states[state.name] = {
           createdAt: new Date(),
           createdBy: options.user ? options.user._id : null,
-          data: options.data
+          data: sanitizeHTMLFromXSS(options.data)
         };
         return resolve(doc);
       });
@@ -281,7 +282,7 @@ module.exports.update = function updateDoc(options) {
         const ops = { $set: {} };
         ops.$set[join('states', state.name, 'modifiedAt')] = new Date();
         ops.$set[join('states', state.name, 'modifiedBy')] = options.user ? options.user._id : null;
-        ops.$set[join('states', state.name, 'data')] = options.data;
+        ops.$set[join('states', state.name, 'data')] = sanitizeHTMLFromXSS(options.data);
         return resolve(ops);
       });
   });
@@ -289,7 +290,7 @@ module.exports.update = function updateDoc(options) {
 
 module.exports.patch = async options => {
   const state = getStateFromOptions(options);
-  await validate(options.resource, options.data, state.validate);
+  await validate(options.resource, sanitizeHTMLFromXSS(options.data), state.validate);
 
   const ops = { $set: {}, $unset: {} };
   ops.$set[join('states', state.name, 'modifiedAt')] = new Date();

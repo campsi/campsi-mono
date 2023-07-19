@@ -141,9 +141,10 @@ module.exports.getDocVersion = async (req, res, next) => {
 };
 
 module.exports.delDoc = async (req, res, next) => {
+  const originalDoc = await documentService.getDocument(req.resource, req.filter);
   const result = await documentService.deleteDocument(req.resource, req.filter, req.query);
   helpers.json(res, result);
-  return req.service.emit('versionedDocument/deleted', getEmitPayload(req));
+  return req.service.emit('versionedDocument/deleted', getEmitPayload(req, { originalDocData: getDocumentData(originalDoc) }));
 };
 
 module.exports.getResources = function (req, res, next) {

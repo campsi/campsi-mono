@@ -205,14 +205,23 @@ module.exports.getDoc = function (req, res) {
     .catch(err => helpers.notFound(res, err));
 };
 
-module.exports.delDoc = function (req, res) {
-  documentService
-    .deleteDocument(req.resource, req.filter)
-    .then(result => {
-      result.deletedCount === 0 ? helpers.notFound(res, result) : helpers.json(res, result);
-    })
-    .then(() => req.service.emit('document/deleted', getEmitPayload(req)))
-    .catch(err => helpers.notFound(res, err));
+module.exports.delDoc = async function (req, res) {
+  try {
+    const originalDoc = await documentService.getDocument(
+      req.resource,
+      req.filter,
+      req.query,
+      req.user,
+      req.state,
+      req.options.resources
+    );
+    const result = await documentService.deleteDocument(req.resource, req.filter);
+    result.deletedCount === 0 ? helpers.notFound(res, result) : helpers.json(res, result);
+
+    req.service.emit('document/deleted', getEmitPayload(req, { originalDocData: originalDoc.data }));
+  } catch (err) {
+    helpers.notFound(res, err);
+  }
 };
 
 module.exports.getResources = function (req, res) {

@@ -169,7 +169,8 @@ module.exports = class StripeBillingService extends CampsiService {
       const subscription = await stripe.subscriptions.retrieve(subscriptionId);
       const nextInvoice = await stripe.invoices.retrieveUpcoming({
         customer: subscription.customer,
-        subscription: subscription.id
+        subscription: subscription.id,
+        expand: buildExpandFromBody(req.query)
       });
       res.json(nextInvoice);
     });

@@ -73,7 +73,7 @@ describe('Auth Local Password Regex', () => {
 
           signin(chai, campsi, glenda.username, firstPassword).end((err, res) => {
             if (err) debug(`received an error from chai: ${err.message}`);
-            res.should.have.status(400);
+            res.should.have.status(401);
             res.should.be.json;
             res.body.should.not.have.property('token');
 

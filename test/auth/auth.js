@@ -206,7 +206,7 @@ describe('Auth API', () => {
             res.body.should.have.property('displayName');
             res.body.should.have.property('email');
             res.body.should.have.property('identities');
-            res.body.should.have.property('token');
+            res.body.should.have.property('tokens');
             done();
           });
       });
@@ -224,7 +224,7 @@ describe('Auth API', () => {
           res.should.have.status(200);
           res.should.be.json;
           res.body.should.be.a('object');
-          res.body.should.have.property('token');
+          res.body.should.have.property('tokens');
           done();
         });
     });
@@ -415,7 +415,7 @@ describe('Auth API', () => {
             res.body.should.have.property('displayName');
             res.body.should.have.property('email');
             res.body.should.have.property('identities');
-            res.body.should.have.property('token');
+            res.body.should.have.property('tokens');
             done();
           });
       });
@@ -646,17 +646,16 @@ describe('Auth API', () => {
             payload.should.have.property('invitedUserId');
             payload.should.have.property('data');
             payload.data.projectId.should.eq('testProjectId');
-
-            chai
-              .request(campsi.app)
-              .post(`/auth/invitations/${invitationToken.value}`)
-              .set('Authorization', 'Bearer ' + glendaToken)
-              .end((err, res) => {
-                if (err) reject(debug(`received an error from chai: ${err.message}`));
-                res.should.have.status(404);
-                resolve();
-              });
           });
+          chai
+            .request(campsi.app)
+            .post(`/auth/invitations/${invitationToken.value}`)
+            .set('Authorization', 'Bearer ' + glendaToken)
+            .end((err, res) => {
+              if (err) reject(debug(`received an error from chai: ${err.message}`));
+              res.should.have.status(404);
+              resolve();
+            });
         });
 
         const inviteAcceptRes = await chai

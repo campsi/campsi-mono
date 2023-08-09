@@ -9,7 +9,7 @@ const format = require('string-format');
 const config = require('config');
 const createUser = require('../helpers/createUser');
 const setupBeforeEach = require('../helpers/setupBeforeEach');
-const { ObjectId, ObjectID } = require('mongodb');
+const { ObjectId } = require('mongodb');
 const expect = chai.expect;
 format.extend(String.prototype);
 chai.use(chaiHttp);
@@ -17,7 +17,7 @@ chai.should();
 
 const createProject = function (id) {
   return {
-    _id: new ObjectID(),
+    _id: new ObjectId(),
     users: {
       [id]: {
         roles: ['owner'],
@@ -33,7 +33,7 @@ const createProject = function (id) {
         createdBy: new ObjectId(),
         data: {},
         modifiedAt: new Date(),
-        modifiedBy: new ObjectID()
+        modifiedBy: new ObjectId()
       }
     }
   };

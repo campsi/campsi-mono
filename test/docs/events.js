@@ -94,44 +94,47 @@ describe('Events', () => {
       );
 
       let documentId;
-      async.series([
-        cb => {
-          // POST
-          chai
-            .request(campsi.app)
-            .post('/docs/simple/state-public')
-            .set('content-type', 'application/json')
-            .send({ name: 'test' })
-            .end((err, res) => {
-              if (err) debug(`received an error from chai: ${err.message}`);
-              documentId = res.body.id;
-              cb();
-            });
-        },
-        cb => {
-          // PUT
-          chai
-            .request(campsi.app)
-            .put(`/docs/simple/${documentId}`)
-            .set('content-type', 'application/json')
-            .send({ name: 'test modified' })
-            .end(cb);
-        },
-        cb => {
-          // CHANGE STATE
-          chai
-            .request(campsi.app)
-            .put(`/docs/simple/${documentId}/state`)
-            .set('content-type', 'application/json')
-            .send({ from: 'state-public', to: 'state-basic' })
-            .end(cb);
-        },
-        cb => {
-          // DELETE
-          chai.request(campsi.app).delete(`/docs/simple/${documentId}`).set('content-type', 'application/json').end(cb);
-        }
-      ]);
-    });
+      async.series(
+        [
+          cb => {
+            // POST
+            chai
+              .request(campsi.app)
+              .post('/docs/simple/state-public')
+              .set('content-type', 'application/json')
+              .send({ name: 'test' })
+              .end((err, res) => {
+                if (err) debug(`received an error from chai: ${err.message}`);
+                documentId = res.body.id;
+                cb();
+              });
+          },
+          cb => {
+            // PUT
+            chai
+              .request(campsi.app)
+              .put(`/docs/simple/${documentId}`)
+              .set('content-type', 'application/json')
+              .send({ name: 'test modified' })
+              .end(cb);
+          },
+          cb => {
+            // CHANGE STATE
+            chai
+              .request(campsi.app)
+              .put(`/docs/simple/${documentId}/state`)
+              .set('content-type', 'application/json')
+              .send({ from: 'state-public', to: 'state-basic' })
+              .end(cb);
+          },
+          cb => {
+            // DELETE
+            chai.request(campsi.app).delete(`/docs/simple/${documentId}`).set('content-type', 'application/json').end(cb);
+          }
+        ],
+        done
+      );
+    }).timeout(5000);
     it('should dispatch events for document users POST / PUT / DELETE', done => {
       // event listeners
       async.parallel(

@@ -132,7 +132,9 @@ describe('Owner-soft-delete', () => {
         });
 
       // make sure the extra field has been cleared out
-      result = await campsi.db.collection('__users__').findOne(project._id);
+      result = await campsi.db.collection('__users__').findOne({
+        _id: project._id
+      });
 
       // test that the displayName has been anonymized
       expect(result.users[`${userId}`].displayName).to.be.empty;

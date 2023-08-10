@@ -106,7 +106,7 @@ class WebhooksService extends CampsiService {
 
   deleteWebhook(req, res) {
     const filter = {
-      _id: ObjectId(req.params.id)
+      _id: new ObjectId(req.params.id)
     };
     if (this.options.requireAuth) {
       filter.createdBy = new ObjectId(req.user._id);

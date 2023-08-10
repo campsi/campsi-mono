@@ -146,13 +146,13 @@ module.exports = class DocsService extends CampsiService {
       '/:resource/:id/state',
       handlers.putDocState
     );
-    this.router.put(
+    this.router.putAsync(
       // #swagger.tags = ['DOCSERVICE'],
       // #swagger.ignore = true
       '/:resource/:id/:state',
       handlers.putDoc
     );
-    this.router.put(
+    this.router.putAsync(
       /* #swagger.tags = ['DOCSERVICE'],
       #swagger.summary = 'DOCS_PUT_RESOURCE_ID_SUMMARY'
       #swagger.parameters['id']={

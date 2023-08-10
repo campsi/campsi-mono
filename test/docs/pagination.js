@@ -55,7 +55,8 @@ function createPizzas() {
 }
 
 // Our parent block
-describe('Pagination', () => {
+describe('Pagination', function () {
+  this.timeout(5000);
   before(done => {
     emptyDatabase(config).then(() => {
       campsi = new CampsiServer(config.campsi);

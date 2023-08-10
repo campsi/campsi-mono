@@ -46,7 +46,7 @@ module.exports.attach = (req, res, next, options) => {
           .isDocumentLockedByOtherUser(req.state, req.filter, req.user, getDocumentLockServiceOptions(req), req.db)
           .then(lock => {
             if (lock && !req?.user?.isAdmin) {
-              reject(helpers.unauthorized(res));
+              reject(helpers.unauthorized(res, new createError.Unauthorized('Document is locked by another user')));
             }
             resolve();
           });

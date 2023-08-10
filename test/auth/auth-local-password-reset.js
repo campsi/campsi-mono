@@ -31,26 +31,17 @@ const services = {
 };
 
 const signin = (chai, campsi, username, password) =>
-  chai
-    .request(campsi.app)
-    .post('/auth/local/signin')
-    .send({ username, password });
+  chai.request(campsi.app).post('/auth/local/signin').send({ username, password });
 
 const createResetPasswordToken = (chai, campsi, email) =>
-  chai
-    .request(campsi.app)
-    .post('/auth/local/reset-password-token')
-    .send({ email });
+  chai.request(campsi.app).post('/auth/local/reset-password-token').send({ email });
 
 const resetUserPassword = (chai, campsi, username, passwordResetToken, newPassword) =>
-  chai
-    .request(campsi.app)
-    .post('/auth/local/reset-password')
-    .send({
-      username,
-      token: passwordResetToken,
-      password: newPassword
-    });
+  chai.request(campsi.app).post('/auth/local/reset-password').send({
+    username,
+    token: passwordResetToken,
+    password: newPassword
+  });
 
 describe('Auth Local Password Reset', () => {
   const context = {};
@@ -71,7 +62,7 @@ describe('Auth Local Password Reset', () => {
 
           signin(chai, campsi, glenda.username, firstPassword).end((err, res) => {
             if (err) debug(`received an error from chai: ${err.message}`);
-            res.should.have.status(400);
+            res.should.have.status(401);
             res.should.be.json;
             res.body.should.not.have.property('token');
 

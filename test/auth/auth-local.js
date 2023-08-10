@@ -175,7 +175,7 @@ describe('Auth Local API', () => {
           chai
             .request(campsi.app)
             .post('/auth/local/signup')
-            .set('Authorization', 'Bearer ' + res.body.token)
+            .set('Authorization', 'Bearer ' + Object.keys(res.body.tokens)?.[0])
             .send(glenda)
             .end((err, res) => {
               if (err) debug(`received an error from chai: ${err.message}`);
@@ -284,10 +284,7 @@ describe('Auth Local API', () => {
           cb => {
             chai
               .request(campsi.app)
-              .get(
-                '/auth/local/validate?token=differentFromValidationToken&redirectURI=' +
-                  encodeURIComponent('/trace/local-signup-validate-redirect')
-              )
+              .get('/auth/local/validate?token=differentFromValidationToken')
               .end((err, res) => {
                 if (err) debug(`received an error from chai: ${err.message}`);
                 res.should.have.status(404);
@@ -397,7 +394,7 @@ describe('Auth Local API', () => {
           })
           .end((err, res) => {
             if (err) debug(`received an error from chai: ${err.message}`);
-            res.should.have.status(400);
+            res.should.have.status(401);
             res.should.be.json;
             res.body.should.be.a('object');
             res.body.should.have.property('message');

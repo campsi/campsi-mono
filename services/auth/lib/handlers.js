@@ -180,7 +180,6 @@ function createAnonymousUser(req, res) {
       }
     },
     email: token.value,
-    token: token.value,
     createdAt: new Date()
   };
   req.db

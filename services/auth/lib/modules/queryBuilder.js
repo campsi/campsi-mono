@@ -25,7 +25,6 @@ function genBearerToken(expiration) {
 function genUpdate(provider, profile) {
   const update = { $set: {} };
   const token = genBearerToken(provider.expiration);
-  update.$set.token = token.value;
   update.$set[`tokens.${token.value}`] = {
     expiration: token.expiration,
     grantedByProvider: provider.name
@@ -58,7 +57,6 @@ function genInsert(provider, profile) {
   };
   insert.invitedBy = profile.identity.invitedBy;
   insert.identities[provider.name] = profile.identity;
-  insert.token = token.value;
   insert.tokens = {
     [token.value]: {
       expiration: token.expiration,

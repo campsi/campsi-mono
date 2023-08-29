@@ -43,6 +43,7 @@ class S3AssetStorage extends AssetStorage {
   createPassThrough(file) {
     const getPublicAssetURL = this.options.getPublicAssetURL;
 
+    const { s3 } = this;
     const bucket = this.options.bucket;
     // will be used later in a scoped context, do not remove
     const getKey = this.getKey;
@@ -60,7 +61,7 @@ class S3AssetStorage extends AssetStorage {
         const self = this;
         try {
           const upload = new Upload({
-            client: this.s3,
+            client: s3,
             params: {
               Bucket: bucket,
               Key: getKey(file, false),

@@ -46,6 +46,8 @@
   },
   "dependencies": {
     "@awaitjs/express": "^0.9.0",
+    "@aws-sdk/client-s3": "^3.398.0",
+    "@aws-sdk/lib-storage": "^3.400.0",
     "@passport-next/passport": "^2.1.1",
     "@passport-next/passport-facebook": "^3.1.1",
     "@passport-next/passport-google-oauth2": "^1.0.0",
@@ -53,7 +55,6 @@
     "@passport-next/passport-local": "^1.2.0",
     "ajv": "^8.11.0",
     "ajv-formats": "^2.1.1",
-    "aws-sdk": "^2.205.0",
     "bcryptjs": "^2.4.3",
     "busboy-body-parser": "^0.3.2",
     "campsi-find-references": "^1.0.2",
@@ -84,6 +85,8 @@
     "yargs": "^16.1.0"
   },
   "devDependencies": {
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/git": "^10.0.1",
     "async": "^2.6.3",
     "body-parser": "^1.18.2",
     "campsi": "./",

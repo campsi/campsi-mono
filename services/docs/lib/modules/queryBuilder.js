@@ -311,7 +311,7 @@ module.exports.patch = async options => {
  * @param {Object}  options
  * @param {Resource} options.resource
  * @param {Object} options.data
- * @param {String} [options.state]
+ * @param {String} options.state
  * @returns {Promise<void>}
  */
 module.exports.validatePatchedDocument = async options => {

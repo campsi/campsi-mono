@@ -364,8 +364,7 @@ module.exports.patchDocument = async (resource, filter, data, state, user) => {
     await builder.validatePatchedDocument({
       resource,
       data: updateDoc.value.states[state].data,
-      state,
-      user
+      state
     });
   } catch (e) {
     const { _id, ...replacement } = originalRawDocument;

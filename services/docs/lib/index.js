@@ -4,6 +4,7 @@ const param = require('./param');
 const handlers = require('./handlers');
 const async = require('async');
 const Ajv = require('ajv');
+const ajvErrors = require('ajv-errors');
 const addFormats = require('ajv-formats');
 const $RefParser = require('json-schema-ref-parser');
 const debug = require('debug')('campsi:docs');
@@ -218,10 +219,12 @@ module.exports = class DocsService extends CampsiService {
     );
 
     return new Promise(resolve => {
-      const ajvWriter = new Ajv({ useAssign: true, strictTuples: false, strict: false });
+      const ajvWriter = new Ajv({ allErrors: true, useAssign: true, strictTuples: false, strict: false });
+      ajvErrors(ajvWriter);
       addFormats(ajvWriter);
       csdAssign(ajvWriter);
-      const ajvReader = new Ajv({ useVisibility: true, strictTuples: false, strict: false });
+      const ajvReader = new Ajv({ allErrors: true, useVisibility: true, strictTuples: false, strict: false });
+      ajvErrors(ajvReader);
       addFormats(ajvReader);
       csdVisibility(ajvReader);
       async.eachOf(

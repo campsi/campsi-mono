@@ -25,7 +25,7 @@ function dispatchError(res, error) {
   switch (true) {
     case error instanceof ValidationError:
       return helpers.validationError(res, error);
-    case error.message === 'Not Found':
+    case error.message.includes('Not Found'):
       return helpers.notFound(res, error);
     case error.message === 'Unauthorized':
       return helpers.unauthorized(res, error);
@@ -155,6 +155,7 @@ module.exports.patchDoc = async (req, res) => {
       req.state,
       req.options.resources
     );
+
     const result = await documentService.patchDocument(req.resource, req.filter, req.body, req.state, req.user);
     helpers.json(res, result);
     req.service.emit(

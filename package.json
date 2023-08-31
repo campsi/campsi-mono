@@ -54,6 +54,7 @@
     "@passport-next/passport-http-bearer": "^1.2.0",
     "@passport-next/passport-local": "^1.2.0",
     "ajv": "^8.11.0",
+    "ajv-errors": "^3.0.0",
     "ajv-formats": "^2.1.1",
     "bcryptjs": "^2.4.3",
     "busboy-body-parser": "^0.3.2",

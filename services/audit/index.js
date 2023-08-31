@@ -6,6 +6,7 @@ const utils = require('./utils.js');
 const JournalService = require('./services/journal');
 const Ajv = require('ajv');
 const addFormats = require('ajv-formats');
+const ajvErrors = require('ajv-errors');
 
 module.exports = class AuditService extends CampsiService {
   initialize() {
@@ -29,7 +30,8 @@ module.exports = class AuditService extends CampsiService {
   }
 
   setupSchemaValidation(resource, schema) {
-    const ajvReader = new Ajv({ useAssign: true, strictTuples: false, strict: false });
+    const ajvReader = new Ajv({ allErrors: true, useAssign: true, strictTuples: false, strict: false });
+    ajvErrors(ajvReader);
     addFormats(ajvReader, ['date-time']);
 
     try {

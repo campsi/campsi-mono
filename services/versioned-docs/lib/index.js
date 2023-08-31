@@ -3,6 +3,7 @@ const CampsiService = require('../../../lib/service');
 const param = require('./param');
 const handlers = require('./handlers');
 const Ajv = require('ajv');
+const ajvErrors = require('ajv-errors');
 const $RefParser = require('json-schema-ref-parser');
 const debug = require('debug')('campsi:versioned-docs');
 const csdAssign = require('../../../lib/keywords/csdAssign');
@@ -34,9 +35,11 @@ module.exports = class VersionedDocsService extends CampsiService {
     this.router.patchAsync('/:resource/:id', handlers.updateDoc);
     this.router.deleteAsync('/:resource/:id', handlers.delDoc);
 
-    const ajvWriter = new Ajv({ useAssign: true, strict: false });
+    const ajvWriter = new Ajv({ allErrors: true, useAssign: true, strict: false });
+    ajvErrors(ajvWriter);
     csdAssign(ajvWriter);
-    const ajvReader = new Ajv({ useVisibility: true, strict: false });
+    const ajvReader = new Ajv({ allErrors: true, useVisibility: true, strict: false });
+    ajvErrors(ajvReader);
     csdVisibility(ajvReader);
     try {
       return Promise.all(

@@ -307,6 +307,18 @@ module.exports.patch = async options => {
   return ops;
 };
 
+/**
+ * @param {Object}  options
+ * @param {Resource} options.resource
+ * @param {Object} options.data
+ * @param {String} [options.state]
+ * @returns {Promise<void>}
+ */
+module.exports.validatePatchedDocument = async options => {
+  const state = getStateFromOptions(options);
+  await validate(options.resource, sanitizeHTMLFromXSS(options.data), state.validate);
+};
+
 module.exports.deleteFilter = function deleteDoc(options) {
   const filter = {};
   filter._id = options.id;

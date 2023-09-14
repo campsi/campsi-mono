@@ -24,6 +24,13 @@ module.exports = class DocsService extends CampsiService {
     const service = this;
     const server = this.server;
 
+    const validateWriteAccess = (req, res, next) => {
+      if (typeof this.options.validateWriteAccess === 'function') {
+        return this.options.validateWriteAccess(req, res, next);
+      }
+      return next();
+    };
+
     this.router.use('/', (req, res, next) => {
       req.options = service.options;
       req.service = service;
@@ -115,6 +122,7 @@ module.exports = class DocsService extends CampsiService {
       // #swagger.tags = ['DOCSERVICE'],
       // #swagger.ignore = true
       '/:resource/:state',
+      validateWriteAccess,
       handlers.postDoc
     );
     this.router.post(
@@ -139,18 +147,21 @@ module.exports = class DocsService extends CampsiService {
             }
         } */
       '/:resource',
+      validateWriteAccess,
       handlers.postDoc
     );
     this.router.put(
       // #swagger.tags = ['DOCSERVICE'],
       // #swagger.ignore = true
       '/:resource/:id/state',
+      validateWriteAccess,
       handlers.putDocState
     );
     this.router.putAsync(
       // #swagger.tags = ['DOCSERVICE'],
       // #swagger.ignore = true
       '/:resource/:id/:state',
+      validateWriteAccess,
       handlers.putDoc
     );
     this.router.putAsync(
@@ -178,12 +189,14 @@ module.exports = class DocsService extends CampsiService {
           }
       } */
       '/:resource/:id',
+      validateWriteAccess,
       handlers.putDoc
     );
     this.router.patch(
       // #swagger.tags = ['DOCSERVICE'],
       // #swagger.ignore = true
       '/:resource/:id',
+      validateWriteAccess,
       handlers.patchDoc
     );
     this.router.delete(

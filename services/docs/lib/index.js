@@ -25,7 +25,7 @@ module.exports = class DocsService extends CampsiService {
     const server = this.server;
 
     const validateWriteAccess = (req, res, next) => {
-      if (this.options.validateWriteAccess) {
+      if (typeof this.options.validateWriteAccess === 'function') {
         return this.options.validateWriteAccess(req, res, next);
       }
       return next();

@@ -14,6 +14,13 @@ module.exports = class VersionedDocsService extends CampsiService {
     const service = this;
     const server = this.server;
 
+    const validateWriteAccess = (req, res, next) => {
+      if (typeof this.options.validateWriteAccess === 'function') {
+        return this.options.validateWriteAccess(req, res, next);
+      }
+      return next();
+    };
+
     this.router.use('/', (req, res, next) => {
       req.options = service.options;
       req.service = service;
@@ -31,8 +38,8 @@ module.exports = class VersionedDocsService extends CampsiService {
     this.router.getAsync('/:resource/:id/versions/', handlers.getDocVersions);
     this.router.getAsync('/:resource/:id/versions/:version', handlers.getDocVersion);
     this.router.getAsync('/:resource/:id', handlers.getDoc);
-    this.router.postAsync('/:resource', handlers.postDoc);
-    this.router.patchAsync('/:resource/:id', handlers.updateDoc);
+    this.router.postAsync('/:resource', validateWriteAccess, handlers.postDoc);
+    this.router.patchAsync('/:resource/:id', validateWriteAccess, handlers.updateDoc);
     this.router.deleteAsync('/:resource/:id', handlers.delDoc);
 
     const ajvWriter = new Ajv({ allErrors: true, useAssign: true, strict: false });

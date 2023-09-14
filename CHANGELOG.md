@@ -1,3 +1,10 @@
+## [3.0.2](https://github.com/campsi/campsi-mono/compare/v3.0.1...v3.0.2) (2023-09-14)
+
+
+### Bug Fixes
+
+* validate docs write access (DEV-4175) ([#258](https://github.com/campsi/campsi-mono/issues/258)) ([0b91ad2](https://github.com/campsi/campsi-mono/commit/0b91ad268b370a1583de50e6ac22f7135309f01c))
+
 ## [3.0.1](https://github.com/campsi/campsi-mono/compare/v3.0.0...v3.0.1) (2023-08-31)
 
 

@@ -1,3 +1,10 @@
+## [3.0.3](https://github.com/campsi/campsi-mono/compare/v3.0.2...v3.0.3) (2023-09-19)
+
+
+### Bug Fixes
+
+* update swagger doc ([#259](https://github.com/campsi/campsi-mono/issues/259)) ([5fcfea0](https://github.com/campsi/campsi-mono/commit/5fcfea0336461d89694c97a27937078fa199ccd7))
+
 ## [3.0.2](https://github.com/campsi/campsi-mono/compare/v3.0.1...v3.0.2) (2023-09-14)
 
 

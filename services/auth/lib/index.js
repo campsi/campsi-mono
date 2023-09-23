@@ -57,17 +57,17 @@ module.exports = class AuthService extends CampsiService {
     };
 
     router.get(
-      // #swagger.ignore = true,
+      // #swagger.ignore = true
       '/users',
       handlers.getUsers
     );
     router.get(
-      // #swagger.ignore = true,
+      // #swagger.ignore = true
       '/users/:userId/extract_personal_data',
       handlers.extractUserPersonalData
     );
     router.get(
-      // #swagger.ignore = true,
+      // #swagger.ignore = true
       '/users/:userId/access_token',
       handlers.getAccessTokenForUser
     );
@@ -75,13 +75,14 @@ module.exports = class AuthService extends CampsiService {
     router.delete(/* #swagger.ignore = true */ '/users/:userId[:]soft-delete', handlers.softDelete);
 
     router.get(
-      // #swagger.ignore = true,
+      // #swagger.ignore = true
       '/providers',
       handlers.getProviders
     );
     router.get(
       /*
-        #swagger.tags = ['Auth service'],
+        #swagger.tags = ['Auth service']
+        #swagger.path = '/auth/me'
         #swagger.description = 'AUTH_ME_DESCRIPTION'
         #swagger.summary = 'AUTH_ME_SUMMARY'
         #swagger.security = [{
@@ -102,13 +103,14 @@ module.exports = class AuthService extends CampsiService {
       handlers.me
     );
     router.put(
-      // #swagger.ignore = true,
+      // #swagger.ignore = true
       '/me',
       handlers.updateMe
     );
     router.patch(
       /*
-        #swagger.tags = ['Auth service'],
+        #swagger.tags = ['Auth service']
+        #swagger.path = '/auth/me'
         #swagger.description = 'AUTH_PARTIALLY_UPDATE_DESCRIPTION'
         #swagger.summary = 'AUTH_PARTIALLY_UPDATE_SUMMARY'
         #swagger.security = [{
@@ -143,7 +145,8 @@ module.exports = class AuthService extends CampsiService {
     );
     router.get(
       /*
-        #swagger.tags = ['Auth service'],
+        #swagger.tags = ['Auth service']
+        #swagger.path = '/auth/logout'
         #swagger.description = 'AUTH_LOGOUT_DESCRIPTION'
         #swagger.summary = 'AUTH_LOGOUT_SUMMARY'
         #swagger.security = [{
@@ -165,7 +168,8 @@ module.exports = class AuthService extends CampsiService {
     );
     router.post(
       /*
-        #swagger.tags = ['Auth service'],
+        #swagger.tags = ['Auth service']
+        #swagger.path = '/auth/invitations'
         #swagger.description = 'AUTH_INVITATION_DESCRIPTION'
         #swagger.summary = 'AUTH_INVITATION_SUMMARY'
         #swagger.security = [{
@@ -196,18 +200,15 @@ module.exports = class AuthService extends CampsiService {
     router.get(/* #swagger.ignore = true */ '/invitations/:invitationToken', limiter, handlers.getUserByInvitationToken);
     router.post(
       // #swagger.ignore = true
-      // #swagger.tags = ['Auth service'],
       '/invitations/:invitationToken',
       handlers.acceptInvitation
     );
     router.deleteAsync(
       // #swagger.ignore = true
-      // #swagger.tags = ['Auth service'],
       '/invitations/:invitationToken',
       handlers.deleteInvitation
     );
     router.put(
-      // #swagger.tags = ['Auth service'],
       // #swagger.ignore = true
       '/tokens',
       handlers.tokenMaintenance
@@ -215,13 +216,14 @@ module.exports = class AuthService extends CampsiService {
 
     if (providers.local) {
       router.use(
-        // #swagger.ignore = true,
+        // #swagger.ignore = true
         '/local',
         local.middleware(providers.local)
       );
       router.post(
         /*
         #swagger.tags = ['Auth service'],
+        #swagger.path = '/auth/local/signup'
         #swagger.description = 'AUTH_LOCAL_SIGNUP_DESCRIPTION'
         #swagger.summary = 'AUTH_LOCAL_SIGNUP_SUMMARY'
         #swagger.requestBody = {
@@ -248,7 +250,8 @@ module.exports = class AuthService extends CampsiService {
       );
       router.post(
         /*
-        #swagger.tags = ['Auth service'],
+        #swagger.tags = ['Auth service']
+        #swagger.path = '/auth/local/signin'
         #swagger.description = 'AUTH_LOCAL_SIGNIN_DESCRIPTION'
         #swagger.summary = 'AUTH_LOCAL_SIGNIN_SUMMARY'
         #swagger.requestBody = {
@@ -280,28 +283,28 @@ module.exports = class AuthService extends CampsiService {
         local.createResetPasswordToken
       );
       router.post(
-        // #swagger.ignore = true,
+        // #swagger.ignore = true
         '/local/reset-password',
         local.resetPassword
       );
       router.get(
-        // #swagger.ignore = true,
+        // #swagger.ignore = true
         '/local/validate',
         local.validate
       );
       router.put(
-        // #swagger.ignore = true,
+        // #swagger.ignore = true
         '/local/update-password',
         local.updatePassword
       );
     }
     this.router.get(
-      // #swagger.ignore = true,
+      // #swagger.ignore = true
       '/:provider',
       handlers.initAuth
     );
     this.router.get(
-      // #swagger.ignore = true,
+      // #swagger.ignore = true
       '/:provider/callback',
       handlers.callback
     );

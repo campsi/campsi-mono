@@ -80,7 +80,24 @@ module.exports = class AuthService extends CampsiService {
       handlers.getProviders
     );
     router.get(
-      // #swagger.ignore = true,
+      /*
+        #swagger.tags = ['Auth service'],
+        #swagger.description = 'AUTH_ME_DESCRIPTION'
+        #swagger.summary = 'AUTH_ME_SUMMARY'
+        #swagger.security = [{
+          "bearerAuth": []
+        }]
+        #swagger.responses[200] = {
+            description: "Token",
+            content: {
+                "application/json": {
+                    schema:{
+                        $ref: "#/components/schemas/MyUserResponse"
+                    }
+                }
+            }
+        }
+        */
       '/me',
       handlers.me
     );
@@ -101,8 +118,24 @@ module.exports = class AuthService extends CampsiService {
       handlers.createAnonymousUser
     );
     router.get(
-      // #swagger.ignore = true
-      // #swagger.tags = ['Auth service'],
+      /*
+        #swagger.tags = ['Auth service'],
+        #swagger.description = 'AUTH_LOGOUT_DESCRIPTION'
+        #swagger.summary = 'AUTH_LOGOUT_SUMMARY'
+        #swagger.security = [{
+          "bearerAuth": []
+        }]
+        #swagger.responses[200] = {
+            description: "Token",
+            content: {
+                "application/json": {
+                    schema:{
+                        $ref: "#/components/schemas/LogoutResponse"
+                    }
+                }
+            }
+        }
+        */
       '/logout',
       handlers.logout
     );
@@ -143,13 +176,6 @@ module.exports = class AuthService extends CampsiService {
         #swagger.tags = ['Auth service'],
         #swagger.description = 'AUTH_LOCAL_SIGNUP_DESCRIPTION'
         #swagger.summary = 'AUTH_LOCAL_SIGNUP_SUMMARY'
-        #swagger.parameters['X-Requested-With'] = {
-          in: 'header',
-          schema: {
-            type: 'string',
-            '@enum': ['XMLHttpRequest']
-          }
-        }
         #swagger.requestBody = {
             required: true,
             content: {
@@ -177,13 +203,6 @@ module.exports = class AuthService extends CampsiService {
         #swagger.tags = ['Auth service'],
         #swagger.description = 'AUTH_LOCAL_SIGNIN_DESCRIPTION'
         #swagger.summary = 'AUTH_LOCAL_SIGNIN_SUMMARY'
-        #swagger.parameters['X-Requested-With'] = {
-          in: 'header',
-          schema: {
-            type: 'string',
-            '@enum': ['XMLHttpRequest']
-          }
-        }
         #swagger.requestBody = {
             required: true,
             content: {

@@ -107,13 +107,37 @@ module.exports = class AuthService extends CampsiService {
       handlers.updateMe
     );
     router.patch(
-      // #swagger.ignore = true,
+      /*
+        #swagger.tags = ['Auth service'],
+        #swagger.description = 'AUTH_PARTIALLY_UPDATE_DESCRIPTION'
+        #swagger.summary = 'AUTH_PARTIALLY_UPDATE_SUMMARY'
+        #swagger.security = [{
+          "bearerAuth": []
+        }]
+        #swagger.requestBody = {
+            required: true,
+            content: {
+                "application/json": {
+                    schema: { $ref: "#/components/schemas/CreateUserRequest" }
+                }
+            }
+        }
+        #swagger.responses[200] = {
+            description: "Token",
+            content: {
+                "application/json": {
+                    schema:{
+                        $ref: "#/components/schemas/MyUserResponse"
+                    }
+                }
+            }
+        }
+        */
       '/me',
       handlers.patchMe
     );
     router.get(
       // #swagger.ignore = true
-      // #swagger.ignore = true,
       '/anonymous',
       handlers.createAnonymousUser
     );

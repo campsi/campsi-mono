@@ -164,8 +164,32 @@ module.exports = class AuthService extends CampsiService {
       handlers.logout
     );
     router.post(
-      // #swagger.ignore = true
-      // #swagger.tags = ['Auth service'],
+      /*
+        #swagger.tags = ['Auth service'],
+        #swagger.description = 'AUTH_INVITATION_DESCRIPTION'
+        #swagger.summary = 'AUTH_INVITATION_SUMMARY'
+        #swagger.security = [{
+          "bearerAuth": []
+        }]
+        #swagger.requestBody = {
+          required: true,
+          content: {
+              "application/json": {
+                  schema: { $ref: "#/components/schemas/InvitationRequest" }
+              }
+          }
+        }
+        #swagger.responses[200] = {
+            description: "Token",
+            content: {
+                "application/json": {
+                    schema:{
+                        $ref: "#/components/schemas/InvitationResponse"
+                    }
+                }
+            }
+        }
+        */
       '/invitations',
       handlers.inviteUser
     );

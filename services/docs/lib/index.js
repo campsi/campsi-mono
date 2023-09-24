@@ -212,22 +212,30 @@ module.exports = class DocsService extends CampsiService {
       handlers.patchDoc
     );
     this.router.delete(
-      /* #swagger.tags = ['DOCSERVICE'],
-      #swagger.summary = 'DOCS_DELETE_RESOURCE_ID_SUMMARY'
-      #swagger.parameters['id']={
+      /*
+        #swagger.tags = ['DOCSERVICE'],
+        #swagger.security = [{
+          "bearerAuth": []
+        }]
+        #swagger.summary = 'DOCS_DELETE_RESOURCE_SUMMARY'
+        #swagger.parameters['projectId'] = {
+          in: 'path',
           description: "DOCS_DELETE_ID_PARAM_DESCRIPTION"
-      }
-      #swagger.responses[200] = {
+        }
+        #swagger.parameters['resource'] = {
+          hide: true
+        }
+        #swagger.responses[200] = {
           description: "DOCS_DELETE_RESPONSE_DESCRIPTION",
           content: {
-              "application/json": {
-                  schema:{
-                      type: "object"
-                  }
+            "application/json": {
+              schema:{
+                $ref: "DOCS_DELETE_RESPONSE_SCHEMA"
               }
+            }
           }
         }
-      */
+        */
       '/:resource/:id',
       handlers.delDoc
     );

@@ -136,11 +136,14 @@ module.exports = class DocsService extends CampsiService {
           "bearerAuth": []
         }]
         #swagger.summary = 'DOCS_POST_RESOURCE_SUMMARY'
+        #swagger.parameters['resource'] = {
+          hide: true
+        }
         #swagger.requestBody = {
           required: true,
           content: {
             "application/json": {
-              schema: { $ref: "DOCS_WRITE_SCHEMA" }
+              schema: { $ref: "DOCS_POST_REQUEST_SCHEMA" }
             }
           }
         }
@@ -149,7 +152,7 @@ module.exports = class DocsService extends CampsiService {
           content: {
             "application/json": {
               schema:{
-                $ref: "DOCS_RESPONSE_SCHEMA"
+                $ref: "DOCS_POST_RESPONSE_SCHEMA"
               }
             }
           }

@@ -130,26 +130,31 @@ module.exports = class DocsService extends CampsiService {
       handlers.postDoc
     );
     this.router.post(
-      /* #swagger.tags = ['DOCSERVICE'],
-         #swagger.summary = 'DOCS_POST_RESOURCE_SUMMARY'
-         #swagger.requestBody = {
+      /*
+        #swagger.tags = ['DOCSERVICE'],
+        #swagger.security = [{
+          "bearerAuth": []
+        }]
+        #swagger.summary = 'DOCS_POST_RESOURCE_SUMMARY'
+        #swagger.requestBody = {
           required: true,
-            content: {
-                "application/json": {
-                    schema: { $ref: "DOCS_WRITE_SCHEMA" }
-                }
+          content: {
+            "application/json": {
+              schema: { $ref: "DOCS_WRITE_SCHEMA" }
             }
+          }
         }
         #swagger.responses[200] = {
-            description: "DOCS_POST_RESPONSE_DESCRIPTION",
-            content: {
-                "application/json": {
-                    schema:{
-                        $ref: "DOCS_RESPONSE_SCHEMA"
-                    }
-                }
+          description: "DOCS_POST_RESPONSE_DESCRIPTION",
+          content: {
+            "application/json": {
+              schema:{
+                $ref: "DOCS_RESPONSE_SCHEMA"
+              }
             }
-        } */
+          }
+        }
+        */
       '/:resource',
       validateWriteAccess,
       handlers.postDoc

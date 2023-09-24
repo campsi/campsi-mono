@@ -104,21 +104,41 @@ module.exports = class DocsService extends CampsiService {
       handlers.getDoc
     );
     this.router.get(
-      /* #swagger.tags = ['DOCSERVICE'],
-      #swagger.summary = 'DOCS_GET_RESOURCE_ID_SUMMARY'
-      #swagger.parameters['id']={
+      /*
+        #swagger.tags = ['DOCSERVICE'],
+        #swagger.security = [{
+          "bearerAuth": []
+        }]
+        #swagger.summary = 'DOCS_GET_RESOURCE_SUMMARY'
+        #swagger.parameters['resource'] = {
+          hide: true
+        }
+        #swagger.parameters['projectId'] = {
+          in: 'path',
           description: "DOCS_GET_ID_PARAM_DESCRIPTION"
         }
-      #swagger.responses[200] = {
+        #swagger.responses[200] = {
           description: "DOCS_GET_RESPONSE_DESCRIPTION",
           content: {
-              "application/json": {
-                  schema:{
-                      $ref: "DOCS_RESPONSE_SCHEMA"
-                  }
+            "application/json": {
+              schema:{
+                $ref: "DOCS_GET_RESPONSE_SCHEMA"
               }
+            }
           }
-      } */
+        }
+        #swagger.responses[404] = {
+          description: "DOCS_GET_RESPONSE_404_DESCRIPTION",
+          content: {
+            "application/json": {
+              schema:{
+                $ref: "DOCS_GET_RESPONSE_404_SCHEMA"
+              }
+            }
+          }
+        }
+        */
+
       '/:resource/:id',
       handlers.getDoc
     );

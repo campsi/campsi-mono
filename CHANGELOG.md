@@ -1,3 +1,10 @@
+## [3.0.4](https://github.com/campsi/campsi-mono/compare/v3.0.3...v3.0.4) (2023-09-28)
+
+
+### Bug Fixes
+
+* trigger build new version ([e757de9](https://github.com/campsi/campsi-mono/commit/e757de99c20561d26ae651a63a0c46d2769bd868))
+
 ## [3.0.3](https://github.com/campsi/campsi-mono/compare/v3.0.2...v3.0.3) (2023-09-19)
 
 

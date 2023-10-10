@@ -1,3 +1,10 @@
+## [3.0.5](https://github.com/campsi/campsi-mono/compare/v3.0.4...v3.0.5) (2023-10-10)
+
+
+### Bug Fixes
+
+* **auth:** email is no more updatable by PATCH /me ([bab9d95](https://github.com/campsi/campsi-mono/commit/bab9d95752afeb8189907e3bd64aa7ca30922aaf))
+
 ## [3.0.4](https://github.com/campsi/campsi-mono/compare/v3.0.3...v3.0.4) (2023-09-28)
 
 

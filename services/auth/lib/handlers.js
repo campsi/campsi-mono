@@ -207,7 +207,10 @@ function getProviders(req, res) {
 }
 
 async function callback(req, res, next) {
-  const { redirectURI } = state.get(req);
+  let { redirectURI } = state.get(req);
+  if (!redirectURI && req.authProvider.name === 'local') {
+    redirectURI = req.query.redirectURI;
+  }
   // noinspection JSUnresolvedFunction
   await passport.authenticate(req.authProvider.name, {
     session: false,
@@ -227,13 +230,17 @@ async function callback(req, res, next) {
       }
     } else {
       if (req.authProvider.options?.validateRedirectURI && !req.authProvider.options.validateRedirectURI(redirectURI)) {
+        delete req.query.redirectURI;
         return redirectWithError(req, res, createError(400, 'invalid redirectURI'), next);
       }
-      res.redirect(
-        editURL(redirectURI, obj => {
-          obj.query.access_token = req.authBearerToken;
-        })
-      );
+      if (req.method === 'GET') {
+        res.redirect(
+          editURL(redirectURI, obj => {
+            obj.query.access_token = req.authBearerToken;
+          })
+        );
+      }
+      res.json({ token: req.authBearerToken, redirectURI });
     }
     if (req.session) {
       req.session.destroy(() => {
@@ -244,7 +251,10 @@ async function callback(req, res, next) {
 }
 
 function redirectWithError(req, res, err, next) {
-  const { redirectURI } = state.get(req);
+  let { redirectURI, defaultRedirectURI } = state.get(req);
+  if (req.authProvider.options?.validateRedirectURI && !req.authProvider.options.validateRedirectURI(redirectURI)) {
+    redirectURI = req.authProvider.options.validateRedirectURI(defaultRedirectURI) ? defaultRedirectURI : null;
+  }
   if (!redirectURI) {
     next ? next(err) : helpers.error(res, err);
   } else {

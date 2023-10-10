@@ -151,7 +151,7 @@ function patchMe(req, res) {
     return helpers.unauthorized(res);
   }
 
-  const allowedProps = ['displayName', 'data', 'identities', 'email'];
+  const allowedProps = ['displayName', 'data'];
   const update = { $set: {} };
 
   for (const [key, value] of Object.entries(req.body)) {
@@ -274,6 +274,7 @@ function getUserFilterFromQuery(query) {
   }
   return filter;
 }
+
 async function getUsers(req, res) {
   if (req.user && req.user.isAdmin) {
     try {
@@ -324,6 +325,7 @@ function getAccessTokenForUser(req, res) {
     redirectWithError(req, res, new Error('Only admin users are allowed to show users'));
   }
 }
+
 /**
  * Entry point of the authentification workflow.
  * There's no req.user yet.
@@ -419,13 +421,15 @@ async function acceptInvitation(req, res) {
     }
   };
   try {
-    const updateResult = await req.db
-      .collection(getUsersCollectionName())
-      .findOneAndUpdate(
-        query,
-        { $unset: { [`identities.invitation-${req.params.invitationToken}`]: true } },
-        { returnDocument: 'before' }
-      );
+    const updateResult = await req.db.collection(getUsersCollectionName()).findOneAndUpdate(
+      query,
+      {
+        $unset: {
+          [`identities.invitation-${req.params.invitationToken}`]: true
+        }
+      },
+      { returnDocument: 'before' }
+    );
 
     const doc = updateResult.value;
     if (!doc) {
@@ -469,13 +473,15 @@ async function deleteInvitation(req, res) {
     [`identities.invitation-${req.params.invitationToken}`]: { $exists: true }
   };
   try {
-    const updateResult = await req.db
-      .collection(getUsersCollectionName())
-      .findOneAndUpdate(
-        query,
-        { $unset: { [`identities.invitation-${req.params.invitationToken}`]: true } },
-        { returnDocument: 'before' }
-      );
+    const updateResult = await req.db.collection(getUsersCollectionName()).findOneAndUpdate(
+      query,
+      {
+        $unset: {
+          [`identities.invitation-${req.params.invitationToken}`]: true
+        }
+      },
+      { returnDocument: 'before' }
+    );
 
     const doc = updateResult.value;
     if (!doc) {
@@ -539,7 +545,15 @@ async function extractUserPersonalData(req, res) {
             picture: 1,
             identities: {
               local: { id: 1, username: 1 },
-              google: { id: 1, sub: 1, name: 1, given_name: 1, familly_name: 1, picture: 1, email: 1 },
+              google: {
+                id: 1,
+                sub: 1,
+                name: 1,
+                given_name: 1,
+                familly_name: 1,
+                picture: 1,
+                email: 1
+              },
               facebook: { id: 1, name: 1, email: 1 }
             }
           }
@@ -566,7 +580,16 @@ async function softDelete(req, res) {
         return redirectWithError(req, res, new Error('Erroneous userId'));
       }
 
-      const update = { $set: { email: '', displayName: '', picture: '', data: {}, identities: {}, deletedAt: new Date() } };
+      const update = {
+        $set: {
+          email: '',
+          displayName: '',
+          picture: '',
+          data: {},
+          identities: {},
+          deletedAt: new Date()
+        }
+      };
       const result = await req.db
         .collection('__users__')
         .findOneAndUpdate({ _id: userId, deletedAt: { $exists: false } }, update, { returnDocument: 'after' });
@@ -603,13 +626,17 @@ async function getUserByInvitationToken(req, res, next) {
   if (!invitationToken) {
     return helpers.missingParameters(res, new Error('invitationToken must be specified'));
   }
-  const user = await req.db
-    .collection(getUsersCollectionName())
-    .findOne({ [`identities.invitation-${invitationToken}`]: { $exists: true } });
+  const user = await req.db.collection(getUsersCollectionName()).findOne({
+    [`identities.invitation-${invitationToken}`]: { $exists: true }
+  });
   if (!user) {
     return helpers.notFound(res, new Error('No user was found with this invitation token'));
   }
-  const redactedUser = (({ _id, email, displayName }) => ({ _id, email, displayName }))(user);
+  const redactedUser = (({ _id, email, displayName }) => ({
+    _id,
+    email,
+    displayName
+  }))(user);
   redactedUser.identityProviders = Object.entries(user.identities)
     .filter(([key, value]) => !!req.authProviders[key] && !!value.id)
     .map(([key, value]) => key);

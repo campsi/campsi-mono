@@ -262,8 +262,8 @@ module.exports.getDocuments = async function (resource, filter, user, query, sta
   const requestedStates = getRequestedStatesFromQuery(resource, query);
 
   let docsQuery = aggregate
-    ? resource.collection.aggregate(pipeline)
-    : resource.collection.find(dbQuery, { projection: dbFields });
+    ? resource.collection.aggregate(pipeline, { allowDiskUse: true })
+    : resource.collection.find(dbQuery, { projection: dbFields, allowDiskUse: true });
   if (!pagination.infinite) {
     docsQuery = docsQuery.skip(skip).limit(limit);
   }

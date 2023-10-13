@@ -1,3 +1,10 @@
+## [3.0.6](https://github.com/campsi/campsi-mono/compare/v3.0.5...v3.0.6) (2023-10-13)
+
+
+### Bug Fixes
+
+* allowDiskUse missing from getDocuments ([#263](https://github.com/campsi/campsi-mono/issues/263)) ([0573f49](https://github.com/campsi/campsi-mono/commit/0573f494c2fb2bcfcc2c1d3489b883ae5baf3d0d))
+
 ## [3.0.5](https://github.com/campsi/campsi-mono/compare/v3.0.4...v3.0.5) (2023-10-10)
 
 

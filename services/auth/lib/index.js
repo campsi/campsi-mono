@@ -53,7 +53,14 @@ module.exports = class AuthService extends CampsiService {
       if (typeof this.options.validatePasswordResetUrl !== 'function') {
         return next();
       }
-      return next(this.options.validatePasswordResetUrl(req.body) ? null : createError(400, 'Invalid reset URL'));
+      return next(this.options.validatePasswordResetUrl(req.body?.resetUrl) ? null : createError(400, 'Invalid reset URL'));
+    };
+
+    const validateRedirectURI = (req, res, next) => {
+      if (typeof this.options.validateRedirectURI !== 'function') {
+        return next();
+      }
+      return next(this.options.validateRedirectURI(req.query.redirectURI) ? null : createError(400, 'invalid redirectURI'));
     };
 
     router.get(
@@ -100,6 +107,7 @@ module.exports = class AuthService extends CampsiService {
         }
         */
       '/me',
+      validateRedirectURI,
       handlers.me
     );
     router.put(

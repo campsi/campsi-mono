@@ -1,3 +1,10 @@
+## [3.0.7](https://github.com/campsi/campsi-mono/compare/v3.0.6...v3.0.7) (2023-10-18)
+
+
+### Bug Fixes
+
+* redirectURI not properly working with local provider ([#262](https://github.com/campsi/campsi-mono/issues/262)) ([97b8add](https://github.com/campsi/campsi-mono/commit/97b8add07cc17ae3079aee82b5e21cecfaad4b3a))
+
 ## [3.0.6](https://github.com/campsi/campsi-mono/compare/v3.0.5...v3.0.6) (2023-10-13)
 
 

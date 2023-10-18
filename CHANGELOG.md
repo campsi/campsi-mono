@@ -1,3 +1,10 @@
+## [3.0.8](https://github.com/campsi/campsi-mono/compare/v3.0.7...v3.0.8) (2023-10-18)
+
+
+### Bug Fixes
+
+* Can't render headers after they are sent to the client ([aad76e5](https://github.com/campsi/campsi-mono/commit/aad76e560ef87cc6db6776281b026a9739a21f62))
+
 ## [3.0.7](https://github.com/campsi/campsi-mono/compare/v3.0.6...v3.0.7) (2023-10-18)
 
 

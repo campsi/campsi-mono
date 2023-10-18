@@ -239,8 +239,9 @@ async function callback(req, res, next) {
             obj.query.access_token = req.authBearerToken;
           })
         );
+      } else {
+        res.json({ token: req.authBearerToken, redirectURI });
       }
-      res.json({ token: req.authBearerToken, redirectURI });
     }
     if (req.session) {
       req.session.destroy(() => {

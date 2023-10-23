@@ -1,3 +1,10 @@
+# [3.1.0](https://github.com/campsi/campsi-mono/compare/v3.0.8...v3.1.0) (2023-10-23)
+
+
+### Features
+
+* add TTL index option for audit service ([#266](https://github.com/campsi/campsi-mono/issues/266)) ([112b0a9](https://github.com/campsi/campsi-mono/commit/112b0a99966690de03f632ffe1942510a8376150))
+
 ## [3.0.8](https://github.com/campsi/campsi-mono/compare/v3.0.7...v3.0.8) (2023-10-18)
 
 

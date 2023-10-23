@@ -21,6 +21,17 @@ module.exports = class AuditService extends CampsiService {
 
     this.db.collection(utils.getCollectionName(this.options)).createIndex({ date: -1 });
 
+    if (
+      Object.prototype.toString.call(this.options.ttlIndex) === '[object Object]' &&
+      typeof this.options.ttlIndex.field === 'string' &&
+      Number.isInteger(this.options.ttlIndex.expireAfterSeconds) &&
+      this.options.ttlIndex.expireAfterSeconds >= 0
+    ) {
+      this.db
+        .collection(utils.getCollectionName(this.options))
+        .createIndex({ [this.options.ttlIndex.field]: 1 }, { expireAfterSeconds: this.options.ttlIndex.expireAfterSeconds });
+    }
+
     return Promise.all(
       Object.entries(service.options.resources).map(async ([key, resource]) => {
         const schema = await utils.validationSchema(service, resource);

@@ -1,6 +1,6 @@
 {
   "name": "campsi",
-  "version": "3.1.0",
+  "version": "3.2.0",
   "description": "Configurable API for managing and publishing document-oriented content",
   "main": "index.js",
   "scripts": {

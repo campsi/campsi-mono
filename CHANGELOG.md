@@ -1,3 +1,10 @@
+# [3.2.0](https://github.com/campsi/campsi-mono/compare/v3.1.0...v3.2.0) (2023-10-24)
+
+
+### Features
+
+* add invitedBy to signup local event payload ([#267](https://github.com/campsi/campsi-mono/issues/267)) ([5d5eb54](https://github.com/campsi/campsi-mono/commit/5d5eb5461f5b22ccbe5f0bc85ef353f3e971a34d))
+
 # [3.1.0](https://github.com/campsi/campsi-mono/compare/v3.0.8...v3.1.0) (2023-10-23)
 
 

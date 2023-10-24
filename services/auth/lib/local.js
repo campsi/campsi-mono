@@ -21,7 +21,8 @@ function dispatchUserSignupEvent(req, user) {
     data: user.data,
     authProvider: 'local',
     requestBody: req.body,
-    requestHeaders: req.headers
+    requestHeaders: req.headers,
+    invitedBy: user.invitedBy
   });
 }
 

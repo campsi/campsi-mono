@@ -1,3 +1,10 @@
+# [3.3.0](https://github.com/campsi/campsi-mono/compare/v3.2.0...v3.3.0) (2023-11-09)
+
+
+### Features
+
+* allow to create a password reset token without a HTTP request ([#268](https://github.com/campsi/campsi-mono/issues/268)) ([2218dcb](https://github.com/campsi/campsi-mono/commit/2218dcb4c820bcbedda331186a1f2df6df54a61d))
+
 # [3.2.0](https://github.com/campsi/campsi-mono/compare/v3.1.0...v3.2.0) (2023-10-24)
 
 

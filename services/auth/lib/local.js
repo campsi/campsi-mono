@@ -320,35 +320,48 @@ module.exports.createResetPasswordToken = async function (req, res) {
     }
     const opts = req.authProvider.options;
 
-    const expirationDate = new Date();
-    const exp = opts.resetPasswordTokenExpiration || 10;
-    expirationDate.setTime(expirationDate.getTime() + exp * 86400000);
+    await this.updateUserWithPasswordResetToken(user, opts, req.db, req.service, req.body, req.headers);
 
-    const token = module.exports.createRandomToken(req.body.email, opts.salt);
-
-    const out = await req.db.collection(getUsersCollectionName()).findOneAndUpdate(
-      { _id: user._id },
-      {
-        $set: {
-          'identities.local.passwordResetToken': {
-            value: token,
-            expiration: expirationDate
-          }
-        }
-      },
-      {
-        returnDocument: 'after'
-      }
-    );
-    req.service.emit('local/passwordResetTokenCreated', {
-      user: out.value,
-      requestBody: req.body,
-      requestHeaders: req.headers
-    });
     return res.json({ success: true });
   } catch (e) {
     return helpers.internalServerError(res, e);
   }
+};
+
+/**
+ * For the given user, update its passwordResetToken, then emit an event
+ * @param {object} user
+ * @param {object} options
+ * @param {number?} [options.resetPasswordTokenExpiration] int
+ * @param {string} options.salt
+ * @param {object} db
+ * @param {object} service
+ * @param {object} body
+ * @param {object} headers
+ */
+module.exports.updateUserWithPasswordResetToken = async (user, options, db, service, body = {}, headers = {}) => {
+  const expirationDate = new Date();
+  const exp = options.resetPasswordTokenExpiration || 10;
+  expirationDate.setTime(expirationDate.getTime() + exp * 86400000);
+
+  const token = this.createRandomToken(user.email, options.salt);
+  const out = await db.collection(getUsersCollectionName()).findOneAndUpdate(
+    { _id: user._id },
+    {
+      $set: {
+        'identities.local.passwordResetToken': {
+          value: token,
+          expiration: expirationDate
+        }
+      }
+    },
+    { returnDocument: 'after' }
+  );
+  service.emit('local/passwordResetTokenCreated', {
+    user: out.value,
+    requestBody: body,
+    requestHeaders: headers
+  });
 };
 
 /**

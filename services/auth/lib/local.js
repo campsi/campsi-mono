@@ -332,6 +332,8 @@ module.exports.createResetPasswordToken = async function (req, res) {
  * For the given user, update its passwordResetToken, then emit an event
  * @param {object} user
  * @param {object} options
+ * @param {number?} [options.resetPasswordTokenExpiration] int
+ * @param {string} options.salt
  * @param {object} db
  * @param {object} service
  * @param {object} body

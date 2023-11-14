@@ -1,3 +1,10 @@
+## [3.3.1](https://github.com/campsi/campsi-mono/compare/v3.3.0...v3.3.1) (2023-11-14)
+
+
+### Bug Fixes
+
+* this undefined in local.js (not arrow function) ([#269](https://github.com/campsi/campsi-mono/issues/269)) ([b2c35e2](https://github.com/campsi/campsi-mono/commit/b2c35e217d493cbaacef5839868d35bcad2fcbc9))
+
 # [3.3.0](https://github.com/campsi/campsi-mono/compare/v3.2.0...v3.3.0) (2023-11-09)
 
 

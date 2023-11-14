@@ -302,7 +302,7 @@ module.exports.validate = async function (req, res) {
  * @param res
  * @return {*}
  */
-module.exports.createResetPasswordToken = async function (req, res) {
+module.exports.createResetPasswordToken = async (req, res) => {
   const missingParams = getMissingParameters(req.body, ['email']);
   if (missingParams.length > 0) {
     return helpers.error(res, new Error(`missing parameter(s) : ${missingParams.join(', ')}`));

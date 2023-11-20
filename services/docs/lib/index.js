@@ -197,29 +197,35 @@ module.exports = class DocsService extends CampsiService {
       handlers.putDoc
     );
     this.router.putAsync(
-      /* #swagger.tags = ['DOCSERVICE'],
-      #swagger.summary = 'DOCS_PUT_RESOURCE_ID_SUMMARY'
-      #swagger.parameters['id']={
+      /*
+        #swagger.tags = ['DOCSERVICE'],
+        #swagger.security = [{
+          "bearerAuth": []
+        }]
+        #swagger.summary = 'DOCS_PUT_RESOURCE_ID_SUMMARY'
+        #swagger.parameters['id'] = {
+          in: 'path',
           description: "DOCS_PUT_ID_PARAM_DESCRIPTION"
-      }
-      #swagger.requestBody = {
-        required: true,
+        }
+        #swagger.requestBody = {
+          required: true,
           content: {
-              "application/json": {
-                  schema: { $ref: "DOCS_WRITE_SCHEMA" }
-              }
+            "application/json": {
+              schema: { $ref: "DOCS_PUT_WRITE_SCHEMA" }
+            }
           }
-      }
-      #swagger.responses[200] = {
+        }
+        #swagger.responses[200] = {
           description: "DOCS_PUT_RESPONSE_DESCRIPTION",
           content: {
-              "application/json": {
-                  schema:{
-                      $ref: "DOCS_RESPONSE_SCHEMA"
-                  }
+            "application/json": {
+              schema:{
+                $ref: "DOCS_PUT_RESPONSE_SCHEMA"
               }
+            }
           }
-      } */
+        }
+        */
       '/:resource/:id',
       validateWriteAccess,
       handlers.putDoc

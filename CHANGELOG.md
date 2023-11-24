@@ -1,3 +1,10 @@
+## [3.3.2](https://github.com/campsi/campsi-mono/compare/v3.3.1...v3.3.2) (2023-11-24)
+
+
+### Bug Fixes
+
+* Improve paginateQuery helper ([#272](https://github.com/campsi/campsi-mono/issues/272)) ([5d7f74e](https://github.com/campsi/campsi-mono/commit/5d7f74e13a99f11c173c751c842a9d897ddbb163))
+
 ## [3.3.1](https://github.com/campsi/campsi-mono/compare/v3.3.0...v3.3.1) (2023-11-14)
 
 

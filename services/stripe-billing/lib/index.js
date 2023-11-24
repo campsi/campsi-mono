@@ -159,7 +159,7 @@ module.exports = class StripeBillingService extends CampsiService {
         default_tax_rates: req.body.default_tax_rates,
         default_source: req.body.default_source,
       };
-      if(req.body.currency) {
+      if (req.body.currency) {
         params.currency = req.body.currency;
       }
       const idempotencyKey = this.createIdempotencyKey(params, 'subscriptions.create');

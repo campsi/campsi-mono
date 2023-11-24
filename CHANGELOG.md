@@ -1,3 +1,10 @@
+# [3.4.0](https://github.com/campsi/campsi-mono/compare/v3.3.2...v3.4.0) (2023-11-24)
+
+
+### Features
+
+* add currency to subscription creation payload ([#271](https://github.com/campsi/campsi-mono/issues/271)) ([af884bd](https://github.com/campsi/campsi-mono/commit/af884bd6dcb45d344da7fc4ff28c8ad0383c4806))
+
 ## [3.3.2](https://github.com/campsi/campsi-mono/compare/v3.3.1...v3.3.2) (2023-11-24)
 
 

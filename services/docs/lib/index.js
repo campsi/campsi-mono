@@ -113,7 +113,7 @@ module.exports = class DocsService extends CampsiService {
         #swagger.parameters['resource'] = {
           hide: true
         }
-        #swagger.parameters['projectId'] = {
+        #swagger.parameters['id'] = {
           in: 'path',
           description: "DOCS_GET_ID_PARAM_DESCRIPTION"
         }
@@ -203,6 +203,9 @@ module.exports = class DocsService extends CampsiService {
           "bearerAuth": []
         }]
         #swagger.summary = 'DOCS_PUT_RESOURCE_ID_SUMMARY'
+        #swagger.parameters['resource'] = {
+          hide: true
+        }
         #swagger.parameters['id'] = {
           in: 'path',
           description: "DOCS_PUT_ID_PARAM_DESCRIPTION"
@@ -244,7 +247,7 @@ module.exports = class DocsService extends CampsiService {
           "bearerAuth": []
         }]
         #swagger.summary = 'DOCS_DELETE_RESOURCE_SUMMARY'
-        #swagger.parameters['projectId'] = {
+        #swagger.parameters['id'] = {
           in: 'path',
           description: "DOCS_DELETE_ID_PARAM_DESCRIPTION"
         }

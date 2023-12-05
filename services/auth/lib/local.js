@@ -127,14 +127,15 @@ module.exports.signup = function (req, res) {
   }
   const users = req.db.collection(getUsersCollectionName());
   // todo : required firstname and lastname when all the frontends are ready
+  if (!req.body.displayName && (!req.body.firstname || !req.body.lastname)) {
+    return helpers.error(res, new Error('missing parameters : displayName or firstname and lastname'));
+  }
+
   const missingParameters = ['password', 'username'].filter(prop => {
     return typeof req.body[prop] === 'undefined' || req.body.prop === '';
   });
   if (missingParameters.length > 0) {
     return helpers.error(res, new Error(`missing parameters : ${missingParameters.join(', ')}`));
-  }
-  if (!req.body.displayName && (!req.body.firstname || !req.body.lastname)) {
-    return helpers.error(res, new Error('missing parameters : displayName or firstname and lastname'));
   }
 
   const insertUser = function (user) {

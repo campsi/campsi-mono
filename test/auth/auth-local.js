@@ -16,6 +16,8 @@ chai.should();
 
 const glenda = {
   displayName: 'Glenda Bennett',
+  firstname: 'Maria',
+  lastname: 'Dupon',
   email: 'glenda@agilitation.fr',
   username: 'glenda',
   password: 'signup!'
@@ -67,6 +69,7 @@ describe('Auth Local API', () => {
         });
     });
   });
+
   describe('/POST local/signup [user already exists]', () => {
     it('it should return an error', done => {
       createUser(context.campsi, glenda).then(() => {
@@ -76,6 +79,8 @@ describe('Auth Local API', () => {
           .set('content-type', 'application/json')
           .send({
             displayName: 'Glenda Bennett 2',
+            firstname: 'Maria',
+            lastname: 'Dupon',
             email: 'glenda@agilitation.fr',
             username: 'glenda',
             password: 'signup!'
@@ -98,6 +103,8 @@ describe('Auth Local API', () => {
           .set('content-type', 'application/json')
           .send({
             displayName: 'Glenda Bennett 2',
+            firstname: 'Maria',
+            lastname: 'Dupon',
             email: 'GLENDA@agilitation.fr',
             username: 'glenda',
             password: 'signup!'
@@ -113,6 +120,7 @@ describe('Auth Local API', () => {
       });
     });
   });
+
   describe('/POST local/signup [password too long]', () => {
     it('it should do something', done => {
       const campsi = context.campsi;
@@ -130,6 +138,7 @@ describe('Auth Local API', () => {
         });
     });
   });
+
   describe('/POST local/signup [default]', () => {
     it('it should do something', done => {
       const campsi = context.campsi;
@@ -156,6 +165,9 @@ describe('Auth Local API', () => {
               user.should.have.property('token');
               user.should.have.property('email');
               user.should.have.property('data');
+              user.should.have.property('username');
+              user.should.have.property('firstname');
+              user.should.have.property('lastname');
               cb();
             });
           }
@@ -164,6 +176,121 @@ describe('Auth Local API', () => {
       );
     });
   });
+
+  describe('/POST local/signup [only display name]', () => {
+    it('it should do something', done => {
+      const campsi = context.campsi;
+      async.parallel(
+        [
+          cb => {
+            chai
+              .request(campsi.app)
+              .post('/auth/local/signup')
+              .set('content-type', 'application/json')
+              .send({
+                ...glenda,
+                firstname: null,
+                lastname: null
+              })
+              .end((err, res) => {
+                if (err) debug(`received an error from chai: ${err.message}`);
+                res.should.have.status(200);
+                res.should.be.json;
+                res.body.should.be.a('object');
+                res.body.should.have.property('token');
+                res.body.token.should.be.a('string');
+                cb();
+              });
+          },
+          cb => {
+            campsi.on('auth/signup', user => {
+              user.should.have.property('token');
+              user.should.have.property('email');
+              user.should.have.property('data');
+              user.should.have.property('username');
+              user.should.have.property('firstname');
+              user.should.have.property('lastname');
+              cb();
+            });
+          }
+        ],
+        done
+      );
+    });
+  });
+
+  describe('/POST local/signup [only firstname/lastname]', () => {
+    it('it should do something', done => {
+      const campsi = context.campsi;
+      async.parallel(
+        [
+          cb => {
+            chai
+              .request(campsi.app)
+              .post('/auth/local/signup')
+              .set('content-type', 'application/json')
+              .send({
+                ...glenda,
+                displayName: null
+              })
+              .end((err, res) => {
+                if (err) debug(`received an error from chai: ${err.message}`);
+                res.should.have.status(200);
+                res.should.be.json;
+                res.body.should.be.a('object');
+                res.body.should.have.property('token');
+                res.body.token.should.be.a('string');
+                cb();
+              });
+          },
+          cb => {
+            campsi.on('auth/signup', user => {
+              user.should.have.property('token');
+              user.should.have.property('email');
+              user.should.have.property('data');
+              user.should.have.property('username');
+              user.should.have.property('firstname');
+              user.should.have.property('lastname');
+              cb();
+            });
+          }
+        ],
+        done
+      );
+    });
+  });
+
+  describe('/POST local/signup [missing display name and firstname/lastname]', () => {
+    it('it should do something', done => {
+      const campsi = context.campsi;
+      async.parallel(
+        [
+          cb => {
+            chai
+              .request(campsi.app)
+              .post('/auth/local/signup')
+              .set('content-type', 'application/json')
+              .send({
+                ...glenda,
+                displayName: null,
+                firstname: null,
+                lastname: null
+              })
+              .end((err, res) => {
+                if (err) debug(`received an error from chai: ${err.message}`);
+                res.should.have.status(400);
+                res.should.be.json;
+                res.body.should.be.a('object');
+                res.body.should.have.property('message');
+                done();
+              });
+          }
+        ],
+        done
+      );
+    });
+  });
+
   describe('/POST local/signup [merge account]', function () {
     it('it should merge the existing user account', done => {
       const campsi = context.campsi;
@@ -186,6 +313,7 @@ describe('Auth Local API', () => {
         });
     });
   });
+
   /*
    * Test the /GET local/validate route
    */
@@ -269,6 +397,7 @@ describe('Auth Local API', () => {
       );
     });
   });
+
   describe('/GET local/validate [bad parameter]', () => {
     it('it should not validate the user', done => {
       const campsi = context.campsi;
@@ -312,6 +441,7 @@ describe('Auth Local API', () => {
       );
     });
   });
+
   describe('/GET local/validate [missing parameter]', () => {
     it('it should not validate the user', done => {
       const campsi = context.campsi;
@@ -355,6 +485,7 @@ describe('Auth Local API', () => {
       );
     });
   });
+
   /*
    * Test the /POST local/signin route
    */
@@ -380,6 +511,7 @@ describe('Auth Local API', () => {
       });
     });
   });
+
   describe('/POST local/signin [bad credentials]', () => {
     it('it should sign in the user', done => {
       const campsi = context.campsi;
@@ -403,6 +535,7 @@ describe('Auth Local API', () => {
       });
     });
   });
+
   describe('/POST local/signin [default]', () => {
     it('it should sign in the user', done => {
       const campsi = context.campsi;
@@ -427,6 +560,7 @@ describe('Auth Local API', () => {
       });
     });
   });
+
   /*
    * Test the /PUT local/update-password route
    */
@@ -452,6 +586,7 @@ describe('Auth Local API', () => {
       });
     });
   });
+
   describe('/PUT local/update-password [bad credentials]', () => {
     it('it should sign in the user', done => {
       const campsi = context.campsi;
@@ -475,6 +610,7 @@ describe('Auth Local API', () => {
       });
     });
   });
+
   describe('/PUT local/update-password [new & confirm do not match]', () => {
     it('it should success', done => {
       const campsi = context.campsi;

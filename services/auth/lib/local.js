@@ -16,7 +16,9 @@ function dispatchUserSignupEvent(req, user) {
   req.service.emit('signup', {
     id: user._id,
     email: user.email,
-    username: user.displayName,
+    username: user.displayName, // todo: replace displayName by email
+    firstname: user.firstname,
+    lastname: user.lastname,
     token: user.identities.local.validationToken,
     data: user.data,
     authProvider: 'local',
@@ -124,12 +126,17 @@ module.exports.signup = function (req, res) {
     );
   }
   const users = req.db.collection(getUsersCollectionName());
-  const missingParameters = ['password', 'displayName', 'username'].filter(prop => {
+  // todo : required firstname and lastname when all the frontends are ready
+  const missingParameters = ['password', 'username'].filter(prop => {
     return typeof req.body[prop] === 'undefined' || req.body.prop === '';
   });
   if (missingParameters.length > 0) {
     return helpers.error(res, new Error(`missing parameters : ${missingParameters.join(', ')}`));
   }
+  if (!req.body.displayName && (!req.body.firstname || !req.body.lastname)) {
+    return helpers.error(res, new Error('missing parameters : displayName or firstname and lastname'));
+  }
+
   const insertUser = function (user) {
     return new Promise((resolve, reject) => {
       users
@@ -149,6 +156,8 @@ module.exports.signup = function (req, res) {
           'identities.local': user.identities.local,
           email: user.email,
           displayName: user.displayName,
+          firstname: user.firstname,
+          lastname: user.lastname,
           data: user.data,
           updatedAt: new Date()
         }
@@ -182,6 +191,8 @@ module.exports.signup = function (req, res) {
     .then(async encryptedPassword => {
       const user = {
         displayName: req.body.displayName,
+        firstname: req.body.firstname,
+        lastname: req.body.lastname,
         email,
         data: req.body.data,
         createdAt: new Date(),

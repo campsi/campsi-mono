@@ -56,8 +56,40 @@ module.exports = class DocsService extends CampsiService {
       handlers.getResources
     );
     this.router.get(
-      // #swagger.tags = ['DOCSERVICE']
-      // #swagger.ignore = true
+      /*
+        #swagger.tags = ['DOCSERVICE'],
+        #swagger.security = [{
+          "bearerAuth": []
+        }]
+        #swagger.summary = 'DOCS_GET_RESOURCES_SUMMARY'
+        #swagger.parameters['resource'] = {
+          hide: true
+        }
+        #swagger.parameters['data.projectId'] = {
+          in: 'query',
+          description: "DOCS_GET_PROJECT_ID_PARAM_DESCRIPTION"
+        }
+        #swagger.responses[200] = {
+          description: "DOCS_GET_ALL_RESPONSE_DESCRIPTION",
+          content: {
+            "application/json": {
+              schema:{
+                $ref: "DOCS_GET_ALL_RESPONSE_SCHEMA"
+              }
+            }
+          }
+        }
+        #swagger.responses[404] = {
+          description: "DOCS_GET_RESPONSE_404_DESCRIPTION",
+          content: {
+            "application/json": {
+              schema:{
+                $ref: "DOCS_GET_RESPONSE_404_SCHEMA"
+              }
+            }
+          }
+        }
+      */
       '/:resource',
       handlers.getDocuments
     );
@@ -138,7 +170,6 @@ module.exports = class DocsService extends CampsiService {
           }
         }
         */
-
       '/:resource/:id',
       handlers.getDoc
     );

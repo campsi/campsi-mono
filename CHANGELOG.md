@@ -1,3 +1,10 @@
+# [3.5.0](https://github.com/campsi/campsi-mono/compare/v3.4.0...v3.5.0) (2023-12-18)
+
+
+### Features
+
+* additional middlewares per resource/method ([#275](https://github.com/campsi/campsi-mono/issues/275)) ([1c6103f](https://github.com/campsi/campsi-mono/commit/1c6103fce41cfb116fba8c6ed73105281dd61583))
+
 # [3.4.0](https://github.com/campsi/campsi-mono/compare/v3.3.2...v3.4.0) (2023-11-24)
 
 

@@ -31,6 +31,13 @@ module.exports = class DocsService extends CampsiService {
       return next();
     };
 
+    const additionalMiddlewares = (req, res, next) => {
+      if (typeof req.resource?.additionalMiddlewares?.[req.method] !== 'function') {
+        return next();
+      }
+      return req.resource?.additionalMiddlewares[req.method](req, res, next);
+    };
+
     this.router.use('/', (req, res, next) => {
       req.options = service.options;
       req.service = service;
@@ -41,7 +48,8 @@ module.exports = class DocsService extends CampsiService {
       // #swagger.tags = ['DOCSERVICE']
       // #swagger.ignore = always
       '/[:]soft-delete',
-      handlers.softDelete);
+      handlers.softDelete
+    );
 
     this.router.param(
       // #swagger.tags = ['DOCSERVICE']
@@ -59,30 +67,35 @@ module.exports = class DocsService extends CampsiService {
       // #swagger.tags = ['DOCSERVICE']
       // #swagger.ignore = true
       '/:resource',
+      additionalMiddlewares,
       handlers.getDocuments
     );
     this.router.post(
       '/:resource/:id/locks',
       // #swagger.tags = ['DOCSERVICE']
       // #swagger.ignore = true
+      additionalMiddlewares,
       handlers.lockDocument
     );
     this.router.get(
       '/:resource/:id/locks',
       // #swagger.ignore = true
       // #swagger.tags = ['DOCSERVICE']
+      additionalMiddlewares,
       handlers.getLocks
     );
     this.router.get(
       // #swagger.ignore = true
       // #swagger.tags = ['DOCSERVICE'],
       '/:resource/:id/users',
+      additionalMiddlewares,
       handlers.getDocUsers
     );
     this.router.post(
       // #swagger.tags = ['DOCSERVICE'],
       // #swagger.ignore = true
       '/:resource/:id/users',
+      additionalMiddlewares,
       handlers.postDocUser
     );
     this.router.delete(
@@ -90,17 +103,20 @@ module.exports = class DocsService extends CampsiService {
          #swagger.ignore = true
       */
       '/:resource/:id/users/:user',
+      additionalMiddlewares,
       handlers.delDocUser
     );
     this.router.post(
       '/:resource/:id/:state/locks',
       // #swagger.ignore = true
+      additionalMiddlewares,
       handlers.lockDocument
     );
     this.router.get(
       // #swagger.tags = ['DOCSERVICE']
       // #swagger.ignore = true
       '/:resource/:id/:state',
+      additionalMiddlewares,
       handlers.getDoc
     );
     this.router.get(
@@ -140,12 +156,14 @@ module.exports = class DocsService extends CampsiService {
         */
 
       '/:resource/:id',
+      additionalMiddlewares,
       handlers.getDoc
     );
     this.router.postAsync(
       // #swagger.tags = ['DOCSERVICE'],
       // #swagger.ignore = true
       '/:resource/:state',
+      additionalMiddlewares,
       validateWriteAccess,
       handlers.postDoc
     );
@@ -179,6 +197,7 @@ module.exports = class DocsService extends CampsiService {
         }
         */
       '/:resource',
+      additionalMiddlewares,
       validateWriteAccess,
       handlers.postDoc
     );
@@ -186,6 +205,7 @@ module.exports = class DocsService extends CampsiService {
       // #swagger.tags = ['DOCSERVICE'],
       // #swagger.ignore = true
       '/:resource/:id/state',
+      additionalMiddlewares,
       validateWriteAccess,
       handlers.putDocState
     );
@@ -193,6 +213,7 @@ module.exports = class DocsService extends CampsiService {
       // #swagger.tags = ['DOCSERVICE'],
       // #swagger.ignore = true
       '/:resource/:id/:state',
+      additionalMiddlewares,
       validateWriteAccess,
       handlers.putDoc
     );
@@ -230,6 +251,7 @@ module.exports = class DocsService extends CampsiService {
         }
         */
       '/:resource/:id',
+      additionalMiddlewares,
       validateWriteAccess,
       handlers.putDoc
     );
@@ -237,6 +259,7 @@ module.exports = class DocsService extends CampsiService {
       // #swagger.tags = ['DOCSERVICE'],
       // #swagger.ignore = true
       '/:resource/:id',
+      additionalMiddlewares,
       validateWriteAccess,
       handlers.patchDoc
     );
@@ -266,17 +289,20 @@ module.exports = class DocsService extends CampsiService {
         }
         */
       '/:resource/:id',
+      additionalMiddlewares,
       handlers.delDoc
     );
     this.router.delete(
       // #swagger.tags = ['DOCSERVICE'],
       // #swagger.ignore = true
       '/:resource/:id/:state',
+      additionalMiddlewares,
       handlers.delDoc
     );
     this.router.delete(
       '/:resource/:id/locks/:lock',
       // #swagger.ignore = true
+      additionalMiddlewares,
       handlers.deleteLock
     );
 

@@ -63,259 +63,35 @@ module.exports = class AuthService extends CampsiService {
       return next(this.options.validateRedirectURI(req.query.redirectURI) ? null : createError(400, 'invalid redirectURI'));
     };
 
-    router.get(
-      // #swagger.ignore = true
-      '/users',
-      handlers.getUsers
-    );
-    router.get(
-      // #swagger.ignore = true
-      '/users/:userId/extract_personal_data',
-      handlers.extractUserPersonalData
-    );
-    router.get(
-      // #swagger.ignore = true
-      '/users/:userId/access_token',
-      handlers.getAccessTokenForUser
-    );
+    router.get('/users', handlers.getUsers);
+    router.get('/users/:userId/extract_personal_data', handlers.extractUserPersonalData);
+    router.get('/users/:userId/access_token', handlers.getAccessTokenForUser);
 
-    router.delete(/* #swagger.ignore = true */ '/users/:userId[:]soft-delete', handlers.softDelete);
+    router.delete('/users/:userId[:]soft-delete', handlers.softDelete);
 
-    router.get(
-      // #swagger.ignore = true
-      '/providers',
-      handlers.getProviders
-    );
-    router.get(
-      /*
-        #swagger.tags = ['Auth service']
-        #swagger.path = '/auth/me'
-        #swagger.description = 'AUTH_ME_DESCRIPTION'
-        #swagger.summary = 'AUTH_ME_SUMMARY'
-        #swagger.security = [{
-          "bearerAuth": []
-        }]
-        #swagger.responses[200] = {
-            description: "Token",
-            content: {
-                "application/json": {
-                    schema:{
-                        $ref: "#/components/schemas/MyUserResponse"
-                    }
-                }
-            }
-        }
-        */
-      '/me',
-      validateRedirectURI,
-      handlers.me
-    );
-    router.put(
-      // #swagger.ignore = true
-      '/me',
-      handlers.updateMe
-    );
-    router.patch(
-      /*
-        #swagger.tags = ['Auth service']
-        #swagger.path = '/auth/me'
-        #swagger.description = 'AUTH_PARTIALLY_UPDATE_DESCRIPTION'
-        #swagger.summary = 'AUTH_PARTIALLY_UPDATE_SUMMARY'
-        #swagger.security = [{
-          "bearerAuth": []
-        }]
-        #swagger.requestBody = {
-            required: true,
-            content: {
-                "application/json": {
-                    schema: { $ref: "#/components/schemas/CreateUserRequest" }
-                }
-            }
-        }
-        #swagger.responses[200] = {
-            description: "Token",
-            content: {
-                "application/json": {
-                    schema:{
-                        $ref: "#/components/schemas/MyUserResponse"
-                    }
-                }
-            }
-        }
-        */
-      '/me',
-      handlers.patchMe
-    );
-    router.get(
-      // #swagger.ignore = true
-      '/anonymous',
-      handlers.createAnonymousUser
-    );
-    router.get(
-      /*
-        #swagger.tags = ['Auth service']
-        #swagger.path = '/auth/logout'
-        #swagger.description = 'AUTH_LOGOUT_DESCRIPTION'
-        #swagger.summary = 'AUTH_LOGOUT_SUMMARY'
-        #swagger.security = [{
-          "bearerAuth": []
-        }]
-        #swagger.responses[200] = {
-            description: "Token",
-            content: {
-                "application/json": {
-                    schema:{
-                        $ref: "#/components/schemas/LogoutResponse"
-                    }
-                }
-            }
-        }
-        */
-      '/logout',
-      handlers.logout
-    );
-    router.post(
-      /*
-        #swagger.tags = ['Auth service']
-        #swagger.path = '/auth/invitations'
-        #swagger.description = 'AUTH_INVITATION_DESCRIPTION'
-        #swagger.summary = 'AUTH_INVITATION_SUMMARY'
-        #swagger.security = [{
-          "bearerAuth": []
-        }]
-        #swagger.requestBody = {
-          required: true,
-          content: {
-              "application/json": {
-                  schema: { $ref: "#/components/schemas/InvitationRequest" }
-              }
-          }
-        }
-        #swagger.responses[200] = {
-            description: "Token",
-            content: {
-                "application/json": {
-                    schema:{
-                        $ref: "#/components/schemas/InvitationResponse"
-                    }
-                }
-            }
-        }
-        */
-      '/invitations',
-      handlers.inviteUser
-    );
-    router.get(/* #swagger.ignore = true */ '/invitations/:invitationToken', limiter, handlers.getUserByInvitationToken);
-    router.post(
-      // #swagger.ignore = true
-      '/invitations/:invitationToken',
-      handlers.acceptInvitation
-    );
-    router.deleteAsync(
-      // #swagger.ignore = true
-      '/invitations/:invitationToken',
-      handlers.deleteInvitation
-    );
-    router.put(
-      // #swagger.ignore = true
-      '/tokens',
-      handlers.tokenMaintenance
-    );
+    router.get('/providers', handlers.getProviders);
+    router.get('/me', validateRedirectURI, handlers.me);
+    router.put('/me', handlers.updateMe);
+    router.patch('/me', handlers.patchMe);
+    router.get('/anonymous', handlers.createAnonymousUser);
+    router.get('/logout', handlers.logout);
+    router.post('/invitations', handlers.inviteUser);
+    router.get('/invitations/:invitationToken', limiter, handlers.getUserByInvitationToken);
+    router.post('/invitations/:invitationToken', handlers.acceptInvitation);
+    router.deleteAsync('/invitations/:invitationToken', handlers.deleteInvitation);
+    router.put('/tokens', handlers.tokenMaintenance);
 
     if (providers.local) {
-      router.use(
-        // #swagger.ignore = true
-        '/local',
-        local.middleware(providers.local)
-      );
-      router.post(
-        /*
-        #swagger.tags = ['Auth service'],
-        #swagger.path = '/auth/local/signup'
-        #swagger.description = 'AUTH_LOCAL_SIGNUP_DESCRIPTION'
-        #swagger.summary = 'AUTH_LOCAL_SIGNUP_SUMMARY'
-        #swagger.requestBody = {
-            required: true,
-            content: {
-                "application/json": {
-                    schema: { $ref: "#/components/schemas/CreateUserRequest" }
-                }
-            }
-        }
-        #swagger.responses[200] = {
-            description: "Token",
-            content: {
-                "application/json": {
-                    schema:{
-                        $ref: "#/components/schemas/TokenResponse"
-                    }
-                }
-            }
-        }
-        */
-        '/local/signup',
-        local.signup
-      );
-      router.post(
-        /*
-        #swagger.tags = ['Auth service']
-        #swagger.path = '/auth/local/signin'
-        #swagger.description = 'AUTH_LOCAL_SIGNIN_DESCRIPTION'
-        #swagger.summary = 'AUTH_LOCAL_SIGNIN_SUMMARY'
-        #swagger.requestBody = {
-            required: true,
-            content: {
-                "application/json": {
-                    schema: { $ref: "#/components/schemas/CredentialRequest" }
-                }
-            }
-        }
-        #swagger.responses[200] = {
-            description: "Token",
-            content: {
-                "application/json": {
-                    schema:{
-                        $ref: "#/components/schemas/TokenResponse"
-                    }
-                }
-            }
-        }
-        */
-        '/local/signin',
-        local.signin
-      );
-      router.postAsync(
-        // #swagger.ignore = true
-        '/local/reset-password-token',
-        validatePasswordResetUrl,
-        local.createResetPasswordToken
-      );
-      router.post(
-        // #swagger.ignore = true
-        '/local/reset-password',
-        local.resetPassword
-      );
-      router.get(
-        // #swagger.ignore = true
-        '/local/validate',
-        local.validate
-      );
-      router.put(
-        // #swagger.ignore = true
-        '/local/update-password',
-        local.updatePassword
-      );
+      router.use('/local', local.middleware(providers.local));
+      router.post('/local/signup', local.signup);
+      router.post('/local/signin', local.signin);
+      router.postAsync('/local/reset-password-token', validatePasswordResetUrl, local.createResetPasswordToken);
+      router.post('/local/reset-password', local.resetPassword);
+      router.get('/local/validate', local.validate);
+      router.put('/local/update-password', local.updatePassword);
     }
-    this.router.get(
-      // #swagger.ignore = true
-      '/:provider',
-      handlers.initAuth
-    );
-    this.router.get(
-      // #swagger.ignore = true
-      '/:provider/callback',
-      handlers.callback
-    );
+    this.router.get('/:provider', handlers.initAuth);
+    this.router.get('/:provider/callback', handlers.callback);
   }
 
   getMiddlewares() {

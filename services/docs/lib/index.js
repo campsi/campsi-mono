@@ -44,267 +44,28 @@ module.exports = class DocsService extends CampsiService {
       next();
     });
 
-    this.router.delete(
-      // #swagger.tags = ['DOCSERVICE']
-      // #swagger.ignore = always
-      '/[:]soft-delete',
-      handlers.softDelete
-    );
+    this.router.delete('/[:]soft-delete', handlers.softDelete);
 
-    this.router.param(
-      // #swagger.tags = ['DOCSERVICE']
-      // #swagger.ignore = always
-      'resource',
-      param.attachResource(service.options)
-    );
-    this.router.get(
-      '/',
-      // #swagger.tags = ['DOCSERVICE']
-      // #swagger.ignore = always
-      handlers.getResources
-    );
-    this.router.get(
-      // #swagger.tags = ['DOCSERVICE']
-      // #swagger.ignore = true
-      '/:resource',
-      additionalMiddlewares,
-      handlers.getDocuments
-    );
-    this.router.post(
-      '/:resource/:id/locks',
-      // #swagger.tags = ['DOCSERVICE']
-      // #swagger.ignore = true
-      additionalMiddlewares,
-      handlers.lockDocument
-    );
-    this.router.get(
-      '/:resource/:id/locks',
-      // #swagger.ignore = true
-      // #swagger.tags = ['DOCSERVICE']
-      additionalMiddlewares,
-      handlers.getLocks
-    );
-    this.router.get(
-      // #swagger.ignore = true
-      // #swagger.tags = ['DOCSERVICE'],
-      '/:resource/:id/users',
-      additionalMiddlewares,
-      handlers.getDocUsers
-    );
-    this.router.post(
-      // #swagger.tags = ['DOCSERVICE'],
-      // #swagger.ignore = true
-      '/:resource/:id/users',
-      additionalMiddlewares,
-      handlers.postDocUser
-    );
-    this.router.delete(
-      /* #swagger.tags = ['DOCSERVICE'],
-         #swagger.ignore = true
-      */
-      '/:resource/:id/users/:user',
-      additionalMiddlewares,
-      handlers.delDocUser
-    );
-    this.router.post(
-      '/:resource/:id/:state/locks',
-      // #swagger.ignore = true
-      additionalMiddlewares,
-      handlers.lockDocument
-    );
-    this.router.get(
-      // #swagger.tags = ['DOCSERVICE']
-      // #swagger.ignore = true
-      '/:resource/:id/:state',
-      additionalMiddlewares,
-      handlers.getDoc
-    );
-    this.router.get(
-      /*
-        #swagger.tags = ['DOCSERVICE'],
-        #swagger.security = [{
-          "bearerAuth": []
-        }]
-        #swagger.summary = 'DOCS_GET_RESOURCE_SUMMARY'
-        #swagger.parameters['resource'] = {
-          hide: true
-        }
-        #swagger.parameters['id'] = {
-          in: 'path',
-          description: "DOCS_GET_ID_PARAM_DESCRIPTION"
-        }
-        #swagger.responses[200] = {
-          description: "DOCS_GET_RESPONSE_DESCRIPTION",
-          content: {
-            "application/json": {
-              schema:{
-                $ref: "DOCS_GET_RESPONSE_SCHEMA"
-              }
-            }
-          }
-        }
-        #swagger.responses[404] = {
-          description: "DOCS_GET_RESPONSE_404_DESCRIPTION",
-          content: {
-            "application/json": {
-              schema:{
-                $ref: "DOCS_GET_RESPONSE_404_SCHEMA"
-              }
-            }
-          }
-        }
-        */
-
-      '/:resource/:id',
-      additionalMiddlewares,
-      handlers.getDoc
-    );
-    this.router.postAsync(
-      // #swagger.tags = ['DOCSERVICE'],
-      // #swagger.ignore = true
-      '/:resource/:state',
-      additionalMiddlewares,
-      validateWriteAccess,
-      handlers.postDoc
-    );
-    this.router.post(
-      /*
-        #swagger.tags = ['DOCSERVICE'],
-        #swagger.security = [{
-          "bearerAuth": []
-        }]
-        #swagger.summary = 'DOCS_POST_RESOURCE_SUMMARY'
-        #swagger.parameters['resource'] = {
-          hide: true
-        }
-        #swagger.requestBody = {
-          required: true,
-          content: {
-            "application/json": {
-              schema: { $ref: "DOCS_POST_REQUEST_SCHEMA" }
-            }
-          }
-        }
-        #swagger.responses[200] = {
-          description: "DOCS_POST_RESPONSE_DESCRIPTION",
-          content: {
-            "application/json": {
-              schema:{
-                $ref: "DOCS_POST_RESPONSE_SCHEMA"
-              }
-            }
-          }
-        }
-        */
-      '/:resource',
-      additionalMiddlewares,
-      validateWriteAccess,
-      handlers.postDoc
-    );
-    this.router.put(
-      // #swagger.tags = ['DOCSERVICE'],
-      // #swagger.ignore = true
-      '/:resource/:id/state',
-      additionalMiddlewares,
-      validateWriteAccess,
-      handlers.putDocState
-    );
-    this.router.putAsync(
-      // #swagger.tags = ['DOCSERVICE'],
-      // #swagger.ignore = true
-      '/:resource/:id/:state',
-      additionalMiddlewares,
-      validateWriteAccess,
-      handlers.putDoc
-    );
-    this.router.putAsync(
-      /*
-        #swagger.tags = ['DOCSERVICE'],
-        #swagger.security = [{
-          "bearerAuth": []
-        }]
-        #swagger.summary = 'DOCS_PUT_RESOURCE_ID_SUMMARY'
-        #swagger.parameters['resource'] = {
-          hide: true
-        }
-        #swagger.parameters['id'] = {
-          in: 'path',
-          description: "DOCS_PUT_ID_PARAM_DESCRIPTION"
-        }
-        #swagger.requestBody = {
-          required: true,
-          content: {
-            "application/json": {
-              schema: { $ref: "DOCS_PUT_WRITE_SCHEMA" }
-            }
-          }
-        }
-        #swagger.responses[200] = {
-          description: "DOCS_PUT_RESPONSE_DESCRIPTION",
-          content: {
-            "application/json": {
-              schema:{
-                $ref: "DOCS_PUT_RESPONSE_SCHEMA"
-              }
-            }
-          }
-        }
-        */
-      '/:resource/:id',
-      additionalMiddlewares,
-      validateWriteAccess,
-      handlers.putDoc
-    );
-    this.router.patch(
-      // #swagger.tags = ['DOCSERVICE'],
-      // #swagger.ignore = true
-      '/:resource/:id',
-      additionalMiddlewares,
-      validateWriteAccess,
-      handlers.patchDoc
-    );
-    this.router.delete(
-      /*
-        #swagger.tags = ['DOCSERVICE'],
-        #swagger.security = [{
-          "bearerAuth": []
-        }]
-        #swagger.summary = 'DOCS_DELETE_RESOURCE_SUMMARY'
-        #swagger.parameters['id'] = {
-          in: 'path',
-          description: "DOCS_DELETE_ID_PARAM_DESCRIPTION"
-        }
-        #swagger.parameters['resource'] = {
-          hide: true
-        }
-        #swagger.responses[200] = {
-          description: "DOCS_DELETE_RESPONSE_DESCRIPTION",
-          content: {
-            "application/json": {
-              schema:{
-                $ref: "DOCS_DELETE_RESPONSE_SCHEMA"
-              }
-            }
-          }
-        }
-        */
-      '/:resource/:id',
-      additionalMiddlewares,
-      handlers.delDoc
-    );
-    this.router.delete(
-      // #swagger.tags = ['DOCSERVICE'],
-      // #swagger.ignore = true
-      '/:resource/:id/:state',
-      additionalMiddlewares,
-      handlers.delDoc
-    );
-    this.router.delete(
-      '/:resource/:id/locks/:lock',
-      // #swagger.ignore = true
-      additionalMiddlewares,
-      handlers.deleteLock
-    );
+    this.router.param('resource', param.attachResource(service.options));
+    this.router.get('/', handlers.getResources);
+    this.router.get('/:resource', additionalMiddlewares, handlers.getDocuments);
+    this.router.post('/:resource/:id/locks', additionalMiddlewares, handlers.lockDocument);
+    this.router.get('/:resource/:id/locks', additionalMiddlewares, handlers.getLocks);
+    this.router.get('/:resource/:id/users', additionalMiddlewares, handlers.getDocUsers);
+    this.router.post('/:resource/:id/users', additionalMiddlewares, handlers.postDocUser);
+    this.router.delete('/:resource/:id/users/:user', additionalMiddlewares, handlers.delDocUser);
+    this.router.post('/:resource/:id/:state/locks', additionalMiddlewares, handlers.lockDocument);
+    this.router.get('/:resource/:id/:state', additionalMiddlewares, handlers.getDoc);
+    this.router.get('/:resource/:id', additionalMiddlewares, handlers.getDoc);
+    this.router.postAsync('/:resource/:state', additionalMiddlewares, validateWriteAccess, handlers.postDoc);
+    this.router.post('/:resource', additionalMiddlewares, validateWriteAccess, handlers.postDoc);
+    this.router.put('/:resource/:id/state', additionalMiddlewares, validateWriteAccess, handlers.putDocState);
+    this.router.putAsync('/:resource/:id/:state', additionalMiddlewares, validateWriteAccess, handlers.putDoc);
+    this.router.putAsync('/:resource/:id', additionalMiddlewares, validateWriteAccess, handlers.putDoc);
+    this.router.patch('/:resource/:id', additionalMiddlewares, validateWriteAccess, handlers.patchDoc);
+    this.router.delete('/:resource/:id', additionalMiddlewares, handlers.delDoc);
+    this.router.delete('/:resource/:id/:state', additionalMiddlewares, handlers.delDoc);
+    this.router.delete('/:resource/:id/locks/:lock', additionalMiddlewares, handlers.deleteLock);
 
     return new Promise(resolve => {
       const ajvWriter = new Ajv({ allErrors: true, useAssign: true, strictTuples: false, strict: false });

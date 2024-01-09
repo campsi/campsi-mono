@@ -7,7 +7,7 @@ const { ObjectId } = require('mongodb');
 
 const createError = require('http-errors');
 const { getDocumentLockServiceOptions } = require('../modules/serviceOptions');
-const { getUsersCollectionName } = require('../../../auth/lib/modules/collectionNames');
+const { getUsersCollection } = require('../../../auth/lib/modules/collectionNames');
 const { paginateQuery } = require('../../../../lib/modules/paginateCursor');
 
 // Helper functions
@@ -557,7 +557,7 @@ module.exports.addUserToDocument = async function (resource, filter, userDetails
   return getDocUsersList(result.value);
 };
 
-module.exports.removeUserFromDocument = async function (resource, filter, userId, db) {
+module.exports.removeUserFromDocument = async function (resource, filter, userId, usersCollection) {
   const groups = [`${resource.label}_${filter._id}`];
   const [removeUserFromDoc, removeGroupFromUser] = await Promise.all([
     resource.collection.findOneAndUpdate(
@@ -565,7 +565,7 @@ module.exports.removeUserFromDocument = async function (resource, filter, userId
       { $unset: { [`users.${userId}`]: 1 } },
       { returnDocument: 'after', projection: { users: 1 } }
     ),
-    db.collection(getUsersCollectionName()).updateOne({ _id: createObjectId(userId) }, { $pull: { groups: { $in: groups } } })
+    usersCollection.updateOne({ _id: createObjectId(userId) }, { $pull: { groups: { $in: groups } } })
   ]);
 
   if (!removeUserFromDoc.value) {

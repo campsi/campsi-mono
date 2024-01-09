@@ -3,7 +3,7 @@ const handlers = require('./handlers');
 const helpers = require('../../../lib/modules/responseHelpers');
 const state = require('./state');
 const bcrypt = require('bcryptjs');
-const { getUsersCollectionName } = require('./modules/collectionNames');
+const { getUsersCollection } = require('./modules/collectionNames');
 const { isEmailValid } = require('./handlers');
 const editURL = require('edit-url');
 const debug = require('debug')('campsi:auth:local');
@@ -49,7 +49,7 @@ module.exports.signin = function (req, res, next) {
  * @param password
  * @param done
  */
-module.exports.callback = function localCallback(req, username, password, done) {
+module.exports.callback = async function localCallback(req, username, password, done) {
   const filter = {
     $or: [
       {
@@ -58,29 +58,29 @@ module.exports.callback = function localCallback(req, username, password, done) 
       { 'identities.local.username': username }
     ]
   };
-  req.db
-    .collection(getUsersCollectionName())
-    .findOne(filter)
-    .then(user => {
-      if (!user) {
-        debug('tried to find user with username', username, 'but none found');
+  try {
+    const usersCollection = await getUsersCollection(req.campsi, req.service.path);
+    const user = await usersCollection.findOne(filter);
+    if (!user) {
+      debug('tried to find user with username', username, 'but none found');
+      done(null, null);
+    }
+    debug('signin passport callback', username, user.identities.local.encryptedPassword, filter);
+    bcrypt.compare(password, user.identities.local.encryptedPassword, function (err, isMatch) {
+      if (err) {
+        debug('bcrypt password compare error', err, password, user.identities.local.encryptedPassword);
+      }
+      if (isMatch) {
+        user.identity = user.identities.local;
+
+        return done(null, user);
+      } else {
         done(null, null);
       }
-      debug('signin passport callback', username, user.identities.local.encryptedPassword, filter);
-      bcrypt.compare(password, user.identities.local.encryptedPassword, function (err, isMatch) {
-        if (err) {
-          debug('bcrypt password compare error', err, password, user.identities.local.encryptedPassword);
-        }
-        if (isMatch) {
-          user.identity = user.identities.local;
-
-          return done(null, user);
-        } else {
-          done(null, null);
-        }
-      });
-    })
-    .catch(done);
+    });
+  } catch (e) {
+    done(e);
+  }
 };
 
 module.exports.encryptPassword = function (password, saltRounds) {
@@ -114,7 +114,7 @@ module.exports.createRandomToken = function (username, salt) {
   return CryptoJS.AES.encrypt(new Date().toISOString() + username, salt).toString();
 };
 
-module.exports.signup = function (req, res) {
+module.exports.signup = async function (req, res) {
   const salt = req.authProvider.options.salt;
   const passwordRegex = new RegExp(req.authProvider.options.passwordRegex ?? '.*');
   if (!passwordRegex.test(req.body.password)) {
@@ -123,7 +123,7 @@ module.exports.signup = function (req, res) {
       new Error(`Invalid password, please respect this regex : ${req.authProvider.options.passwordRegex}`)
     );
   }
-  const users = req.db.collection(getUsersCollectionName());
+  const users = await getUsersCollection(req.campsi, req.service.path);
   const missingParameters = ['password', 'displayName', 'username'].filter(prop => {
     return typeof req.body[prop] === 'undefined' || req.body.prop === '';
   });
@@ -256,7 +256,8 @@ module.exports.validate = async function (req, res) {
   }
 
   try {
-    const result = await req.db.collection(getUsersCollectionName()).findOneAndUpdate(
+    const usersCollection = await getUsersCollection(req.campsi, req.service.path);
+    const result = await usersCollection.findOneAndUpdate(
       { 'identities.local.validationToken': req.query.token },
       {
         $set: { 'identities.local.validated': true },
@@ -308,7 +309,8 @@ module.exports.createResetPasswordToken = async (req, res) => {
     return helpers.error(res, new Error(`missing parameter(s) : ${missingParams.join(', ')}`));
   }
   try {
-    const user = await req.db.collection(getUsersCollectionName()).findOne({
+    const usersCollection = await getUsersCollection(req.campsi, req.service.path);
+    const user = await usersCollection.findOne({
       email: new RegExp('^' + req.body.email.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$', 'i')
     });
     if (!user) {
@@ -320,7 +322,7 @@ module.exports.createResetPasswordToken = async (req, res) => {
     }
     const opts = req.authProvider.options;
 
-    await this.updateUserWithPasswordResetToken(user, opts, req.db, req.service, req.body, req.headers);
+    await this.updateUserWithPasswordResetToken(user, opts, req.db, req.service, req.body, req.headers, usersCollection);
 
     return res.json({ success: true });
   } catch (e) {
@@ -338,14 +340,23 @@ module.exports.createResetPasswordToken = async (req, res) => {
  * @param {object} service
  * @param {object} body
  * @param {object} headers
+ * @param {import('mongodb').Collection} usersCollection
  */
-module.exports.updateUserWithPasswordResetToken = async (user, options, db, service, body = {}, headers = {}) => {
+module.exports.updateUserWithPasswordResetToken = async (
+  user,
+  options,
+  db,
+  service,
+  body = {},
+  headers = {},
+  usersCollection
+) => {
   const expirationDate = new Date();
   const exp = options.resetPasswordTokenExpiration || 10;
   expirationDate.setTime(expirationDate.getTime() + exp * 86400000);
 
   const token = this.createRandomToken(user.email, options.salt);
-  const out = await db.collection(getUsersCollectionName()).findOneAndUpdate(
+  const out = await usersCollection.findOneAndUpdate(
     { _id: user._id },
     {
       $set: {
@@ -372,7 +383,7 @@ module.exports.updateUserWithPasswordResetToken = async (user, options, db, serv
  * @param res
  * @return {*}
  */
-module.exports.resetPassword = function (req, res) {
+module.exports.resetPassword = async function (req, res) {
   const missingParams = getMissingParameters(req.body, ['password', 'token']);
   const passwordRegex = new RegExp(req.authProvider.options.passwordRegex ?? '.*');
   if (!passwordRegex.test(req.body.password)) {
@@ -384,9 +395,11 @@ module.exports.resetPassword = function (req, res) {
   if (missingParams.length > 0) {
     return helpers.error(res, new Error(`missing parameter(s) : ${missingParams.join(', ')}`));
   }
-  module.exports
-    .encryptPassword(req.body.password)
-    .then(function (encryptedPassword) {
+
+  try {
+    const encryptedPassword = await this.encryptPassword(req.body.password);
+    try {
+      const usersCollection = await getUsersCollection(req.campsi, req.service.path);
       const filter = {
         'identities.local.passwordResetToken.value': req.body.token,
         'identities.local.passwordResetToken.expiration': { $gt: new Date() }
@@ -401,28 +414,25 @@ module.exports.resetPassword = function (req, res) {
           passwordResetToken: ''
         }
       };
-      req.db
-        .collection(getUsersCollectionName())
-        .findOneAndUpdate(filter, update)
-        .then(result => {
-          if (!result.value) {
-            throw new Error('wrong reset token');
-          }
-          // we set the username as a param because if the update succeeds,
-          // the request is forwarded to the passport local callback and will
-          // authorize the user with the new password
-          req.body.username = result.value.identities.local.username || result.value.email;
-          return handlers.callback(req, res);
-        })
-        .catch(err => handlers.redirectWithError(req, res, err));
-    })
-    .catch(passwordEncryptionError => {
-      debug('Could not encrypt password', passwordEncryptionError);
-      helpers.error({
-        error: true,
-        message: 'an error occurred while encrypting the password specified'
-      });
+      const result = await usersCollection.findOneAndUpdate(filter, update);
+      if (!result.value) {
+        throw new Error('wrong reset token');
+      }
+      // we set the username as a param because if the update succeeds,
+      // the request is forwarded to the passport local callback and will
+      // authorize the user with the new password
+      req.body.username = result.value.identities.local.username || result.value.email;
+      return handlers.callback(req, res);
+    } catch (e) {
+      handlers.redirectWithError(req, res, e);
+    }
+  } catch (passwordEncryptionError) {
+    debug('Could not encrypt password', passwordEncryptionError);
+    helpers.error({
+      error: true,
+      message: 'an error occurred while encrypting the password specified'
     });
+  }
 };
 
 /**
@@ -432,7 +442,7 @@ module.exports.resetPassword = function (req, res) {
  * @param res
  * @return {*}
  */
-module.exports.updatePassword = function (req, res) {
+module.exports.updatePassword = async function (req, res) {
   const missingParams = getMissingParameters(req.body, ['new', 'confirm']);
   const passwordRegex = new RegExp(req.authProvider.options.passwordRegex ?? '.*');
   if (!passwordRegex.test(req.body.new)) {
@@ -449,12 +459,11 @@ module.exports.updatePassword = function (req, res) {
     return helpers.error(res, new Error('new and confirmation password do not match'));
   }
 
-  module.exports
-    .encryptPassword(req.body.new)
-    .then(encryptedPassword => {
-      const filter = {
-        _id: req.user._id
-      };
+  try {
+    const encryptedPassword = await this.encryptPassword(req.body.new);
+    try {
+      const usersCollection = await getUsersCollection(req.campsi, req.service.path);
+      const filter = { _id: req.user._id };
 
       const update = {
         $set: {
@@ -464,21 +473,16 @@ module.exports.updatePassword = function (req, res) {
         $unset: { token: '' }
       };
 
-      req.db
-        .collection(getUsersCollectionName())
-        .findOneAndUpdate(filter, update)
-        .then(() => {
-          return res.json({ success: true });
-        })
-        .catch(err => {
-          return helpers.error(res, err);
-        });
-    })
-    .catch(passwordEncryptionError => {
-      debug('Could not encrypt password', passwordEncryptionError);
-      helpers.error({
-        error: true,
-        message: 'an error occurred while encrypting the new password'
-      });
+      await usersCollection.findOneAndUpdate(filter, update);
+      return res.json({ success: true });
+    } catch (e) {
+      return helpers.error(res, e);
+    }
+  } catch (passwordEncryptionError) {
+    debug('Could not encrypt password', passwordEncryptionError);
+    helpers.error({
+      error: true,
+      message: 'an error occurred while encrypting the new password'
     });
+  }
 };

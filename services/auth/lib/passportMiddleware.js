@@ -1,4 +1,4 @@
-const { getUsersCollectionName } = require('./modules/collectionNames');
+const { getUsersCollection } = require('./modules/collectionNames');
 const { deleteExpiredTokens } = require('./tokens');
 const findCallback = require('./modules/findCallback');
 const builder = require('./modules/queryBuilder');
@@ -23,9 +23,9 @@ function proxyVerifyCallback(fn, args, done) {
  *
  * @param req
  */
-module.exports = function passportMiddleware(req) {
+module.exports = async function passportMiddleware(req) {
   const db = req.db;
-  const users = req.db.collection(getUsersCollectionName());
+  const users = await getUsersCollection(req.campsi, req.service.path);
   const provider = req.authProvider;
   const availableProviders = req.authProviders;
   return proxyVerifyCallback(provider.callback, arguments, async function (err, profile, passportCallback) {
@@ -80,7 +80,7 @@ module.exports = function passportMiddleware(req) {
       const result = await users.findOneAndUpdate(filter, update, { returnDocument: 'after' });
       req.authBearerToken = updateToken.value;
       passportCallback(null, result.value);
-      await deleteExpiredTokens(existingUser.tokens, existingUser._id, db, providersToRemove);
+      await deleteExpiredTokens(existingUser.tokens, existingUser._id, db, providersToRemove, users);
       // We dispatch an event here to be able to execute side effects when a user log in, i.e. send the event to a 3rd party CRM
       req.service.emit('login', result.value);
     } catch (e) {

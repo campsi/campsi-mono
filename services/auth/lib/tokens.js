@@ -1,7 +1,6 @@
 const debug = require('debug')('campsi:auth:tokens');
-const { getUsersCollectionName } = require('./modules/collectionNames');
 
-async function deleteExpiredTokens(tokens, userId, db, providersToRemove = []) {
+async function deleteExpiredTokens(tokens, userId, db, providersToRemove = [], usersCollection) {
   try {
     const validTokens = {};
     const expiredTokensLog = [];
@@ -31,13 +30,11 @@ async function deleteExpiredTokens(tokens, userId, db, providersToRemove = []) {
 
     if (expiredTokensLog.length) {
       try {
-        await db.collection(`${getUsersCollectionName()}.tokens_log`).insertMany(expiredTokensLog);
+        await db.collection(`${usersCollection.collectionName}.tokens_log`).insertMany(expiredTokensLog);
       } catch (ex) {
         debug(ex);
       }
-      await db
-        .collection(getUsersCollectionName())
-        .updateOne({ _id: userId }, { $set: { tokens: validTokens } }, { returnDocument: 'after' });
+      await usersCollection.updateOne({ _id: userId }, { $set: { tokens: validTokens } }, { returnDocument: 'after' });
     }
   } catch (e) {
     debug(e);

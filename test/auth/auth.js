@@ -412,10 +412,8 @@ describe('Auth API', () => {
             res.should.have.status(200);
             res.should.be.json;
             res.body.should.be.a('object');
-            res.body.should.have.property('displayName');
-            res.body.should.have.property('email');
-            res.body.should.have.property('identities');
-            res.body.should.have.property('tokens');
+            res.body.should.have.property('redirectURI');
+            res.body.should.have.property('token');
             done();
           });
       });
@@ -809,6 +807,7 @@ describe('Auth API', () => {
       expiredUserTokens.length.should.be.eq(6);
     });
   });
+
   describe('extract user personal data', () => {
     it('should extract personal data', async () => {
       const campsi = context.campsi;

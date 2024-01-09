@@ -9,6 +9,7 @@ describe('Unit Test', () => {
       assert.equal('Y2FtcHNp', btoa('campsi'));
       done();
     });
+
     it('should return a valid decoded string', done => {
       assert.equal('campsi', atob('Y2FtcHNp'));
       done();

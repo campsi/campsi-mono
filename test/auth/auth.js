@@ -511,9 +511,10 @@ describe('Auth API', () => {
         password: 'password'
       };
       createUser(chai, campsi, admin, true).then(adminToken => {
-        campsi.db
-          .collection(getUsersCollectionName())
-          .findOneAndUpdate({ email: admin.email }, { $set: { isAdmin: true } }, { returnDocument: 'after' })
+        getUsersCollection(campsi)
+          .then(usersCollection =>
+            usersCollection.findOneAndUpdate({ email: admin.email }, { $set: { isAdmin: true } }, { returnDocument: 'after' })
+          )
           .then(updateResult => {
             createUser(chai, campsi, glenda).then(userToken => {
               chai
@@ -600,7 +601,8 @@ describe('Auth API', () => {
         res.body.should.have.property('id');
 
         try {
-          const doc = await campsi.db.collection(getUsersCollectionName()).findOne({ email: robert.email });
+          const usersCollection = await getUsersCollection(campsi);
+          const doc = await usersCollection.findOne({ email: robert.email });
           doc.should.be.a('object');
           res.body.id.should.be.eq(doc._id.toString());
           done();

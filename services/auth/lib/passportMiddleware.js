@@ -55,12 +55,14 @@ module.exports = function passportMiddleware(req) {
       let providersToRemove = [];
 
       if (existingProvidersIdentities.length >= 1 && !existingProvidersIdentities.includes(provider.name)) {
-        // user exists, has one on more identities, but not the one we are trying to login with: we return an error with providers the user should login with
+        // user exists, has one on more identities, but not the one we are trying to log in with:
+        // we return an error with providers the user should log in with
         return passportCallback(
           createError(409, `user already exists with identity providers ${existingProvidersIdentities.join(', ')}`)
         );
       } else if (existingProvidersIdentities.length > 1) {
-        // user exists and has multiple identities: we update it by removing the other ones, to keep only the one the user is trying to login with
+        // user exists and has multiple identities:
+        // we update it by removing the other ones, to keep only the one the user is trying to log in with
         delete update.$set[`identities.${provider.name}`];
         const udpatedIdentities = { [provider.name]: profile.identity };
         Object.entries(existingUser.identities).forEach(([key, value]) => {
@@ -74,13 +76,13 @@ module.exports = function passportMiddleware(req) {
       /*
        *  2 other cases:
        * user exists, but has no identities (for instance: invitation): we update it
-       * user exists, has only one identity: the one we are trying to login with: we update it too
+       * user exists, has only one identity: the one we are trying to log in with: we update it too
        */
 
+      await deleteExpiredTokens(existingUser.tokens, existingUser._id, db, providersToRemove);
       const result = await users.findOneAndUpdate(filter, update, { returnDocument: 'after' });
       req.authBearerToken = updateToken.value;
       passportCallback(null, result.value);
-      await deleteExpiredTokens(existingUser.tokens, existingUser._id, db, providersToRemove);
       // We dispatch an event here to be able to execute side effects when a user log in, i.e. send the event to a 3rd party CRM
       req.service.emit('login', result.value);
     } catch (e) {

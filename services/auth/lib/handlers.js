@@ -36,27 +36,14 @@ async function tokenMaintenance(req, res) {
         }
       },
       {
+        $match: {
+          'expiredTokens.1': { $exists: true }
+        }
+      },
+      {
         $project: {
           user: 1,
-          expiredTokens: 1,
-          tokens: {
-            $gt: [
-              {
-                $size: '$expiredTokens'
-              },
-              1
-            ]
-          }
-        }
-      },
-      {
-        $match: {
-          tokens: true
-        }
-      },
-      {
-        $project: {
-          user: 1
+          expiredTokens: { $arrayToObject: '$expiredTokens' }
         }
       }
     ];
@@ -65,7 +52,7 @@ async function tokenMaintenance(req, res) {
 
     for await (const user of cursor) {
       try {
-        await deleteExpiredTokens(user.user.tokens, user._id, req.db, usersCollection);
+        await deleteExpiredTokens(user.user.tokens, user._id, req.db, undefined, usersCollection);
       } catch (e) {
         console.log(e);
       }
@@ -218,6 +205,7 @@ function getProviders(req, res) {
 
 async function callback(req, res, next) {
   let { redirectURI } = state.get(req);
+  const redirectUriFromState = !!redirectURI;
   if (!redirectURI && req.authProvider.name === 'local') {
     redirectURI = req.query.redirectURI;
   }
@@ -243,7 +231,7 @@ async function callback(req, res, next) {
         delete req.query.redirectURI;
         return redirectWithError(req, res, createError(400, 'invalid redirectURI'), next);
       }
-      if (req.method === 'GET') {
+      if (req.method === 'GET' || redirectUriFromState) {
         res.redirect(
           editURL(redirectURI, obj => {
             obj.query.access_token = req.authBearerToken;
@@ -300,7 +288,7 @@ async function getUsers(req, res) {
   if (req.user && req.user.isAdmin) {
     try {
       const usersCollection = await getUsersCollection(req.campsi, req.service.path);
-      const users = usersCollection
+      const users = await usersCollection
         .find(getUserFilterFromQuery(req.query), {
           projection: { 'identities.local.encryptedPassword': 0 }
         })

@@ -1,5 +1,14 @@
 const debug = require('debug')('campsi:auth:tokens');
 
+/**
+ *
+ * @param {Object}  tokens
+ * @param {import('mongodb').ObjectId}  userId
+ * @param {import('mongodb').Db}  db
+ * @param {array} [providersToRemove = []]
+ * @param {import('mongodb').Collection}  usersCollection
+ * @returns {Promise<void>}
+ */
 async function deleteExpiredTokens(tokens, userId, db, providersToRemove = [], usersCollection) {
   try {
     const validTokens = {};
@@ -11,21 +20,17 @@ async function deleteExpiredTokens(tokens, userId, db, providersToRemove = [], u
 
     // iterate over users tokens
     for (const [key, token] of Object.entries(tokens)) {
-      if (token.expiration > new Date() && !providersToRemove.includes(token.grantedByProvider)) {
-        validTokens[`${key}`] = token;
-      } else if (providersToRemove.includes(token.grantedByProvider)) {
-        expiredTokensLog.push({
-          userId,
-          token: key,
-          ...token
-        });
-      } else {
-        expiredTokensLog.push({
-          userId,
-          token: key,
-          ...token
-        });
+      if (!providersToRemove.includes(token.grantedByProvider)) {
+        if (token.expiration > new Date()) {
+          validTokens[`${key}`] = token;
+          continue;
+        }
       }
+      expiredTokensLog.push({
+        userId,
+        token: key,
+        ...token
+      });
     }
 
     if (expiredTokensLog.length) {

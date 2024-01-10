@@ -26,7 +26,7 @@ function dispatchUserSignupEvent(req, user) {
   });
 }
 
-module.exports.middleware = function (localProvider) {
+const middleware = function (localProvider) {
   return (req, res, next) => {
     req.authProvider = localProvider;
     state.serialize(req);
@@ -34,7 +34,7 @@ module.exports.middleware = function (localProvider) {
   };
 };
 
-module.exports.signin = function (req, res, next) {
+const signin = function (req, res, next) {
   // could be a one-liner, but I find this more explicit
   // the real signin method is the callback below
   return handlers.callback(req, res, next);
@@ -49,7 +49,7 @@ module.exports.signin = function (req, res, next) {
  * @param password
  * @param done
  */
-module.exports.callback = async function localCallback(req, username, password, done) {
+const callback = async function localCallback(req, username, password, done) {
   const filter = {
     $or: [
       {
@@ -83,7 +83,7 @@ module.exports.callback = async function localCallback(req, username, password, 
   }
 };
 
-module.exports.encryptPassword = function (password, saltRounds) {
+const encryptPassword = function (password, saltRounds) {
   function byteLength(str) {
     // returns the byte length of an utf8 string
     let s = str.length;
@@ -110,11 +110,11 @@ module.exports.encryptPassword = function (password, saltRounds) {
   });
 };
 
-module.exports.createRandomToken = function (username, salt) {
+const createRandomToken = function (username, salt) {
   return CryptoJS.AES.encrypt(new Date().toISOString() + username, salt).toString();
 };
 
-module.exports.signup = async function (req, res) {
+const signup = async function (req, res) {
   const salt = req.authProvider.options.salt;
   const passwordRegex = new RegExp(req.authProvider.options.passwordRegex ?? '.*');
   if (!passwordRegex.test(req.body.password)) {
@@ -123,9 +123,6 @@ module.exports.signup = async function (req, res) {
       new Error(`Invalid password, please respect this regex : ${req.authProvider.options.passwordRegex}`)
     );
   }
-  const collections = await req.campsi.db.listCollections({}, { nameOnly: true }).toArray();
-  const dbname = req.campsi.db.databaseName;
-  const dbnamespace = req.campsi.db.namespace;
   const users = await getUsersCollection(req.campsi, req.service.path);
   const missingParameters = ['password', 'displayName', 'username'].filter(prop => {
     return typeof req.body[prop] === 'undefined' || req.body.prop === '';
@@ -180,8 +177,7 @@ module.exports.signup = async function (req, res) {
     }
   }
   const email = String(req.body.email || req.body.username).toLowerCase();
-  module.exports
-    .encryptPassword(req.body.password)
+  encryptPassword(req.body.password)
     .then(async encryptedPassword => {
       const user = {
         displayName: req.body.displayName,
@@ -194,7 +190,7 @@ module.exports.signup = async function (req, res) {
             username: req.body.username,
             encryptedPassword,
             validated: false,
-            validationToken: module.exports.createRandomToken(req.body.username, salt)
+            validationToken: createRandomToken(req.body.username, salt)
           }
         }
       };
@@ -253,7 +249,7 @@ module.exports.signup = async function (req, res) {
  * @param {string} req.query.redirectURI
  * @param {*} res
  */
-module.exports.validate = async function (req, res) {
+const validate = async function (req, res) {
   if (!req.query.token) {
     return helpers.error(res, new Error('you must provide a validation token'));
   }
@@ -306,7 +302,7 @@ module.exports.validate = async function (req, res) {
  * @param res
  * @return {*}
  */
-module.exports.createResetPasswordToken = async (req, res) => {
+const createResetPasswordToken = async (req, res) => {
   const missingParams = getMissingParameters(req.body, ['email']);
   if (missingParams.length > 0) {
     return helpers.error(res, new Error(`missing parameter(s) : ${missingParams.join(', ')}`));
@@ -325,7 +321,7 @@ module.exports.createResetPasswordToken = async (req, res) => {
     }
     const opts = req.authProvider.options;
 
-    await this.updateUserWithPasswordResetToken(user, opts, req.db, req.service, req.body, req.headers, usersCollection);
+    await updateUserWithPasswordResetToken(user, opts, req.db, req.service, req.body, req.headers, usersCollection);
 
     return res.json({ success: true });
   } catch (e) {
@@ -345,20 +341,12 @@ module.exports.createResetPasswordToken = async (req, res) => {
  * @param {object} headers
  * @param {import('mongodb').Collection} usersCollection
  */
-module.exports.updateUserWithPasswordResetToken = async (
-  user,
-  options,
-  db,
-  service,
-  body = {},
-  headers = {},
-  usersCollection
-) => {
+const updateUserWithPasswordResetToken = async (user, options, db, service, body = {}, headers = {}, usersCollection) => {
   const expirationDate = new Date();
   const exp = options.resetPasswordTokenExpiration || 10;
   expirationDate.setTime(expirationDate.getTime() + exp * 86400000);
 
-  const token = this.createRandomToken(user.email, options.salt);
+  const token = createRandomToken(user.email, options.salt);
   const out = await usersCollection.findOneAndUpdate(
     { _id: user._id },
     {
@@ -386,7 +374,7 @@ module.exports.updateUserWithPasswordResetToken = async (
  * @param res
  * @return {*}
  */
-module.exports.resetPassword = async function (req, res) {
+const resetPassword = async function (req, res) {
   const missingParams = getMissingParameters(req.body, ['password', 'token']);
   const passwordRegex = new RegExp(req.authProvider.options.passwordRegex ?? '.*');
   if (!passwordRegex.test(req.body.password)) {
@@ -400,7 +388,7 @@ module.exports.resetPassword = async function (req, res) {
   }
 
   try {
-    const encryptedPassword = await this.encryptPassword(req.body.password);
+    const encryptedPassword = await encryptPassword(req.body.password);
     try {
       const usersCollection = await getUsersCollection(req.campsi, req.service.path);
       const filter = {
@@ -445,7 +433,7 @@ module.exports.resetPassword = async function (req, res) {
  * @param res
  * @return {*}
  */
-module.exports.updatePassword = async function (req, res) {
+const updatePassword = async function (req, res) {
   const missingParams = getMissingParameters(req.body, ['new', 'confirm']);
   const passwordRegex = new RegExp(req.authProvider.options.passwordRegex ?? '.*');
   if (!passwordRegex.test(req.body.new)) {
@@ -463,7 +451,7 @@ module.exports.updatePassword = async function (req, res) {
   }
 
   try {
-    const encryptedPassword = await this.encryptPassword(req.body.new);
+    const encryptedPassword = await encryptPassword(req.body.new);
     try {
       const usersCollection = await getUsersCollection(req.campsi, req.service.path);
       const filter = { _id: req.user._id };
@@ -488,4 +476,18 @@ module.exports.updatePassword = async function (req, res) {
       message: 'an error occurred while encrypting the new password'
     });
   }
+};
+
+module.exports = {
+  middleware,
+  signin,
+  callback,
+  encryptPassword,
+  createRandomToken,
+  signup,
+  validate,
+  createResetPasswordToken,
+  resetPassword,
+  updateUserWithPasswordResetToken,
+  updatePassword
 };

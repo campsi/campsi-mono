@@ -102,8 +102,6 @@ async function me(req, res) {
   }
   delete req.user.identities?.local?.encryptedPassword;
 
-  const collections = await req.campsi.db.listCollections({}, { nameOnly: true }).toArray();
-
   res.json(req.user);
 
   try {

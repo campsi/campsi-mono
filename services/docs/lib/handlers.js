@@ -8,7 +8,7 @@ const { ObjectId } = require('mongodb');
 const ValidationError = require('../../../lib/errors/ValidationError');
 const createError = require('http-errors');
 const { getDocumentLockServiceOptions } = require('./modules/serviceOptions');
-const { getUsersCollection } = require('../../auth/lib/modules/collectionNames');
+const { getUsersCollection } = require('../../auth/lib/modules/authCollections');
 
 const getEmitPayload = (req, additionalProps) => {
   return Object.assign(

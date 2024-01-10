@@ -1,5 +1,5 @@
 const passport = require('@passport-next/passport');
-const { getUsersCollection } = require('../modules/collectionNames');
+const { getUsersCollection } = require('../modules/authCollections');
 const BearerStrategy = require('@passport-next/passport-http-bearer').Strategy;
 const debug = require('debug')('campsi:auth:bearerMiddleware');
 

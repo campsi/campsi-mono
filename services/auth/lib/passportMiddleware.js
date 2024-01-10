@@ -1,4 +1,4 @@
-const { getUsersCollection } = require('./modules/collectionNames');
+const { getUsersCollection } = require('./modules/authCollections');
 const { deleteExpiredTokens } = require('./tokens');
 const findCallback = require('./modules/findCallback');
 const builder = require('./modules/queryBuilder');

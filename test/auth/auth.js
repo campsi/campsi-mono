@@ -12,7 +12,7 @@ const createUser = require('../helpers/createUser');
 const debug = require('debug')('campsi:test');
 const setupBeforeEach = require('../helpers/setupBeforeEach');
 const { ObjectId } = require('mongodb');
-const { getUsersCollection } = require('../../services/auth/lib/modules/collectionNames');
+const { getUsersCollection } = require('../../services/auth/lib/modules/authCollections');
 const expect = chai.expect;
 format.extend(String.prototype);
 chai.use(chaiHttp);

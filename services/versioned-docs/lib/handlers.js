@@ -4,7 +4,7 @@ const documentService = require('./services/document');
 const userService = require('./services/user');
 const buildLink = require('../../../lib/modules/buildLink');
 const createError = require('http-errors');
-const { getUsersCollection } = require('../../auth/lib/modules/collectionNames');
+const { getUsersCollection } = require('../../auth/lib/modules/authCollections');
 const getEmitPayload = (req, additionalProps) => {
   return Object.assign(
     {

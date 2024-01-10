@@ -7,7 +7,7 @@ const debug = require('debug')('campsi:service:auth');
 const { ObjectId } = require('mongodb');
 const createError = require('http-errors');
 const { deleteExpiredTokens } = require('./tokens');
-const { getUsersCollection } = require('./modules/collectionNames');
+const { getUsersCollection } = require('./modules/authCollections');
 const createObjectId = require('../../../lib/modules/createObjectId');
 const disposableDomains = require('disposable-email-domains');
 

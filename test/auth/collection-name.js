@@ -12,7 +12,6 @@ const chai = require('chai');
 const CampsiServer = require('campsi');
 const chaiHttp = require('chai-http');
 const format = require('string-format');
-const { getUsersCollectionName, getSessionCollectionName } = require('../../services/auth/lib/modules/collectionNames');
 const AuthService = require('../../services/auth/lib');
 const { emptyDatabase } = require('../helpers/emptyDatabase');
 const expect = chai.expect;

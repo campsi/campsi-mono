@@ -1,6 +1,5 @@
 const CampsiServer = require('campsi');
 const { emptyDatabase } = require('./emptyDatabase');
-const debug = require('debug')('campsi:test');
 
 module.exports =
   (config, services, context, cb = () => {}) =>

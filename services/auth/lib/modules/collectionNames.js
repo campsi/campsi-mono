@@ -1,9 +1,11 @@
-/* eslint-disable no-process-exit */
-/* eslint-disable node/no-unpublished-require */
-const config = require('config');
-
-function getSessionCollectionName() {
-  return config?.services?.auth?.options?.session?.collectionName || '__sessions__';
+/**
+ * return the session collection
+ * @param {import('../../../../lib/server')} campsi
+ * @param {string} [servicePath]
+ * @returns {Promise<import('mongodb').Collection>}
+ */
+async function getSessionCollection(campsi, servicePath) {
+  return getAuthCollection(campsi, servicePath, 'Session');
 }
 
 /**
@@ -13,6 +15,20 @@ function getSessionCollectionName() {
  * @returns {Promise<import('mongodb').Collection>}
  */
 async function getUsersCollection(campsi, servicePath) {
+  return getAuthCollection(campsi, servicePath, 'Users');
+}
+
+/**
+ * return the users or sessions collection
+ * @param {import('../../../../lib/server')} campsi
+ * @param {string} [servicePath]
+ * @param {('Users'|'Session')} [collectionType]
+ * @returns {Promise<import('mongodb').Collection>}
+ */
+async function getAuthCollection(campsi, servicePath, collectionType) {
+  if (!['Users', 'Session'].includes(collectionType)) {
+    throw new Error('Invalid collectionType');
+  }
   let collectionName;
   let authPath;
 
@@ -21,7 +37,7 @@ async function getUsersCollection(campsi, servicePath) {
     if (service) {
       const className = service.constructor.name;
       if (className === 'AuthService') {
-        collectionName = service.getUsersCollectionName();
+        collectionName = service[`get${collectionType}CollectionName`]();
       }
       authPath = service.options.authServicePath;
     }
@@ -36,7 +52,7 @@ async function getUsersCollection(campsi, servicePath) {
     if (!authPath) {
       throw new Error('No AuthService found');
     }
-    collectionName = campsi.services.get(authPath).getUsersCollectionName();
+    collectionName = campsi.services.get(authPath)[`get${collectionType}CollectionName`]();
   }
 
   const collectionExists = !!(await campsi.db.listCollections({ name: collectionName }, { nameOnly: true }).toArray()).length;
@@ -48,6 +64,6 @@ async function getUsersCollection(campsi, servicePath) {
 }
 
 module.exports = {
-  getSessionCollectionName,
+  getSessionCollection,
   getUsersCollection
 };

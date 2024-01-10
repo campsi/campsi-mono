@@ -19,6 +19,7 @@ format.extend(String.prototype);
 chai.use(chaiHttp);
 
 const services = {
+  Auth: require('../../services/auth/lib'),
   Docs: require('../../services/docs/lib')
 };
 
@@ -29,7 +30,11 @@ describe('Events', () => {
   beforeEach(done => {
     emptyDatabase(config).then(() => {
       campsi = new CampsiServer(config.campsi);
-      campsi.mount('docs', new services.Docs(config.services.docs));
+      Object.entries(services).map(([name, service]) => {
+        // eslint-disable-next-line new-cap
+        return campsi.mount(name.toLowerCase(), new service(config.services[name.toLowerCase()]));
+      });
+
       campsi.app.use((req, res, next) => {
         req.user = me;
         next();

@@ -45,13 +45,13 @@ describe('Auth API', () => {
    */
   describe('Collection name tests', async () => {
     it('it should return the default name of the users collection', done => {
-      const usersCollectionName = getUsersCollectionName();
+      const usersCollectionName = context.campsi.services.get('auth').getUsersCollectionName();
       expect(usersCollectionName).equal('__users__');
       done();
     });
 
     it('it should return the default name of the session collection', done => {
-      const sessionCollectionName = getSessionCollectionName();
+      const sessionCollectionName = context.campsi.services.get('auth').getSessionCollectionName();
       expect(sessionCollectionName).equal('__sessions__');
       done();
     });

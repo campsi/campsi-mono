@@ -12,6 +12,7 @@ chai.use(chaiHttp);
 chai.should();
 
 const services = {
+  Auth: require('../../services/auth/lib'),
   VersionedDocs: require('../../services/versioned-docs/lib')
 };
 
@@ -35,10 +36,7 @@ describe('VersionedDocs API', () => {
 
   describe('/POST documents', () => {
     it('it should return a newly created document', async () => {
-      const res = await chai
-        .request(context.campsi.app)
-        .post('/versioneddocs/contracts')
-        .send(current);
+      const res = await chai.request(context.campsi.app).post('/versioneddocs/contracts').send(current);
       res.should.have.status(200);
       res.should.be.json;
       res.body.should.be.a('object');
@@ -52,10 +50,7 @@ describe('VersionedDocs API', () => {
   describe('/POST invalid document', () => {
     it('it should return a validation error', async () => {
       const { content, ...incompleteDocPayload } = current;
-      const res = await chai
-        .request(context.campsi.app)
-        .post('/versioneddocs/contracts')
-        .send(incompleteDocPayload);
+      const res = await chai.request(context.campsi.app).post('/versioneddocs/contracts').send(incompleteDocPayload);
       res.should.have.status(500);
       res.should.be.json;
       res.body.should.be.a('object');

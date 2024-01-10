@@ -123,6 +123,9 @@ module.exports.signup = async function (req, res) {
       new Error(`Invalid password, please respect this regex : ${req.authProvider.options.passwordRegex}`)
     );
   }
+  const collections = await req.campsi.db.listCollections({}, { nameOnly: true }).toArray();
+  const dbname = req.campsi.db.databaseName;
+  const dbnamespace = req.campsi.db.namespace;
   const users = await getUsersCollection(req.campsi, req.service.path);
   const missingParameters = ['password', 'displayName', 'username'].filter(prop => {
     return typeof req.body[prop] === 'undefined' || req.body.prop === '';

@@ -75,6 +75,10 @@ describe('User Fetching', () => {
                 users[0].should.be.a('object');
                 users[0].email.should.eq(glenda.email);
                 done();
+              })
+              .catch(err => {
+                debug(`received an error from fetchUsers: ${err.message}`);
+                done(err);
               });
           });
       });

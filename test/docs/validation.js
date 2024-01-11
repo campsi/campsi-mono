@@ -76,7 +76,7 @@ describe('Validation', () => {
             res.body.should.have.a.property('message').that.is.a('string');
             res.body.message.should.eq('Validation Error');
             res.body.should.have.a.property('errors').that.is.an('array');
-            res.body.errors.should.have.a.lengthOf(1);
+            res.body.errors.should.have.a.lengthOf(2);
             done();
           });
       });

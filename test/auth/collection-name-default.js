@@ -4,14 +4,11 @@ process.env.NODE_CONFIG_DIR = './test/config';
 
 // Require the dev-dependencies
 const debug = require('debug')('campsi:test');
-const { MongoClient } = require('mongodb');
 const config = require('config');
 const chai = require('chai');
 const CampsiServer = require('campsi');
-const mongoUriBuilder = require('mongo-uri-builder');
 const chaiHttp = require('chai-http');
 const format = require('string-format');
-const { getUsersCollectionName, getSessionCollectionName } = require('../../services/auth/lib/modules/collectionNames');
 const AuthService = require('../../services/auth/lib');
 const { emptyDatabase } = require('../helpers/emptyDatabase');
 const expect = chai.expect;
@@ -45,13 +42,13 @@ describe('Auth API', () => {
    */
   describe('Collection name tests', async () => {
     it('it should return the default name of the users collection', done => {
-      const usersCollectionName = getUsersCollectionName();
+      const usersCollectionName = context.campsi.services.get('auth').getUsersCollectionName();
       expect(usersCollectionName).equal('__users__');
       done();
     });
 
     it('it should return the default name of the session collection', done => {
-      const sessionCollectionName = getSessionCollectionName();
+      const sessionCollectionName = context.campsi.services.get('auth').getSessionCollectionName();
       expect(sessionCollectionName).equal('__sessions__');
       done();
     });

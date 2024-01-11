@@ -387,7 +387,7 @@ module.exports.addUserToDocument = async (resource, filter, userDetails) => {
   return getDocUsersList(doc.value);
 };
 
-module.exports.removeUserFromDocument = async (resource, filter, userId, db) => {
+module.exports.removeUserFromDocument = async (resource, filter, userId, usersCollection) => {
   // remove user from doc
   const [removeUserFromDoc, removeGroupFromUser] = await Promise.all([
     resource.currentCollection.findOneAndUpdate(
@@ -395,9 +395,10 @@ module.exports.removeUserFromDocument = async (resource, filter, userId, db) => 
       { $unset: { [`users.${userId}`]: 1 } },
       { returnDocument: 'after', projection: { users: 1 } }
     ),
-    db
-      .collection('__users__')
-      .updateOne({ _id: createObjectId(userId) }, { $pull: { groups: { $in: [`${resource.label}_${filter._id}`] } } })
+    usersCollection.updateOne(
+      { _id: createObjectId(userId) },
+      { $pull: { groups: { $in: [`${resource.label}_${filter._id}`] } } }
+    )
   ]);
 
   if (!removeUserFromDoc.value) {

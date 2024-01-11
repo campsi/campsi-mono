@@ -8,6 +8,7 @@ const { ObjectId } = require('mongodb');
 const ValidationError = require('../../../lib/errors/ValidationError');
 const createError = require('http-errors');
 const { getDocumentLockServiceOptions } = require('./modules/serviceOptions');
+const { getUsersCollection } = require('../../auth/lib/modules/authCollections');
 
 const getEmitPayload = (req, additionalProps) => {
   return Object.assign(
@@ -254,13 +255,16 @@ module.exports.postDocUser = function (req, res) {
     .catch(err => helpers.notFound(res, err));
 };
 
-module.exports.delDocUser = function (req, res) {
-  documentService
-    .removeUserFromDocument(req.resource, req.filter, req.params.user, req.db)
-    .then(users => userService.fetchUsers(users, req.options, req.service.server))
-    .then(result => helpers.json(res, result))
-    .then(() => req.service.emit('document/users/removed', getEmitPayload(req, { removedUserId: req.params.user })))
-    .catch(err => helpers.notFound(res, err));
+module.exports.delDocUser = async function (req, res) {
+  try {
+    const usersCollection = await getUsersCollection(req.campsi, req.service.path);
+    const users = await documentService.removeUserFromDocument(req.resource, req.filter, req.params.user, usersCollection);
+    const result = await userService.fetchUsers(users, req.options, req.service.server);
+    helpers.json(res, result);
+    req.service.emit('document/users/removed', getEmitPayload(req, { removedUserId: req.params.user }));
+  } catch (e) {
+    helpers.notFound(res, e);
+  }
 };
 
 module.exports.softDelete = function (req, res) {

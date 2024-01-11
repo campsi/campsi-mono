@@ -12,7 +12,7 @@ const createUser = require('../helpers/createUser');
 const debug = require('debug')('campsi:test');
 const setupBeforeEach = require('../helpers/setupBeforeEach');
 const { ObjectId } = require('mongodb');
-const { getUsersCollectionName } = require('../../services/auth/lib/modules/collectionNames');
+const { getUsersCollection } = require('../../services/auth/lib/modules/authCollections');
 const expect = chai.expect;
 format.extend(String.prototype);
 chai.use(chaiHttp);
@@ -372,9 +372,8 @@ describe('Auth API', () => {
             // bdd token must be undefined
             const filter = {};
             filter['token.value'] = token;
-            campsi.db
-              .collection(getUsersCollectionName())
-              .findOne(filter)
+            getUsersCollection(campsi)
+              .then(usersCollection => usersCollection.findOne(filter))
               .then(user => {
                 expect(user).to.be.null;
                 done();
@@ -512,9 +511,10 @@ describe('Auth API', () => {
         password: 'password'
       };
       createUser(chai, campsi, admin, true).then(adminToken => {
-        campsi.db
-          .collection(getUsersCollectionName())
-          .findOneAndUpdate({ email: admin.email }, { $set: { isAdmin: true } }, { returnDocument: 'after' })
+        getUsersCollection(campsi)
+          .then(usersCollection =>
+            usersCollection.findOneAndUpdate({ email: admin.email }, { $set: { isAdmin: true } }, { returnDocument: 'after' })
+          )
           .then(updateResult => {
             createUser(chai, campsi, glenda).then(userToken => {
               chai
@@ -601,7 +601,8 @@ describe('Auth API', () => {
         res.body.should.have.property('id');
 
         try {
-          const doc = await campsi.db.collection(getUsersCollectionName()).findOne({ email: robert.email });
+          const usersCollection = await getUsersCollection(campsi);
+          const doc = await usersCollection.findOne({ email: robert.email });
           doc.should.be.a('object');
           res.body.id.should.be.eq(doc._id.toString());
           done();

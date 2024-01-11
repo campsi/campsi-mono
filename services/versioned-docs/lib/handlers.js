@@ -4,7 +4,7 @@ const documentService = require('./services/document');
 const userService = require('./services/user');
 const buildLink = require('../../../lib/modules/buildLink');
 const createError = require('http-errors');
-
+const { getUsersCollection } = require('../../auth/lib/modules/authCollections');
 const getEmitPayload = (req, additionalProps) => {
   return Object.assign(
     {
@@ -169,7 +169,8 @@ module.exports.postDocUser = async (req, res, next) => {
 };
 
 module.exports.delDocUser = async (req, res, next) => {
-  const usersId = await documentService.removeUserFromDocument(req.resource, req.filter, req.params.user, req.db);
+  const usersCollection = await getUsersCollection(req.campsi, req.service.path);
+  const usersId = await documentService.removeUserFromDocument(req.resource, req.filter, req.params.user, usersCollection);
   if (!usersId) return next(createError(404, 'Document not found'));
 
   const users = await userService.fetchUsers(usersId, req.options, req.service.server);

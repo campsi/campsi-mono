@@ -1,4 +1,4 @@
-const { getUsersCollectionName } = require('./modules/collectionNames');
+const { getUsersCollection } = require('./modules/authCollections');
 const { deleteExpiredTokens } = require('./tokens');
 const findCallback = require('./modules/findCallback');
 const builder = require('./modules/queryBuilder');
@@ -23,9 +23,9 @@ function proxyVerifyCallback(fn, args, done) {
  *
  * @param req
  */
-module.exports = function passportMiddleware(req) {
+module.exports = async function passportMiddleware(req) {
   const db = req.db;
-  const users = req.db.collection(getUsersCollectionName());
+  const users = await getUsersCollection(req.campsi, req.service.path);
   const provider = req.authProvider;
   const availableProviders = req.authProviders;
   return proxyVerifyCallback(provider.callback, arguments, async function (err, profile, passportCallback) {
@@ -79,7 +79,7 @@ module.exports = function passportMiddleware(req) {
        * user exists, has only one identity: the one we are trying to log in with: we update it too
        */
 
-      await deleteExpiredTokens(existingUser.tokens, existingUser._id, db, providersToRemove);
+      await deleteExpiredTokens(existingUser.tokens, existingUser._id, db, providersToRemove, users);
       const result = await users.findOneAndUpdate(filter, update, { returnDocument: 'after' });
       req.authBearerToken = updateToken.value;
       passportCallback(null, result.value);

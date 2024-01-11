@@ -7,7 +7,7 @@ const debug = require('debug')('campsi:service:auth');
 const { ObjectId } = require('mongodb');
 const createError = require('http-errors');
 const { deleteExpiredTokens } = require('./tokens');
-const { getUsersCollectionName } = require('./modules/collectionNames');
+const { getUsersCollection } = require('./modules/authCollections');
 const createObjectId = require('../../../lib/modules/createObjectId');
 const disposableDomains = require('disposable-email-domains');
 
@@ -18,6 +18,8 @@ async function tokenMaintenance(req, res) {
 
   // this aggregation only returns users that have expired tokens to archive
   if (req?.query?.action === 'deleteExpiredTokens') {
+    const usersCollection = await getUsersCollection(req.campsi, req.service.path);
+
     const aggregation = [
       {
         $project: {
@@ -34,36 +36,23 @@ async function tokenMaintenance(req, res) {
         }
       },
       {
+        $match: {
+          'expiredTokens.1': { $exists: true }
+        }
+      },
+      {
         $project: {
           user: 1,
-          expiredTokens: 1,
-          tokens: {
-            $gt: [
-              {
-                $size: '$expiredTokens'
-              },
-              1
-            ]
-          }
-        }
-      },
-      {
-        $match: {
-          tokens: true
-        }
-      },
-      {
-        $project: {
-          user: 1
+          expiredTokens: { $arrayToObject: '$expiredTokens' }
         }
       }
     ];
 
-    const cursor = req.db.collection('__users__').aggregate(aggregation);
+    const cursor = usersCollection.aggregate(aggregation);
 
     for await (const user of cursor) {
       try {
-        await deleteExpiredTokens(user.user.tokens, user._id, req.db);
+        await deleteExpiredTokens(user.user.tokens, user._id, req.db, undefined, usersCollection);
       } catch (e) {
         console.log(e);
       }
@@ -80,7 +69,7 @@ async function logout(req, res) {
     return helpers.unauthorized(res);
   }
   try {
-    const usersCollection = req.db.collection(getUsersCollectionName());
+    const usersCollection = await getUsersCollection(req.campsi, req.service.path);
     const token = req.authBearerToken;
     const user = req.user;
 
@@ -101,13 +90,13 @@ async function logout(req, res) {
       token,
       ...result.value.tokens[token]
     };
-    return req.db.collection(`${getUsersCollectionName()}.tokens_log`).insertOne(tokenToArchive);
+    return req.db.collection(`${usersCollection.collectionName}.tokens_log`).insertOne(tokenToArchive);
   } catch (e) {
     return helpers.internalServerError(res, e);
   }
 }
 
-function me(req, res) {
+async function me(req, res) {
   if (!req.user) {
     return helpers.unauthorized(res);
   }
@@ -115,14 +104,15 @@ function me(req, res) {
 
   res.json(req.user);
 
-  req.db
-    .collection(getUsersCollectionName())
-    .findOneAndUpdate({ _id: req.user._id }, { $set: { lastSeenAt: new Date() } }, {})
-    .then(_result => {})
-    .catch(error => helpers.error(res, error));
+  try {
+    const usersCollection = await getUsersCollection(req.campsi, req.service.path);
+    await usersCollection.findOneAndUpdate({ _id: req.user._id }, { $set: { lastSeenAt: new Date() } }, {});
+  } catch (e) {
+    helpers.error(res, e);
+  }
 }
 
-function updateMe(req, res) {
+async function updateMe(req, res) {
   if (!req.user) {
     return helpers.unauthorized(res);
   }
@@ -136,17 +126,19 @@ function updateMe(req, res) {
     }
   });
 
-  req.db
-    .collection(getUsersCollectionName())
-    .findOneAndUpdate({ _id: req.user._id }, update, {
+  try {
+    const usersCollection = await getUsersCollection(req.campsi, req.service.path);
+    const result = await usersCollection.findOneAndUpdate({ _id: req.user._id }, update, {
       returnDocument: 'after',
       projection: { 'identities.local.encryptedPassword': 0 }
-    })
-    .then(result => res.json(result.value))
-    .catch(error => helpers.error(res, error));
+    });
+    res.json(result.value);
+  } catch (e) {
+    helpers.error(res, e);
+  }
 }
 
-function patchMe(req, res) {
+async function patchMe(req, res) {
   if (!req.user) {
     return helpers.unauthorized(res);
   }
@@ -159,17 +151,18 @@ function patchMe(req, res) {
       update.$set[key] = value;
     }
   }
-
-  req.db
-    .collection(getUsersCollectionName())
-    .findOneAndUpdate({ _id: req.user._id }, update, {
+  try {
+    const usersCollection = await getUsersCollection(req.campsi, req.service.path);
+    const result = await usersCollection.findOneAndUpdate({ _id: req.user._id }, update, {
       returnDocument: 'after'
-    })
-    .then(result => res.json(result.value))
-    .catch(error => helpers.error(res, error));
+    });
+    res.json(result.value);
+  } catch (e) {
+    helpers.error(res, e);
+  }
 }
 
-function createAnonymousUser(req, res) {
+async function createAnonymousUser(req, res) {
   const token = builder.genBearerToken(100);
   const insert = {
     identities: {},
@@ -182,12 +175,14 @@ function createAnonymousUser(req, res) {
     email: token.value,
     createdAt: new Date()
   };
-  req.db
-    .collection(getUsersCollectionName())
-    .insertOne(insert)
-    .then(insertResult => {
-      res.json({ _id: insertResult.insertedId, ...insert });
-    });
+
+  try {
+    const usersCollection = await getUsersCollection(req.campsi, req.service.path);
+    const result = await usersCollection.insertOne(insert);
+    res.json({ _id: result.insertedId, ...insert });
+  } catch (e) {
+    helpers.error(res, e);
+  }
 }
 
 function getProviders(req, res) {
@@ -208,6 +203,7 @@ function getProviders(req, res) {
 
 async function callback(req, res, next) {
   let { redirectURI } = state.get(req);
+  const redirectUriFromState = !!redirectURI;
   if (!redirectURI && req.authProvider.name === 'local') {
     redirectURI = req.query.redirectURI;
   }
@@ -233,7 +229,7 @@ async function callback(req, res, next) {
         delete req.query.redirectURI;
         return redirectWithError(req, res, createError(400, 'invalid redirectURI'), next);
       }
-      if (req.method === 'GET') {
+      if (req.method === 'GET' || redirectUriFromState) {
         res.redirect(
           editURL(redirectURI, obj => {
             obj.query.access_token = req.authBearerToken;
@@ -289,8 +285,8 @@ function getUserFilterFromQuery(query) {
 async function getUsers(req, res) {
   if (req.user && req.user.isAdmin) {
     try {
-      const users = await req.db
-        .collection(getUsersCollectionName())
+      const usersCollection = await getUsersCollection(req.campsi, req.service.path);
+      const users = await usersCollection
         .find(getUserFilterFromQuery(req.query), {
           projection: { 'identities.local.encryptedPassword': 0 }
         })
@@ -304,7 +300,7 @@ async function getUsers(req, res) {
   }
 }
 
-function getAccessTokenForUser(req, res) {
+async function getAccessTokenForUser(req, res) {
   if (req.user && req.user.isAdmin) {
     let userId;
     try {
@@ -313,25 +309,24 @@ function getAccessTokenForUser(req, res) {
       return redirectWithError(req, res, new Error('Erroneous userId'));
     }
     const { update, updateToken } = builder.genUpdate({ name: 'impersonatingByAdmin' }, {});
-    req.db
-      .collection(getUsersCollectionName())
-      .findOneAndUpdate({ _id: userId }, update, {
+    try {
+      const usersCollection = await getUsersCollection(req.campsi, req.service.path);
+      const result = await usersCollection.findOneAndUpdate({ _id: userId }, update, {
         returnDocument: 'after'
-      })
-      .then(result => {
-        if (result.value) {
-          if (!req.query.redirectURI) {
-            return res.json({ token: updateToken.value });
-          }
-          res.redirect(
-            editURL(req.query.redirectURI, url => {
-              url.query.access_token = updateToken.value;
-            })
-          );
-        } else {
-          helpers.notFound(res, new Error('Unknown user'));
-        }
       });
+      if (result.value) {
+        if (!req.query.redirectURI) {
+          return res.json({ token: updateToken.value });
+        }
+        res.redirect(
+          editURL(req.query.redirectURI, url => {
+            url.query.access_token = updateToken.value;
+          })
+        );
+      } else {
+        helpers.notFound(res, new Error('Unknown user'));
+      }
+    } catch (e) {}
   } else {
     redirectWithError(req, res, new Error('Only admin users are allowed to show users'));
   }
@@ -370,9 +365,8 @@ async function inviteUser(req, res) {
   const update = { $set: { updatedAt: new Date() } };
   // if user exists with the given email, we return the id
   try {
-    const result = await req.db
-      .collection(getUsersCollectionName())
-      .findOneAndUpdate(filter, update, { returnDocument: 'after' });
+    const usersCollection = await getUsersCollection(req.campsi, req.service.path);
+    const result = await usersCollection.findOneAndUpdate(filter, update, { returnDocument: 'after' });
 
     const provider = {
       name: `invitation-${invitationToken.value}`,
@@ -391,7 +385,7 @@ async function inviteUser(req, res) {
     if (result.value) {
       const doc = result.value;
       const { update } = builder.genUpdate(provider, profile);
-      await req.db.collection(getUsersCollectionName()).updateOne({ _id: doc._id }, update);
+      await usersCollection.updateOne({ _id: doc._id }, update);
       res.json({ id: doc._id.toString(), invitationToken });
 
       return dispatchInvitationEvent({
@@ -405,7 +399,7 @@ async function inviteUser(req, res) {
     } else {
       const { insert, insertToken } = builder.genInsert(provider, profile);
 
-      const result = await req.db.collection(getUsersCollectionName()).insertOne(insert);
+      const result = await usersCollection.insertOne(insert);
       res.json({ id: result.insertedId, insertToken, invitationToken });
       dispatchInvitationEvent({
         id: result.insertedId,
@@ -432,7 +426,8 @@ async function acceptInvitation(req, res) {
     }
   };
   try {
-    const updateResult = await req.db.collection(getUsersCollectionName()).findOneAndUpdate(
+    const usersCollection = await getUsersCollection(req.campsi, req.service.path);
+    const updateResult = await usersCollection.findOneAndUpdate(
       query,
       {
         $unset: {
@@ -448,7 +443,7 @@ async function acceptInvitation(req, res) {
       return helpers.notFound(res, new Error('No user was found with this invitation token'));
     }
     if (doc.identities?.local?.validationToken) {
-      const updatedUser = await req.db.collection(getUsersCollectionName()).findOneAndUpdate(
+      const updatedUser = await usersCollection.findOneAndUpdate(
         { _id: doc._id },
         {
           $set: { 'identities.local.validated': true },
@@ -469,7 +464,7 @@ async function acceptInvitation(req, res) {
     };
     res.json(payload);
     req.service.emit('invitation/accepted', payload);
-    await cleanupExpiredInvitations(req.user, req.db);
+    await cleanupExpiredInvitations(req.user, usersCollection);
   } catch (err) {
     return helpers.error(res, err);
   }
@@ -484,7 +479,8 @@ async function deleteInvitation(req, res) {
     [`identities.invitation-${req.params.invitationToken}`]: { $exists: true }
   };
   try {
-    const updateResult = await req.db.collection(getUsersCollectionName()).findOneAndUpdate(
+    const usersCollection = await getUsersCollection(req.campsi, req.service.path);
+    const updateResult = await usersCollection.findOneAndUpdate(
       query,
       {
         $unset: {
@@ -510,13 +506,13 @@ async function deleteInvitation(req, res) {
     };
     res.json(payload);
     req.service.emit('invitation/deleted', payload);
-    await cleanupExpiredInvitations(req.user, req.db);
+    await cleanupExpiredInvitations(req.user, usersCollection);
   } catch (err) {
     return helpers.error(res, err);
   }
 }
 
-const cleanupExpiredInvitations = async (user, db) => {
+const cleanupExpiredInvitations = async (user, usersCollection) => {
   const expiredInvitations = Object.entries(user.identities || {})
     .map(([provider, identity]) => {
       if (!provider.startsWith('invitation')) {
@@ -533,7 +529,7 @@ const cleanupExpiredInvitations = async (user, db) => {
     expiredInvitations.forEach(key => {
       update.$unset[`identities.${key}`] = true;
     });
-    await db.collection(getUsersCollectionName()).updateOne({ _id: user._id }, update);
+    await usersCollection.updateOne({ _id: user._id }, update);
   }
 };
 
@@ -547,7 +543,8 @@ async function extractUserPersonalData(req, res) {
     }
 
     try {
-      const user = await req.db.collection(getUsersCollectionName()).findOne(
+      const usersCollection = await getUsersCollection(req.campsi, req.service.path);
+      const user = await usersCollection.findOne(
         { _id: userId },
         {
           projection: {
@@ -637,7 +634,8 @@ async function getUserByInvitationToken(req, res, next) {
   if (!invitationToken) {
     return helpers.missingParameters(res, new Error('invitationToken must be specified'));
   }
-  const user = await req.db.collection(getUsersCollectionName()).findOne({
+  const usersCollection = await getUsersCollection(req.campsi, req.service.path);
+  const user = await usersCollection.findOne({
     [`identities.invitation-${invitationToken}`]: { $exists: true }
   });
   if (!user) {

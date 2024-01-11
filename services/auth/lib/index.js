@@ -8,7 +8,6 @@ const debug = require('debug')('campsi');
 const authUser = require('./middleware/authUser');
 const session = require('./middleware/session');
 const createObjectId = require('../../../lib/modules/createObjectId');
-const { getUsersCollectionName } = require('./modules/collectionNames');
 const createError = require('http-errors');
 
 module.exports = class AuthService extends CampsiService {
@@ -100,7 +99,7 @@ module.exports = class AuthService extends CampsiService {
 
   install() {
     this.db
-      .collection(getUsersCollectionName())
+      .collection(this.getUsersCollectionName())
       .createIndex({ email: 1 }, { unique: true })
       .catch(err => {
         debug("Can't apply unique index on users collection");
@@ -108,7 +107,7 @@ module.exports = class AuthService extends CampsiService {
       });
     if (this.options.providers.local) {
       this.db
-        .collection(getUsersCollectionName())
+        .collection(this.getUsersCollectionName())
         .createIndex({ 'identities.local.validationToken': 1 })
         .catch(err => debug(err));
     }
@@ -116,11 +115,19 @@ module.exports = class AuthService extends CampsiService {
 
   async fetchUsers(userIds) {
     const filter = { _id: { $in: userIds.map(id => createObjectId(id)) } };
-    const users = await this.db.collection(getUsersCollectionName()).find(filter).toArray();
+    const users = await this.db.collection(this.getUsersCollectionName()).find(filter).toArray();
     const map = users.reduce((map, user) => {
       map[user._id.toString()] = user;
       return map;
     }, {});
     return userIds.map(userId => map[userId] || userId);
+  }
+
+  getUsersCollectionName() {
+    return this.options?.collectionName || '__users__';
+  }
+
+  getSessionCollectionName() {
+    return this.options?.session?.collectionName || '__sessions__';
   }
 };

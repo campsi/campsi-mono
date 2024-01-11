@@ -1,5 +1,5 @@
 const passport = require('@passport-next/passport');
-const { getUsersCollectionName } = require('../modules/collectionNames');
+const { getUsersCollection } = require('../modules/authCollections');
 const BearerStrategy = require('@passport-next/passport-http-bearer').Strategy;
 const debug = require('debug')('campsi:auth:bearerMiddleware');
 
@@ -7,13 +7,14 @@ const debug = require('debug')('campsi:auth:bearerMiddleware');
  * Bearer token authorization used for API calls.
  * High order function returning the actual middleware
  * @param {CampsiServer} server
+ * @param {AuthService} service
  * @returns {Function}
  */
-module.exports = function authUser(server) {
+module.exports = function authUser(server, service) {
   // Initialize passport
   server.app.use(passport.initialize());
   // Middleware initialization, we register a new BearerStrategy
-  const users = server.db.collection(getUsersCollectionName());
+  const users = server.db.collection(service.getUsersCollectionName());
   // If the Authorization header contains a valid token
   // This strategy will return the associated user
   passport.use(

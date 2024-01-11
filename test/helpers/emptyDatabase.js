@@ -8,6 +8,7 @@ module.exports.emptyDatabase = async config => {
   const collections = await db.listCollections({}, { nameOnly: true }).toArray();
   for (const collection of collections) {
     await db.collection(collection.name).deleteMany({});
+    await db.collection(collection.name).dropIndexes();
   }
   await client.close();
 };

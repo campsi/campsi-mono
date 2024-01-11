@@ -1,3 +1,28 @@
+# [4.0.0](https://github.com/campsi/campsi-mono/compare/v3.5.0...v4.0.0) (2024-01-11)
+
+
+### Features
+
+* getUsersCollectionName and getSessionCollectionName replaced (DEV-3556) ([#278](https://github.com/campsi/campsi-mono/issues/278)) ([77ef05a](https://github.com/campsi/campsi-mono/commit/77ef05ab8875f506791fc73d13e43d0ad335c30b))
+
+
+### BREAKING CHANGES
+
+* an option (authServicePath) is required in services config if multiple AuthService are instantiated
+
+* fix: auth unit tests
+
+* feat: getSessionName as a function based on auth service
+
+unit tests fixed
+* an option (authServicePath) is required in services config if multiple AuthService are instantiated
+
+* chore: code cleanup
+
+* chore: file renamed for consistency
+
+* feat: dropIndexes in emptyDatabase (tests)
+
 # [3.5.0](https://github.com/campsi/campsi-mono/compare/v3.4.0...v3.5.0) (2023-12-18)
 
 

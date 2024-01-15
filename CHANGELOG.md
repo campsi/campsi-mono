@@ -1,3 +1,10 @@
+# [4.1.0](https://github.com/campsi/campsi-mono/compare/v4.0.0...v4.1.0) (2024-01-15)
+
+
+### Features
+
+* allow returning metadata for getDocuments ([#279](https://github.com/campsi/campsi-mono/issues/279)) ([c5dfded](https://github.com/campsi/campsi-mono/commit/c5dfded97ea90bab665ef06f6e0c834cf254e135))
+
 # [4.0.0](https://github.com/campsi/campsi-mono/compare/v3.5.0...v4.0.0) (2024-01-11)
 
 

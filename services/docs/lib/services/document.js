@@ -183,6 +183,9 @@ module.exports.getDocuments = async function (resource, filter, user, query, sta
   const dbQuery = Object.assign(filterState, filter, builder.find(queryBuilderOptions));
 
   const dbFields = { _id: 1, states: 1, users: 1, groups: 1 };
+  if (query?.with?.includes('metadata')) {
+    dbFields.metadata = 1;
+  }
 
   const aggregate = !!resource.isInheritable || query?.with?.includes('creator');
 
@@ -289,6 +292,9 @@ module.exports.getDocuments = async function (resource, filter, user, query, sta
     }
     if (query?.with?.includes('creator')) {
       returnData.creator = doc.creator;
+    }
+    if (query?.with?.includes('metadata')) {
+      returnData.metadata = doc.metadata;
     }
 
     addVirtualProperties(resource, returnData.data);

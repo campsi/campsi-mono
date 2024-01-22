@@ -705,7 +705,7 @@ describe('Auth API', () => {
         { returnDocument: 'after' }
       );
 
-      await campsi.db.collection('__users__').findOneAndUpdate(
+      await campsi.db.collection('__users__').updateOne(
         { email: admin.email },
         {
           $set: {
@@ -714,7 +714,7 @@ describe('Auth API', () => {
         }
       );
 
-      const oldTokens = Object.entries(user.value.tokens);
+      const oldTokens = Object.entries(user.tokens);
       oldTokens.length.should.be.eq(7);
 
       await chai
@@ -747,29 +747,27 @@ describe('Auth API', () => {
 
       Object.entries(robertUser.tokens).length.should.be.eq(1);
 
-      await campsi.db.collection('__users__').findOneAndUpdate(
+      await campsi.db.collection('__users__').updateOne(
         { email: robert.email },
         {
           $set: {
             tokens: { ...robertUser.tokens, ...expiredTokens },
             isAdmin: true
           }
-        },
-        { returnDocument: 'after' }
+        }
       );
 
-      await campsi.db.collection('__users__').findOneAndUpdate(
+      await campsi.db.collection('__users__').updateOne(
         { email: glenda.email },
         {
           $set: {
             tokens: { ...glendaUser.tokens, ...expiredTokens2 },
             isAdmin: true
           }
-        },
-        { returnDocument: 'after' }
+        }
       );
 
-      await campsi.db.collection('__users__').findOneAndUpdate(
+      await campsi.db.collection('__users__').updateOne(
         { email: admin.email },
         {
           $set: {
@@ -822,14 +820,14 @@ describe('Auth API', () => {
 
       // create two users, one admin one lamba
       const adminToken = await createUser(chai, campsi, admin, true);
-      await campsi.db.collection('__users__').findOneAndUpdate({ email: admin.email }, { $set: { isAdmin: true } });
+      await campsi.db.collection('__users__').updateOne({ email: admin.email }, { $set: { isAdmin: true } });
 
       await createUser(chai, campsi, glenda);
 
       // add facebook and google identites to glenda
       await campsi.db
         .collection('__users__')
-        .findOneAndUpdate(
+        .updateOne(
           { email: glenda.email },
           { $set: { 'identities.facebook': identities.facebook, 'identities.google': identities.google } }
         );
@@ -871,7 +869,7 @@ describe('Auth API', () => {
 
       // create two users one admin one lambda
       const adminToken = await createUser(chai, campsi, admin, true);
-      await campsi.db.collection('__users__').findOneAndUpdate({ email: admin.email }, { $set: { isAdmin: true } });
+      await campsi.db.collection('__users__').updateOne({ email: admin.email }, { $set: { isAdmin: true } });
 
       const glendaToken = await createUser(chai, campsi, glenda);
 

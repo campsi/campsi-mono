@@ -22,8 +22,8 @@ module.exports.anonymizePersonalData = async function (user, db, collection, fie
       const result = await db.collection(collection).findOneAndUpdate({ [field]: { $exists: true } }, { $set: { [field]: '' } });
 
       // also anonymize additional field if passed in
-      if (result && result.value) {
-        return result.value;
+      if (result) {
+        return result;
       } else {
         throw new createError.NotFound('resource not found or already soft deleted');
       }
@@ -169,8 +169,7 @@ module.exports.lockDocument = async function (resource, state, filter, tokenTime
       }
     };
 
-    const result = await lockCollection.findOneAndUpdate(find, update);
-    return result;
+    return await lockCollection.findOneAndUpdate(find, update);
   } else {
     return undefined;
   }
@@ -364,12 +363,14 @@ module.exports.patchDocument = async (resource, filter, data, state, user) => {
   }
 
   const updateDoc = await resource.collection.findOneAndUpdate(filter, update, { returnDocument: 'after' });
-  if (!updateDoc.value) throw new Error('Not Found');
+  if (!updateDoc) {
+    throw new Error('Not Found');
+  }
 
   try {
     await builder.validatePatchedDocument({
       resource,
-      data: updateDoc.value.states[state].data,
+      data: updateDoc.states[state].data,
       state
     });
   } catch (e) {
@@ -557,10 +558,10 @@ module.exports.addUserToDocument = async function (resource, filter, userDetails
   };
   const options = { returnDocument: 'after', projection: { users: 1 } };
   const result = await resource.collection.findOneAndUpdate(filter, ops, options);
-  if (!result.value) {
+  if (!result) {
     throw new Error('Not Found');
   }
-  return getDocUsersList(result.value);
+  return getDocUsersList(result);
 };
 
 module.exports.removeUserFromDocument = async function (resource, filter, userId, usersCollection) {
@@ -574,10 +575,10 @@ module.exports.removeUserFromDocument = async function (resource, filter, userId
     usersCollection.updateOne({ _id: createObjectId(userId) }, { $pull: { groups: { $in: groups } } })
   ]);
 
-  if (!removeUserFromDoc.value) {
+  if (!removeUserFromDoc) {
     throw new Error('Not Found');
   }
-  return getDocUsersList(removeUserFromDoc.value);
+  return getDocUsersList(removeUserFromDoc);
 };
 
 module.exports.setDocumentState = async function (resource, filter, fromState, toState, user) {

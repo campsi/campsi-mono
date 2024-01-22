@@ -156,8 +156,9 @@ const signup = async function (req, res) {
       if (invitationToken) {
         update.$unset = { [`identities.invitation-${invitationToken}`]: true };
       }
-      const result = await users.findOneAndUpdate({ email: user.email }, update, { returnDocument: 'after' });
-      return result.value;
+      return await users.findOneAndUpdate({ email: user.email }, update, {
+        returnDocument: 'after'
+      });
     } catch (err) {
       throw new Error('could not perform findOneAndUpdate');
     }
@@ -265,14 +266,14 @@ const validate = async function (req, res) {
       { returnDocument: 'after' }
     );
     const redirectURI = req.query.redirectURI;
-    if (result.value) {
+    if (result) {
       req.service.emit('local/validated', {
-        user: result.value,
+        user: result,
         requestBody: req.body,
         requestHeaders: req.headers
       });
-      req.user = result.value;
-      debug('user validated', result.value);
+      req.user = result;
+      debug('user validated', result);
       if (redirectURI) {
         return res.redirect(301, redirectURI);
       }
@@ -360,7 +361,7 @@ const updateUserWithPasswordResetToken = async (user, options, db, service, body
     { returnDocument: 'after' }
   );
   service.emit('local/passwordResetTokenCreated', {
-    user: out.value,
+    user: out,
     requestBody: body,
     requestHeaders: headers
   });
@@ -406,13 +407,13 @@ const resetPassword = async function (req, res) {
         }
       };
       const result = await usersCollection.findOneAndUpdate(filter, update);
-      if (!result.value) {
+      if (!result) {
         throw new Error('wrong reset token');
       }
       // we set the username as a param because if the update succeeds,
       // the request is forwarded to the passport local callback and will
       // authorize the user with the new password
-      req.body.username = result.value.identities.local.username || result.value.email;
+      req.body.username = result.identities.local.username || result.email;
       return handlers.callback(req, res);
     } catch (e) {
       handlers.redirectWithError(req, res, e);
@@ -464,7 +465,7 @@ const updatePassword = async function (req, res) {
         $unset: { token: '' }
       };
 
-      await usersCollection.findOneAndUpdate(filter, update);
+      await usersCollection.updateOne(filter, update);
       return res.json({ success: true });
     } catch (e) {
       return helpers.error(res, e);

@@ -82,9 +82,9 @@ module.exports = async function passportMiddleware(req) {
       await deleteExpiredTokens(existingUser.tokens, existingUser._id, db, providersToRemove, users);
       const result = await users.findOneAndUpdate(filter, update, { returnDocument: 'after' });
       req.authBearerToken = updateToken.value;
-      passportCallback(null, result.value);
+      passportCallback(null, result);
       // We dispatch an event here to be able to execute side effects when a user log in, i.e. send the event to a 3rd party CRM
-      req.service.emit('login', result.value);
+      req.service.emit('login', result);
     } catch (e) {
       passportCallback();
     }

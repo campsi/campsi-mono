@@ -384,7 +384,7 @@ module.exports.addUserToDocument = async (resource, filter, userDetails) => {
   };
   const options = { returnDocument: 'after', projection: { users: 1 } };
   const doc = await resource.currentCollection.findOneAndUpdate(filter, ops, options);
-  return getDocUsersList(doc.value);
+  return getDocUsersList(doc);
 };
 
 module.exports.removeUserFromDocument = async (resource, filter, userId, usersCollection) => {
@@ -401,11 +401,11 @@ module.exports.removeUserFromDocument = async (resource, filter, userId, usersCo
     )
   ]);
 
-  if (!removeUserFromDoc.value) {
+  if (!removeUserFromDoc) {
     throw new createError.NotFound('Document not found');
   }
 
-  return removeUserFromDoc.value;
+  return removeUserFromDoc;
 };
 
 module.exports.deleteDocument = async (resource, filter, query) => {

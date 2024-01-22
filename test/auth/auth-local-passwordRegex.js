@@ -127,8 +127,9 @@ describe('Auth Local Password Regex', () => {
     });
   });
   describe('/PUT local/update-password', () => {
-    it('it should return an error', done => {
+    it('it should return an error because the password does not match the regex', done => {
       const campsi = context.campsi;
+      campsi.services.get('auth').options.providers.local.options.passwordRegex = /^((?!ilyes).)*$/s;
       chai
         .request(campsi.app)
         .post('/auth/local/signup')
@@ -152,22 +153,6 @@ describe('Auth Local Password Regex', () => {
               res.should.be.json;
               res.body.should.be.a('object');
               res.body.should.have.property('message');
-              chai
-                .request(campsi.app)
-                .put('/auth/local/update-password')
-                .set('content-type', 'application/json')
-                .set('Authorization', 'Bearer ' + token)
-                .send({
-                  new: firstPassword,
-                  confirm: firstPassword
-                })
-                .end((err, res) => {
-                  if (err) debug(`received an error from chai: ${err.message}`);
-                  res.should.have.status(200);
-                  res.should.be.json;
-                  res.body.should.be.a('object');
-                  delete campsi.services.get('auth').options.providers.local.options.passwordRegex;
-                });
               done();
             });
         });

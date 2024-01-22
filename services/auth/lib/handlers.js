@@ -213,7 +213,6 @@ async function callback(req, res, next) {
     failWithError: true
   })(req, res, err => {
     if (err) {
-      console.log('err', err);
       return redirectWithError(req, res, err, next);
     }
     if (!req.user) {

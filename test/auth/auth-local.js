@@ -44,7 +44,7 @@ function createUser(campsi, user) {
 describe('Auth Local API', () => {
   const context = {};
   beforeEach(setupBeforeEach(config, services, context));
-  afterEach(done => context.server.close(done));
+  afterEach(done => context.server?.close(done));
   /*
    * Test the /POST local/signup route
    */

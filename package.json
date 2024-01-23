@@ -106,6 +106,7 @@
     "eslint-plugin-promise": "^6.0.0",
     "express": "^4.16.4",
     "fake-object-id": "0.0.3",
+    "find-process": "^1.4.7",
     "husky": "^8.0.1",
     "mime-types": "^2.1.18",
     "mocha": "^10.0.0",

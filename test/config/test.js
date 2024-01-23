@@ -33,6 +33,9 @@ module.exports = {
     bodyParser: {
       json: {
         limit: '10mb'
+      },
+      urlencoded: {
+        extended: false
       }
     }
   },

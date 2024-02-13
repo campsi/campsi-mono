@@ -381,7 +381,7 @@ module.exports.patchDocument = async (resource, filter, data, state, user) => {
   return {
     id: filter._id,
     state,
-    data: updateDoc.value.states[state].data
+    data: updateDoc.states[state].data
   };
 };
 

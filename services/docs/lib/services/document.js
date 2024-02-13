@@ -156,8 +156,7 @@ module.exports.lockDocument = async function (resource, state, filter, tokenTime
       }
     };
 
-    const result = await lockCollection.insertOne(lock);
-    return result;
+    return await lockCollection.insertOne(lock);
   } else if (new ObjectId(user._id).equals(lock[`${state}`].userId) || lock[`${state}`].timeout < new Date()) {
     // update / overwrite the existing lock because it belongs to the same user
     // for the same doc state or the old has lock expired

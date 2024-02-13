@@ -437,7 +437,6 @@ const resetPassword = async function (req, res) {
 const updatePassword = async function (req, res) {
   const missingParams = getMissingParameters(req.body, ['new', 'confirm']);
   const passwordRegex = new RegExp(req.authProvider.options.passwordRegex ?? '.*');
-  const test = passwordRegex.test(req.body.new);
   if (!passwordRegex.test(req.body.new)) {
     return helpers.error(
       res,

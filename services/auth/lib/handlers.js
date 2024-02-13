@@ -79,7 +79,7 @@ async function logout(req, res) {
       { returnDocument: 'before' }
     );
 
-    if (!result?.value) {
+    if (!result) {
       return res.json({ message: 'user not signed out' });
     }
 
@@ -88,7 +88,7 @@ async function logout(req, res) {
     const tokenToArchive = {
       userId: user._id,
       token,
-      ...result.value.tokens[token]
+      ...result.tokens[token]
     };
     return req.db.collection(`${usersCollection.collectionName}.tokens_log`).insertOne(tokenToArchive);
   } catch (e) {
@@ -106,7 +106,7 @@ async function me(req, res) {
 
   try {
     const usersCollection = await getUsersCollection(req.campsi, req.service.path);
-    await usersCollection.findOneAndUpdate({ _id: req.user._id }, { $set: { lastSeenAt: new Date() } }, {});
+    await usersCollection.updateOne({ _id: req.user._id }, { $set: { lastSeenAt: new Date() } });
   } catch (e) {
     helpers.error(res, e);
   }
@@ -132,7 +132,7 @@ async function updateMe(req, res) {
       returnDocument: 'after',
       projection: { 'identities.local.encryptedPassword': 0 }
     });
-    res.json(result.value);
+    res.json(result);
   } catch (e) {
     helpers.error(res, e);
   }
@@ -156,7 +156,7 @@ async function patchMe(req, res) {
     const result = await usersCollection.findOneAndUpdate({ _id: req.user._id }, update, {
       returnDocument: 'after'
     });
-    res.json(result.value);
+    res.json(result);
   } catch (e) {
     helpers.error(res, e);
   }
@@ -314,7 +314,7 @@ async function getAccessTokenForUser(req, res) {
       const result = await usersCollection.findOneAndUpdate({ _id: userId }, update, {
         returnDocument: 'after'
       });
-      if (result.value) {
+      if (result) {
         if (!req.query.redirectURI) {
           return res.json({ token: updateToken.value });
         }
@@ -366,7 +366,9 @@ async function inviteUser(req, res) {
   // if user exists with the given email, we return the id
   try {
     const usersCollection = await getUsersCollection(req.campsi, req.service.path);
-    const result = await usersCollection.findOneAndUpdate(filter, update, { returnDocument: 'after' });
+    const doc = await usersCollection.findOneAndUpdate(filter, update, {
+      returnDocument: 'after'
+    });
 
     const provider = {
       name: `invitation-${invitationToken.value}`,
@@ -382,8 +384,7 @@ async function inviteUser(req, res) {
       }
     };
 
-    if (result.value) {
-      const doc = result.value;
+    if (doc) {
       const { update } = builder.genUpdate(provider, profile);
       await usersCollection.updateOne({ _id: doc._id }, update);
       res.json({ id: doc._id.toString(), invitationToken });
@@ -427,7 +428,7 @@ async function acceptInvitation(req, res) {
   };
   try {
     const usersCollection = await getUsersCollection(req.campsi, req.service.path);
-    const updateResult = await usersCollection.findOneAndUpdate(
+    const doc = await usersCollection.findOneAndUpdate(
       query,
       {
         $unset: {
@@ -437,13 +438,12 @@ async function acceptInvitation(req, res) {
       { returnDocument: 'before' }
     );
 
-    const doc = updateResult.value;
     if (!doc) {
       debug('No user was found nor updated in query', query);
       return helpers.notFound(res, new Error('No user was found with this invitation token'));
     }
     if (doc.identities?.local?.validationToken) {
-      const updatedUser = await usersCollection.findOneAndUpdate(
+      req.user = await usersCollection.findOneAndUpdate(
         { _id: doc._id },
         {
           $set: { 'identities.local.validated': true },
@@ -451,7 +451,6 @@ async function acceptInvitation(req, res) {
         },
         { returnDocument: 'after' }
       );
-      req.user = updatedUser.value;
     }
     const invitation = doc.identities[`invitation-${req.params.invitationToken}`];
     const payload = {
@@ -480,7 +479,7 @@ async function deleteInvitation(req, res) {
   };
   try {
     const usersCollection = await getUsersCollection(req.campsi, req.service.path);
-    const updateResult = await usersCollection.findOneAndUpdate(
+    const doc = await usersCollection.findOneAndUpdate(
       query,
       {
         $unset: {
@@ -490,7 +489,6 @@ async function deleteInvitation(req, res) {
       { returnDocument: 'before' }
     );
 
-    const doc = updateResult.value;
     if (!doc) {
       debug('No user was found nor updated in query', query);
       return helpers.notFound(res, new Error('No user was found with this invitation token'));
@@ -600,10 +598,12 @@ async function softDelete(req, res) {
       };
       const result = await req.db
         .collection('__users__')
-        .findOneAndUpdate({ _id: userId, deletedAt: { $exists: false } }, update, { returnDocument: 'after' });
+        .findOneAndUpdate({ _id: userId, deletedAt: { $exists: false } }, update, {
+          returnDocument: 'after'
+        });
 
-      if (result && result.value) {
-        return res.json(result.value);
+      if (result) {
+        return res.json(result);
       }
       helpers.notFound(res, new Error('User not found or already soft deleted'));
     } catch (err) {

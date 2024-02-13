@@ -49,7 +49,7 @@ class WebhooksService extends CampsiService {
                 this.collection
                   .findOneAndUpdate({ _id: webhook._id }, { $inc: { failCount: 1 } }, { returnDocument: 'after' })
                   .then(result => {
-                    debug(`failed ${result.value._id}, ${result.value.failCount} failure so far`);
+                    debug(`failed ${result._id}, ${result.failCount} failure so far`);
                   })
                   .catch(updateError => {
                     debug('error updating webhook', updateError);

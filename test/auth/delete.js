@@ -77,9 +77,7 @@ describe('Auth API', () => {
       };
 
       const adminToken = await createUser(chai, campsi, admin, true);
-      await campsi.db
-        .collection('__users__')
-        .findOneAndUpdate({ email: admin.email }, { $set: { isAdmin: true } }, { returnDocument: 'after' });
+      await campsi.db.collection('__users__').updateOne({ email: admin.email }, { $set: { isAdmin: true } });
 
       await createUser(chai, campsi, glenda);
       let res = await chai
@@ -131,9 +129,7 @@ describe('Auth API', () => {
       password: 'password'
     };
     const adminToken = await createUser(chai, campsi, admin, true);
-    await campsi.db
-      .collection('__users__')
-      .findOneAndUpdate({ email: admin.email }, { $set: { isAdmin: true } }, { returnDocument: 'after' });
+    await campsi.db.collection('__users__').updateOne({ email: admin.email }, { $set: { isAdmin: true } });
 
     const userToken = await createUser(chai, campsi, glenda);
     let res = await chai

@@ -80,7 +80,7 @@ module.exports.createNotification = async function (req, res) {
 
     debug('createNotification :: End');
 
-    return helpers.json(res, { success: true, notification: {...notification, _id: insertedId } });
+    return helpers.json(res, { success: true, notification: { ...notification, _id: insertedId } });
   } catch (err) {
     debug(`createNotification :: Error :: ${err.message} :: ${err.stack}`);
 
@@ -132,7 +132,7 @@ module.exports.updateNotification = async function (req, res) {
       }
     };
 
-    const { value: updatedNotification } = await req.resource.collection.findOneAndUpdate({ _id: notificationId }, ops, {
+    const updatedNotification = await req.resource.collection.findOneAndUpdate({ _id: notificationId }, ops, {
       returnDocument: 'after'
     });
 
@@ -175,7 +175,7 @@ module.exports.patchNotification = async function (req, res) {
       delete ops.$unset;
     }
 
-    const { value: updatedNotification } = await req.resource.collection.findOneAndUpdate({ _id: notificationId }, ops, {
+    const updatedNotification = await req.resource.collection.findOneAndUpdate({ _id: notificationId }, ops, {
       returnDocument: 'after'
     });
 

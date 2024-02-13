@@ -53,9 +53,7 @@ describe('locks', () => {
       campsi = context.campsi;
 
       adminToken = await createUser(chai, campsi, admin, true);
-      await campsi.db
-        .collection('__users__')
-        .findOneAndUpdate({ email: admin.email }, { $set: { isAdmin: true } }, { returnDocument: 'after' });
+      await campsi.db.collection('__users__').updateOne({ email: admin.email }, { $set: { isAdmin: true } });
 
       userToken = await createUser(chai, campsi, owner);
       nownerToken = await createUser(chai, campsi, nowner);
@@ -316,9 +314,7 @@ describe('locks', () => {
 
       lockId = res.body[0]._id;
 
-      await campsi.db
-        .collection('__users__')
-        .findOneAndUpdate({ email: admin.email }, { $set: { isAdmin: true } }, { returnDocument: 'after' });
+      await campsi.db.collection('__users__').updateOne({ email: admin.email }, { $set: { isAdmin: true } });
 
       try {
         res = await chai
@@ -350,9 +346,7 @@ describe('locks', () => {
 
       lockId = res.body[0]._id;
 
-      await campsi.db
-        .collection('__users__')
-        .findOneAndUpdate({ email: admin.email }, { $set: { isAdmin: true } }, { returnDocument: 'after' });
+      await campsi.db.collection('__users__').updateOne({ email: admin.email }, { $set: { isAdmin: true } });
 
       try {
         res = await chai

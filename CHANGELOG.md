@@ -1,3 +1,25 @@
+# [5.0.0](https://github.com/campsi/campsi-mono/compare/v4.1.0...v5.0.0) (2024-02-13)
+
+
+### Features
+
+* upgrade mongodb node driver (DEV-4642) ([#280](https://github.com/campsi/campsi-mono/issues/280)) ([4a6f939](https://github.com/campsi/campsi-mono/commit/4a6f93902ac0033008271da540b5d30b03e362d9))
+
+
+### BREAKING CHANGES
+
+* due to v5 => v6 breaking changes updates
+
+* feat: auth unit tests fixed
+
+* wip
+
+* fix: unit tests
+
+* fix: unit tests bodyparser warning
+
+* chore: code cleanup
+
 # [4.1.0](https://github.com/campsi/campsi-mono/compare/v4.0.0...v4.1.0) (2024-01-15)
 
 

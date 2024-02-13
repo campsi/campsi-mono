@@ -1,3 +1,10 @@
+## [5.0.1](https://github.com/campsi/campsi-mono/compare/v5.0.0...v5.0.1) (2024-02-13)
+
+
+### Bug Fixes
+
+* patch with missing update ([96d9920](https://github.com/campsi/campsi-mono/commit/96d992088abfed140f8b13d02dde560471b09b04))
+
 # [5.0.0](https://github.com/campsi/campsi-mono/compare/v4.1.0...v5.0.0) (2024-02-13)
 
 

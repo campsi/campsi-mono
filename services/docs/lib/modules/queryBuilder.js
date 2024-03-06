@@ -102,6 +102,9 @@ function numberOperators(filters, key, value) {
   if (value.hasOwnProperty('lte')) {
     filter.$lte = Number(value.lte);
   }
+  if (value.hasOwnProperty('in')) {
+    filter.$in = value.in.split(',').map(Number);
+  }
   if (Object.keys(filter).length) {
     filters[key] = filter;
   }

@@ -257,6 +257,24 @@ describe('Filter Documents', () => {
     });
   });
 
+  describe('Number in', () => {
+    it('it should return first & third document', async () => {
+      await createData();
+      return new Promise(resolve => {
+        chai
+          .request(campsi.app)
+          .get('/docs/categories?data.price[in]=10,30&sort=_id')
+          .end((err, res) => {
+            if (err) debug(`received an error from chai: ${err.message}`);
+            testResponse(res, 2);
+            testDocument(res.body[0], 0);
+            testDocument(res.body[1], 2);
+            resolve();
+          });
+      });
+    });
+  });
+
   describe('Date before', () => {
     it('it should return first document', async () => {
       await createData();

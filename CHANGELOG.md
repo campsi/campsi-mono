@@ -1,3 +1,10 @@
+# [5.1.0](https://github.com/campsi/campsi-mono/compare/v5.0.1...v5.1.0) (2024-03-06)
+
+
+### Features
+
+* Add 'in' operator for Numbers ([#281](https://github.com/campsi/campsi-mono/issues/281)) ([f058ae1](https://github.com/campsi/campsi-mono/commit/f058ae15f261746bf4e24c698dab77b36f252e96))
+
 ## [5.0.1](https://github.com/campsi/campsi-mono/compare/v5.0.0...v5.0.1) (2024-02-13)
 
 

@@ -318,7 +318,13 @@ const createResetPasswordToken = async (req, res) => {
     }
 
     if (!user.identities?.local?.id) {
-      return helpers.forbidden(res, new Error('user does not have a local identity provider'));
+      const availableProviders = req.authProviders;
+      const existingProvidersIdentities = Object.entries(user.identities || {})
+        .filter(([key, value]) => !!availableProviders[key] && !!value?.id)
+        .map(([key, value]) => key);
+      // user.identities can have keys not related to providers, like invitation keys, and thus can be not fully created. at this point we consider it as not found.
+      const errorMessage = existingProvidersIdentities.length ? 'user does not have a local identity provider' : 'User not found';
+      return helpers.forbidden(res, new Error(errorMessage));
     }
     const opts = req.authProvider.options;
 

@@ -1,3 +1,10 @@
+## [5.1.1](https://github.com/campsi/campsi-mono/compare/v5.1.0...v5.1.1) (2024-03-11)
+
+
+### Bug Fixes
+
+* more accurate error message for createResetPasswordToken ([#282](https://github.com/campsi/campsi-mono/issues/282)) ([ced07f6](https://github.com/campsi/campsi-mono/commit/ced07f697599fcf15d41a4c25985c3923bc3dbfc))
+
 # [5.1.0](https://github.com/campsi/campsi-mono/compare/v5.0.1...v5.1.0) (2024-03-06)
 
 

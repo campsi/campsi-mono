@@ -36,10 +36,12 @@ async function createData() {
     { label: 'third label', price: 30, start: new Date('2022-05-11'), visible: true }
   ];
 
+  const createdRecords = [];
   for await (const data of entries) {
     const record = await builder.create({ user: owner, data, resource: category, state: 'published' });
-    await category.collection.insertOne(record);
+    createdRecords.push(await category.collection.insertOne(record));
   }
+  return createdRecords;
 }
 
 function testResponse(response, length) {
@@ -186,7 +188,7 @@ describe('Filter Documents', () => {
   });
 
   describe('Number lt', () => {
-    it('it should return first & second document', async () => {
+    it('it should return first & second documents', async () => {
       await createData();
       return new Promise(resolve => {
         chai
@@ -204,7 +206,7 @@ describe('Filter Documents', () => {
   });
 
   describe('Number gt', () => {
-    it('it should return second and third document', async () => {
+    it('it should return second and third documents', async () => {
       await createData();
       return new Promise(resolve => {
         chai
@@ -222,7 +224,7 @@ describe('Filter Documents', () => {
   });
 
   describe('Number lte', () => {
-    it('it should return first & second document', async () => {
+    it('it should return first & second documents', async () => {
       await createData();
       return new Promise(resolve => {
         chai
@@ -240,7 +242,7 @@ describe('Filter Documents', () => {
   });
 
   describe('Number gte', () => {
-    it('it should return second & third document', async () => {
+    it('it should return second & third documents', async () => {
       await createData();
       return new Promise(resolve => {
         chai
@@ -258,7 +260,7 @@ describe('Filter Documents', () => {
   });
 
   describe('Number in', () => {
-    it('it should return first & third document', async () => {
+    it('it should return first & third documents', async () => {
       await createData();
       return new Promise(resolve => {
         chai
@@ -341,7 +343,7 @@ describe('Filter Documents', () => {
   });
 
   describe('Exists', () => {
-    it('it should return second & third document', async () => {
+    it('it should return second & third documents', async () => {
       await createData();
       return new Promise(resolve => {
         chai
@@ -365,6 +367,26 @@ describe('Filter Documents', () => {
             if (err) debug(`received an error from chai: ${err.message}`);
             testResponse(res, 1);
             testDocument(res.body[0], 0);
+            resolve();
+          });
+      });
+    });
+  });
+
+  describe('Filter by Ids', () => {
+    it('it should return first & third documents', async () => {
+      const createdRecords = await createData();
+      const ids = [createdRecords[0].insertedId, createdRecords[2].insertedId];
+      return new Promise(resolve => {
+        chai
+          .request(campsi.app)
+          .post('/docs/categories/documents:get')
+          .send({ ids })
+          .end((err, res) => {
+            if (err) debug(`received an error from chai: ${err.message}`);
+            testResponse(res, 2);
+            testDocument(res.body[0], 0);
+            testDocument(res.body[1], 2);
             resolve();
           });
       });

@@ -178,7 +178,11 @@ module.exports.getDocuments = async function (resource, filter, user, query, sta
   const queryBuilderOptions = { resource, user, query, state };
   const filterState = {};
   filterState[`states.${state}`] = { $exists: true };
-  const dbQuery = Object.assign(filterState, filter, builder.find(queryBuilderOptions));
+  const filterIds = {};
+  if (query.ids) {
+    filterIds._id = { $in: query.ids.map(id => createObjectId(id)) };
+  }
+  const dbQuery = Object.assign(filterState, filterIds, filter, builder.find(queryBuilderOptions));
 
   const dbFields = { _id: 1, states: 1, users: 1, groups: 1 };
   if (query?.with?.includes('metadata')) {

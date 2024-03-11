@@ -39,9 +39,26 @@ module.exports.attach = (req, res, next, options) => {
       }
     }
 
+    // Custom Method
+    const customMethods = {
+      ':get': 'GET',
+      ':post': 'POST',
+      ':put': 'PUT',
+      ':patch': 'PATCH',
+      ':delete': 'DELETE'
+    };
+    Object.entries(customMethods).some(([fragment, method]) => {
+      const customMethodFound = req.path.includes(fragment);
+      if (customMethodFound) {
+        req.customMethod = method;
+      }
+      return customMethodFound;
+    });
+
     // check if the document is locked by someone else if we are trying to modify it
     const lockChek = new Promise((resolve, reject) => {
-      if (['PUT', 'POST', 'PATCH', 'DELETE'].some(method => req.method.includes(method))) {
+      const requestMethod = req.customMethod || req.method;
+      if (['PUT', 'POST', 'PATCH', 'DELETE'].some(method => requestMethod.includes(method))) {
         documentService
           .isDocumentLockedByOtherUser(req.state, req.filter, req.user, getDocumentLockServiceOptions(req), req.db)
           .then(lock => {
@@ -56,7 +73,7 @@ module.exports.attach = (req, res, next, options) => {
     lockChek
       .then(() => {
         try {
-          const filter = can(req.user, req.resource, req.method, req.state);
+          const filter = can(req.user, req.resource, req.customMethod || req.method, req.state);
           req.filter = { ...req.filter, ...filter };
 
           next();

@@ -1,3 +1,10 @@
+# [5.2.0](https://github.com/campsi/campsi-mono/compare/v5.1.1...v5.2.0) (2024-03-12)
+
+
+### Features
+
+* Filter by ids ([#283](https://github.com/campsi/campsi-mono/issues/283)) ([2a3ca08](https://github.com/campsi/campsi-mono/commit/2a3ca08a8117ca407dfe6788b58027fd0e9ff19d))
+
 ## [5.1.1](https://github.com/campsi/campsi-mono/compare/v5.1.0...v5.1.1) (2024-03-11)
 
 

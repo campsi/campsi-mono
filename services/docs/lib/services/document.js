@@ -180,7 +180,8 @@ module.exports.getDocuments = async function (resource, filter, user, query, sta
   filterState[`states.${state}`] = { $exists: true };
   const filterIds = {};
   if (query.ids) {
-    filterIds._id = { $in: query.ids.map(id => createObjectId(id)) };
+    // TODO: $in operator should not have more than 200 elements
+    filterIds._id = { $in: query.ids.map(id => createObjectId(id)).filter(Boolean) };
   }
   const dbQuery = Object.assign(filterState, filterIds, filter, builder.find(queryBuilderOptions));
 

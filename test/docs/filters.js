@@ -374,6 +374,22 @@ describe('Filter Documents', () => {
   });
 
   describe('Filter by Ids', () => {
+    it('it should return first document and filter out bad ids', async () => {
+      const createdRecords = await createData();
+      const ids = [createdRecords[0].insertedId, '007'];
+      return new Promise(resolve => {
+        chai
+          .request(campsi.app)
+          .post('/docs/categories/documents:get')
+          .send({ ids })
+          .end((err, res) => {
+            if (err) debug(`received an error from chai: ${err.message}`);
+            testResponse(res, 1);
+            testDocument(res.body[0], 0);
+            resolve();
+          });
+      });
+    });
     it('it should return first & third documents', async () => {
       const createdRecords = await createData();
       const ids = [createdRecords[0].insertedId, createdRecords[2].insertedId];

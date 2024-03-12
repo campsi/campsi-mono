@@ -3,8 +3,6 @@ process.env.NODE_CONFIG_DIR = './test/docs/config';
 process.env.NODE_ENV = 'test';
 
 // Require the dev-dependencies
-const { MongoClient } = require('mongodb');
-const mongoUriBuilder = require('mongo-uri-builder');
 const debug = require('debug')('campsi:test');
 const chai = require('chai');
 const chaiHttp = require('chai-http');
@@ -67,6 +65,26 @@ describe('CRUD', () => {
           res.should.have.status(200);
           res.should.be.json;
           res.body.should.be.a('object');
+          done();
+        });
+    });
+  });
+  /*
+   * Test the /GET docs/pizzas route
+   */
+  describe('/POST docs/pizzas/:getDocuments', () => {
+    it('it should GET all the documents', done => {
+      chai
+        .request(campsi.app)
+        .get('/docs/pizzas')
+        .end((err, res) => {
+          if (err) debug(`received an error from chai: ${err.message}`);
+          res.should.have.status(200);
+          res.should.have.header('x-total-count', '0');
+          res.should.not.have.header('link');
+          res.should.be.json;
+          res.body.should.be.a('array');
+          res.body.length.should.be.eq(0);
           done();
         });
     });

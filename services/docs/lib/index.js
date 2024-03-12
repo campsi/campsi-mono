@@ -32,10 +32,11 @@ module.exports = class DocsService extends CampsiService {
     };
 
     const additionalMiddlewares = (req, res, next) => {
-      if (typeof req.resource?.additionalMiddlewares?.[req.method] !== 'function') {
+      const method = req.customMethod || req.method;
+      if (typeof req.resource?.additionalMiddlewares?.[method] !== 'function') {
         return next();
       }
-      return req.resource?.additionalMiddlewares[req.method](req, res, next);
+      return req.resource?.additionalMiddlewares[method](req, res, next);
     };
 
     this.router.use('/', (req, res, next) => {
@@ -49,6 +50,7 @@ module.exports = class DocsService extends CampsiService {
     this.router.param('resource', param.attachResource(service.options));
     this.router.get('/', handlers.getResources);
     this.router.get('/:resource', additionalMiddlewares, handlers.getDocuments);
+    this.router.post('/:resource/documents[:]get', additionalMiddlewares, handlers.getDocuments);
     this.router.post('/:resource/:id/locks', additionalMiddlewares, handlers.lockDocument);
     this.router.get('/:resource/:id/locks', additionalMiddlewares, handlers.getLocks);
     this.router.get('/:resource/:id/users', additionalMiddlewares, handlers.getDocUsers);

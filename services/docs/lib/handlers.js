@@ -51,14 +51,16 @@ module.exports.deleteLock = async function (req, res) {
 };
 
 module.exports.getDocuments = function (req, res) {
+  const fullQuery = { ...req.query, ...req.body };
+
   const pagination = {};
-  const perPage = req.query.perPage || req.resource.perPage;
+  const perPage = fullQuery.perPage || req.resource.perPage;
   if (perPage) pagination.perPage = perPage;
-  if (req.query.page) pagination.page = req.query.page;
-  pagination.infinite = req.query.pagination && `${req.query.pagination}`.toLowerCase() === 'false';
+  if (fullQuery.page) pagination.page = fullQuery.page;
+  pagination.infinite = fullQuery.pagination && `${fullQuery.pagination}`.toLowerCase() === 'false';
 
   documentService
-    .getDocuments(req.resource, req.filter, req.user, req.query, req.state, req.query.sort, pagination, req.options.resources)
+    .getDocuments(req.resource, req.filter, req.user, fullQuery, req.state, fullQuery.sort, pagination, req.options.resources)
     .then(data => {
       const links = [];
       Object.entries(data.nav).forEach(([rel, page]) => {
@@ -83,7 +85,7 @@ module.exports.getDocuments = function (req, res) {
 
       return helpers.json(res, data.docs, headers);
     })
-    .catch(err => {
+    .catch(() => {
       helpers.notFound(res);
     });
 };

@@ -3,8 +3,6 @@ process.env.NODE_CONFIG_DIR = './test/docs/config';
 process.env.NODE_ENV = 'test';
 
 // Require the dev-dependencies
-const { MongoClient } = require('mongodb');
-const mongoUriBuilder = require('mongo-uri-builder');
 const debug = require('debug')('campsi:test');
 const chai = require('chai');
 const chaiHttp = require('chai-http');
@@ -12,7 +10,6 @@ const format = require('string-format');
 const CampsiServer = require('campsi');
 const config = require('config');
 const builder = require('../../services/docs/lib/modules/queryBuilder');
-const async = require('async');
 const fakeId = require('fake-object-id');
 const { emptyDatabase } = require('../helpers/emptyDatabase');
 

@@ -26,12 +26,12 @@ module.exports = class NotificationsService extends CampsiService {
 
     this.router.param('resource', param.attachResource(service.options));
     this.router.get('/', handlers.getResources);
-    this.router.getAsync('/:resource/', handlers.getNotifications);
-    this.router.getAsync('/:resource/:id', handlers.getNotification);
-    this.router.postAsync('/:resource/', handlers.createNotification);
-    this.router.putAsync('/:resource/:id', handlers.updateNotification);
-    this.router.patchAsync('/:resource/:id', handlers.patchNotification);
-    this.router.deleteAsync('/:resource/:id', handlers.deleteNotification);
+    this.router.get('/:resource/', handlers.getNotifications);
+    this.router.get('/:resource/:id', handlers.getNotification);
+    this.router.post('/:resource/', handlers.createNotification);
+    this.router.put('/:resource/:id', handlers.updateNotification);
+    this.router.patch('/:resource/:id', handlers.patchNotification);
+    this.router.delete('/:resource/:id', handlers.deleteNotification);
 
     return new Promise(resolve => {
       const ajvWriter = new Ajv({ allErrors: true, useAssign: true, strictTuples: false, strict: false });

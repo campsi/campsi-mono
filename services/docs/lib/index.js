@@ -59,11 +59,11 @@ module.exports = class DocsService extends CampsiService {
     this.router.post('/:resource/:id/:state/locks', additionalMiddlewares, handlers.lockDocument);
     this.router.get('/:resource/:id/:state', additionalMiddlewares, handlers.getDoc);
     this.router.get('/:resource/:id', additionalMiddlewares, handlers.getDoc);
-    this.router.postAsync('/:resource/:state', additionalMiddlewares, validateWriteAccess, handlers.postDoc);
+    this.router.post('/:resource/:state', additionalMiddlewares, validateWriteAccess, handlers.postDoc);
     this.router.post('/:resource', additionalMiddlewares, validateWriteAccess, handlers.postDoc);
     this.router.put('/:resource/:id/state', additionalMiddlewares, validateWriteAccess, handlers.putDocState);
-    this.router.putAsync('/:resource/:id/:state', additionalMiddlewares, validateWriteAccess, handlers.putDoc);
-    this.router.putAsync('/:resource/:id', additionalMiddlewares, validateWriteAccess, handlers.putDoc);
+    this.router.put('/:resource/:id/:state', additionalMiddlewares, validateWriteAccess, handlers.putDoc);
+    this.router.put('/:resource/:id', additionalMiddlewares, validateWriteAccess, handlers.putDoc);
     this.router.patch('/:resource/:id', additionalMiddlewares, validateWriteAccess, handlers.patchDoc);
     this.router.delete('/:resource/:id', additionalMiddlewares, handlers.delDoc);
     this.router.delete('/:resource/:id/:state', additionalMiddlewares, handlers.delDoc);

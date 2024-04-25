@@ -77,14 +77,14 @@ module.exports = class AuthService extends CampsiService {
     router.post('/invitations', handlers.inviteUser);
     router.get('/invitations/:invitationToken', limiter, handlers.getUserByInvitationToken);
     router.post('/invitations/:invitationToken', handlers.acceptInvitation);
-    router.deleteAsync('/invitations/:invitationToken', handlers.deleteInvitation);
+    router.delete('/invitations/:invitationToken', handlers.deleteInvitation);
     router.put('/tokens', handlers.tokenMaintenance);
 
     if (providers.local) {
       router.use('/local', local.middleware(providers.local));
       router.post('/local/signup', local.signup);
       router.post('/local/signin', local.signin);
-      router.postAsync('/local/reset-password-token', validatePasswordResetUrl, local.createResetPasswordToken);
+      router.post('/local/reset-password-token', validatePasswordResetUrl, local.createResetPasswordToken);
       router.post('/local/reset-password', local.resetPassword);
       router.get('/local/validate', local.validate);
       router.put('/local/update-password', local.updatePassword);

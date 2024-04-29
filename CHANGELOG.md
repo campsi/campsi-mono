@@ -1,3 +1,10 @@
+# [5.3.0](https://github.com/campsi/campsi-mono/compare/v5.2.0...v5.3.0) (2024-04-29)
+
+
+### Features
+
+* add custom error handler ([#285](https://github.com/campsi/campsi-mono/issues/285)) ([ed488a2](https://github.com/campsi/campsi-mono/commit/ed488a251da6faf126fd0a378b8d4293d084ca47))
+
 # [5.2.0](https://github.com/campsi/campsi-mono/compare/v5.1.1...v5.2.0) (2024-03-12)
 
 

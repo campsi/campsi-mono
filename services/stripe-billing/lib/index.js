@@ -167,7 +167,7 @@ module.exports = class StripeBillingService extends CampsiService {
       );
     });
 
-    this.router.getAsync('/subscriptions/:id[:]get-next-invoice', async (req, res) => {
+    this.router.get('/subscriptions/:id[:]get-next-invoice', async (req, res) => {
       const subscriptionId = req.params.id;
       const subscription = await stripe.subscriptions.retrieve(subscriptionId);
       const nextInvoice = await stripe.invoices.retrieveUpcoming({
@@ -221,11 +221,11 @@ module.exports = class StripeBillingService extends CampsiService {
       stripe.invoices.retrieve(req.params.id, optionsFromQuery(req.query), defaultHandler(res));
     });
 
-    this.router.getAsync('/subscription-schedules/:id', (req, res) => {
+    this.router.get('/subscription-schedules/:id', (req, res) => {
       stripe.subscriptionSchedules.retrieve(req.params.id, optionsFromQuery(req.query), defaultHandler(res));
     });
 
-    this.router.postAsync('/subscription-schedules', (req, res) => {
+    this.router.post('/subscription-schedules', (req, res) => {
       const params = {
         customer: req.body.customer,
         metadata: req.body.metadata,
@@ -240,7 +240,7 @@ module.exports = class StripeBillingService extends CampsiService {
       stripe.subscriptionSchedules.create(params, { idempotencyKey }, defaultHandler(res));
     });
 
-    this.router.putAsync('/subscription-schedules/:id', (req, res) => {
+    this.router.put('/subscription-schedules/:id', (req, res) => {
       stripe.subscriptionSchedules.update(
         req.params.id,
         {
@@ -255,7 +255,7 @@ module.exports = class StripeBillingService extends CampsiService {
       );
     });
 
-    this.router.postAsync('/subscription-schedules[:]list-all', async (req, res) => {
+    this.router.post('/subscription-schedules[:]list-all', async (req, res) => {
       const schedules = [];
       const params = {
         customer: req.body.customer,
@@ -293,7 +293,7 @@ module.exports = class StripeBillingService extends CampsiService {
       res.json(schedules);
     });
 
-    this.router.deleteAsync('/subscription-schedules/:id[:]release', (req, res) => {
+    this.router.delete('/subscription-schedules/:id[:]release', (req, res) => {
       stripe.subscriptionSchedules.release(
         req.params.id,
         { preserve_cancel_date: req.body.preserve_cancel_date },

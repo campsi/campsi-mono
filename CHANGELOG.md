@@ -1,3 +1,10 @@
+# [5.4.0](https://github.com/campsi/campsi-mono/compare/v5.3.0...v5.4.0) (2024-05-07)
+
+
+### Features
+
+* add exports ([#291](https://github.com/campsi/campsi-mono/issues/291)) ([e6b23a2](https://github.com/campsi/campsi-mono/commit/e6b23a2c9f5daf2dfc5a56dcf22e28ffc19a73d2))
+
 # [5.3.0](https://github.com/campsi/campsi-mono/compare/v5.2.0...v5.3.0) (2024-04-29)
 
 

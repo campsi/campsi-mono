@@ -70,6 +70,7 @@ function stringOperators(filters, key, value) {
   }
   /* eslint-enable no-prototype-builtins */
 }
+module.exports.stringOperators = stringOperators;
 
 /**
  * LHS brackets operator on number
@@ -110,6 +111,7 @@ function numberOperators(filters, key, value) {
   }
   /* eslint-enable no-prototype-builtins */
 }
+module.exports.numberOperators = numberOperators;
 
 /**
  * LHS brackets operator on date
@@ -134,6 +136,7 @@ function dateOperators(filters, key, value) {
   }
   /* eslint-enable no-prototype-builtins */
 }
+module.exports.dateOperators = dateOperators;
 
 /**
  * LHS brackets operator on boolean
@@ -150,6 +153,7 @@ function boolOperators(filters, key, value) {
   }
   /* eslint-enable no-prototype-builtins */
 }
+module.exports.boolOperators = boolOperators;
 
 /**
  * Miscellaneous LHS brackets operators
@@ -167,6 +171,7 @@ function specialOperators(filters, key, value) {
   }
   /* eslint-enable no-prototype-builtins */
 }
+module.exports.specialOperators = specialOperators;
 
 /**
  * This function transforms the query string into a MongoDb `$match` filter.

@@ -19,7 +19,6 @@ Manage and expose **document-oriented** content through a configurable RESTful *
 - [ ] Patch updates
 - [ ] Conflicts resolver
 
-
 #### Querying
 - [x] Embed related documents `?embed=shippingAddresses`
 - [x] Complex **filtering** `?data.name=Thomas&data.address.city=London`

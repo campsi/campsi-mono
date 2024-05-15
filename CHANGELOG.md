@@ -1,3 +1,10 @@
+## [5.5.1](https://github.com/campsi/campsi-mono/compare/v5.5.0...v5.5.1) (2024-05-15)
+
+
+### Reverts
+
+* Revert "feat: add error handler for services" ([acaef20](https://github.com/campsi/campsi-mono/commit/acaef202b470b6c1e0ae5dffb7bb72d4dd017b39))
+
 # [5.5.0](https://github.com/campsi/campsi-mono/compare/v5.4.0...v5.5.0) (2024-05-15)
 
 

@@ -1,3 +1,10 @@
+# [5.5.0](https://github.com/campsi/campsi-mono/compare/v5.4.0...v5.5.0) (2024-05-15)
+
+
+### Features
+
+* add error handler for services ([8090791](https://github.com/campsi/campsi-mono/commit/8090791f190ab586a4edb69833b87d3d312cd6cf))
+
 # [5.4.0](https://github.com/campsi/campsi-mono/compare/v5.3.0...v5.4.0) (2024-05-07)
 
 

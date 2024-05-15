@@ -76,15 +76,11 @@ module.exports = class StripeBillingService extends CampsiService {
 
     this.router.all('*', validateRequestAccess);
 
-    const defaultHandler = (req, res, next) => (err, obj) => {
+    const defaultHandler = (res) => (err, obj) => {
       if (err) {
-        if (this.errorHandler) {
-          this.errorHandler(err, req, res, next);
-        } else {
-          helpers.error(res, err);
-          console.error(err);
-          this.server.logger.error(err);
-        }
+        helpers.error(res, err);
+        console.error(err);
+        this.server.logger.error(err);
       } else {
         helpers.json(res, obj);
       }
@@ -100,7 +96,7 @@ module.exports = class StripeBillingService extends CampsiService {
         this.checkEmailValidity(req.body?.email);
         const params = bodyToCustomer(req.body, 'source', req.user);
         const idempotencyKey = this.createIdempotencyKey(params, 'customers.create');
-        stripe.customers.create(params, { idempotencyKey }, defaultHandler(req, res));
+        stripe.customers.create(params, { idempotencyKey }, defaultHandler(res));
       }
       catch (ex) {
         res.status(400).json(ex);
@@ -109,13 +105,13 @@ module.exports = class StripeBillingService extends CampsiService {
 
     this.router.get('/customers/:id', (req, res) => {
       req.query.expand = buildExpandFromQuery(req.query, customerExpand);
-      stripe.customers.retrieve(req.params.id, optionsFromQuery(req.query), defaultHandler(req, res));
+      stripe.customers.retrieve(req.params.id, optionsFromQuery(req.query), defaultHandler(res));
     });
 
     this.router.put('/customers/:id', (req, res) => {
       try {
         this.checkEmailValidity(req?.body.email);
-        stripe.customers.update(req.params.id, bodyToCustomer(req.body, 'default_source'), defaultHandler(req, res));
+        stripe.customers.update(req.params.id, bodyToCustomer(req.body, 'default_source'), defaultHandler(res));
       }
       catch(err) {
         res.status(400).json(err);
@@ -124,31 +120,31 @@ module.exports = class StripeBillingService extends CampsiService {
 
     this.router.patch('/customers/:id', (req, res) => {
       req.body.expand = buildExpandFromBody(req.body, customerExpand);
-      stripe.customers.update(req.params.id, req.body, defaultHandler(req, res));
+      stripe.customers.update(req.params.id, req.body, defaultHandler(res));
     });
 
     this.router.delete('/customers/:id', (req, res) => {
-      stripe.customers.del(req.params.id, defaultHandler(req, res));
+      stripe.customers.del(req.params.id, defaultHandler(res));
     });
 
     this.router.get('/customers/:customer/invoices', (req, res) => {
-      stripe.invoices.list(Object.assign({ customer: req.params.customer }, optionsFromQuery(req.query)), defaultHandler(req, res));
+      stripe.invoices.list(Object.assign({ customer: req.params.customer }, optionsFromQuery(req.query)), defaultHandler(res));
     });
 
     this.router.post('/customers/:customer/tax_ids', (req, res) => {
-      stripe.customers.createTaxId(req.params.customer, { type: req.body.type, value: req.body.value }, defaultHandler(req, res));
+      stripe.customers.createTaxId(req.params.customer, { type: req.body.type, value: req.body.value }, defaultHandler(res));
     });
 
     this.router.post('/customers/:customer/sources', (req, res) => {
-      stripe.customers.createSource(req.params.customer, { source: req.body.source }, defaultHandler(req, res));
+      stripe.customers.createSource(req.params.customer, { source: req.body.source }, defaultHandler(res));
     });
 
     this.router.delete('/customers/:customer/sources/:id', (req, res) => {
-      stripe.customers.deleteSource(req.params.customer, req.params.id, defaultHandler(req, res));
+      stripe.customers.deleteSource(req.params.customer, req.params.id, defaultHandler(res));
     });
 
     this.router.delete('/customers/:customer/tax_ids/:id', (req, res) => {
-      stripe.customers.deleteTaxId(req.params.customer, req.params.id, defaultHandler(req, res));
+      stripe.customers.deleteTaxId(req.params.customer, req.params.id, defaultHandler(res));
     });
 
     this.router.post('/subscriptions', (req, res) => {
@@ -167,7 +163,7 @@ module.exports = class StripeBillingService extends CampsiService {
         params.currency = req.body.currency;
       }
       const idempotencyKey = this.createIdempotencyKey(params, 'subscriptions.create');
-      stripe.subscriptions.create(params, { idempotencyKey }, defaultHandler(req, res)
+      stripe.subscriptions.create(params, { idempotencyKey }, defaultHandler(res)
       );
     });
 
@@ -184,7 +180,7 @@ module.exports = class StripeBillingService extends CampsiService {
 
     this.router.get('/subscriptions/:id', (req, res) => {
       req.query.expand = buildExpandFromQuery(req.query, subscriptionExpand);
-      stripe.subscriptions.retrieve(req.params.id, optionsFromQuery(req.query), defaultHandler(req, res));
+      stripe.subscriptions.retrieve(req.params.id, optionsFromQuery(req.query), defaultHandler(res));
     });
 
     this.router.delete('/subscriptions/:id', (req, res) => {
@@ -192,7 +188,7 @@ module.exports = class StripeBillingService extends CampsiService {
       if (req.body.invoice_now) {
         params.invoice_now = req.body.invoice_now;
       }
-      stripe.subscriptions.del(req.params.id, params, defaultHandler(req, res));
+      stripe.subscriptions.del(req.params.id, params, defaultHandler(res));
     });
 
     this.router.put('/subscriptions/:id', (req, res) => {
@@ -208,25 +204,25 @@ module.exports = class StripeBillingService extends CampsiService {
           default_tax_rates: req.body.default_tax_rates,
           default_source: req.body.default_source
         },
-        defaultHandler(req, res)
+        defaultHandler(res)
       );
     });
 
     this.router.patch('/subscriptions/:id', (req, res) => {
       req.body.expand = buildExpandFromBody(req.body, subscriptionExpand);
-      stripe.subscriptions.update(req.params.id, req.body, defaultHandler(req, res));
+      stripe.subscriptions.update(req.params.id, req.body, defaultHandler(res));
     });
 
     this.router.get('/sources/:id', (req, res) => {
-      stripe.sources.retrieve(req.params.id, optionsFromQuery(req.query), defaultHandler(req, res));
+      stripe.sources.retrieve(req.params.id, optionsFromQuery(req.query), defaultHandler(res));
     });
 
     this.router.get('/invoices/:id', (req, res) => {
-      stripe.invoices.retrieve(req.params.id, optionsFromQuery(req.query), defaultHandler(req, res));
+      stripe.invoices.retrieve(req.params.id, optionsFromQuery(req.query), defaultHandler(res));
     });
 
     this.router.get('/subscription-schedules/:id', (req, res) => {
-      stripe.subscriptionSchedules.retrieve(req.params.id, optionsFromQuery(req.query), defaultHandler(req, res));
+      stripe.subscriptionSchedules.retrieve(req.params.id, optionsFromQuery(req.query), defaultHandler(res));
     });
 
     this.router.post('/subscription-schedules', (req, res) => {
@@ -241,7 +237,7 @@ module.exports = class StripeBillingService extends CampsiService {
         expand: buildExpandFromBody(req.body)
       };
       const idempotencyKey = this.createIdempotencyKey(params, 'subscriptionSchedules.create');
-      stripe.subscriptionSchedules.create(params, { idempotencyKey }, defaultHandler(req, res));
+      stripe.subscriptionSchedules.create(params, { idempotencyKey }, defaultHandler(res));
     });
 
     this.router.put('/subscription-schedules/:id', (req, res) => {
@@ -255,7 +251,7 @@ module.exports = class StripeBillingService extends CampsiService {
           end_behavior: req.body.end_behavior,
           expand: buildExpandFromBody(req.body)
         },
-        defaultHandler(req, res)
+        defaultHandler(res)
       );
     });
 
@@ -301,7 +297,7 @@ module.exports = class StripeBillingService extends CampsiService {
       stripe.subscriptionSchedules.release(
         req.params.id,
         { preserve_cancel_date: req.body.preserve_cancel_date },
-        defaultHandler(req, res)
+        defaultHandler(res)
       );
     });
 
@@ -314,17 +310,17 @@ module.exports = class StripeBillingService extends CampsiService {
         metadata: req.body.metadata
       };
       const idempotencyKey = this.createIdempotencyKey(params, 'setupIntents.create');
-      stripe.setupIntents.create(params, { idempotencyKey }, defaultHandler(req, res)
+      stripe.setupIntents.create(params, { idempotencyKey }, defaultHandler(res)
       );
     });
 
     this.router.get('/coupons/:code[:]check-validity', this.checkCouponCodeValidity);
 
     this.router.get('/payment_intents/:id', (req, res) => {
-      stripe.paymentIntents.retrieve(req.params.id, optionsFromQuery(req.query), defaultHandler(req, res));
+      stripe.paymentIntents.retrieve(req.params.id, optionsFromQuery(req.query), defaultHandler(res));
     });
     this.router.post('/payment_intents/:id[:]confirm', (req, res) => {
-      stripe.paymentIntents.confirm(req.params.id, defaultHandler(req, res));
+      stripe.paymentIntents.confirm(req.params.id, defaultHandler(res));
     });
     this.router.post('/payment_intents', (req, res) => {
       const params = {
@@ -339,7 +335,7 @@ module.exports = class StripeBillingService extends CampsiService {
         params.payment_method = req.body.payment_method;
       }
       const idempotencyKey = this.createIdempotencyKey(params, 'paymentIntents.create');
-      stripe.paymentIntents.create(params,{ idempotencyKey }, defaultHandler(req, res));
+      stripe.paymentIntents.create(params,{ idempotencyKey }, defaultHandler(res));
     });
     this.router.patch('/payment_intents/:id', (req, res) => {
       const payload = {
@@ -351,7 +347,7 @@ module.exports = class StripeBillingService extends CampsiService {
       if (req.body.metadata) {
         payload.metadata = req.body.metadata;
       }
-      stripe.paymentIntents.update(req.params.id, payload, defaultHandler(req, res));
+      stripe.paymentIntents.update(req.params.id, payload, defaultHandler(res));
     });
 
     return super.initialize();

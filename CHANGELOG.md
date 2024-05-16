@@ -1,3 +1,10 @@
+## [5.5.2](https://github.com/campsi/campsi-mono/compare/v5.5.1...v5.5.2) (2024-05-16)
+
+
+### Bug Fixes
+
+* force semantic-release update ([197df97](https://github.com/campsi/campsi-mono/commit/197df9798e6bf846088284c4d25719e00a8c64d9))
+
 ## [5.5.1](https://github.com/campsi/campsi-mono/compare/v5.5.0...v5.5.1) (2024-05-15)
 
 

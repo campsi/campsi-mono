@@ -74,6 +74,7 @@ module.exports = class StripeBillingService extends CampsiService {
       return next();
     }
 
+
     this.router.all('*', validateRequestAccess);
 
     const defaultHandler = (req, res, next) => (err, obj) => {

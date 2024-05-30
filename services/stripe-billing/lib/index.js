@@ -24,8 +24,7 @@ const buildExpandFromQuery = (query, defaultExpand) => {
 };
 
 const bodyToCustomer = (body, sourcePropertyName, user) => {
-
-  return {
+  const customerPayload = {
     name: String(body.name),
     description: String(body.description),
     source: body.source,
@@ -39,7 +38,11 @@ const bodyToCustomer = (body, sourcePropertyName, user) => {
     shipping: body.shipping,
     preferred_locales: [...new Set([...(body.preferred_locales ?? []), 'fr-FR'])],
     expand: buildExpandFromBody(body, customerExpand)
-  };
+  }
+  if(!customerPayload.default_source) {
+    delete customerPayload.default_source; // can't be empty or unset
+  }
+  return customerPayload;
 };
 
 const optionsFromQuery = query => {

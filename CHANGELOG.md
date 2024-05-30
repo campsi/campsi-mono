@@ -1,3 +1,10 @@
+## [5.5.3](https://github.com/campsi/campsi-mono/compare/v5.5.2...v5.5.3) (2024-05-30)
+
+
+### Bug Fixes
+
+* customer default_source can't be unset ([#293](https://github.com/campsi/campsi-mono/issues/293)) ([ab837b6](https://github.com/campsi/campsi-mono/commit/ab837b659e2555fad55a63f2ec8b28d0f0452ef1))
+
 ## [5.5.2](https://github.com/campsi/campsi-mono/compare/v5.5.1...v5.5.2) (2024-05-16)
 
 

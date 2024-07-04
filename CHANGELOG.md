@@ -1,3 +1,10 @@
+## [5.5.4](https://github.com/campsi/campsi-mono/compare/v5.5.3...v5.5.4) (2024-07-04)
+
+
+### Bug Fixes
+
+* getDocument without default state ([#296](https://github.com/campsi/campsi-mono/issues/296)) ([0970bbf](https://github.com/campsi/campsi-mono/commit/0970bbfd724ab8db10a38f2434a7f134d8f0fe85))
+
 ## [5.5.3](https://github.com/campsi/campsi-mono/compare/v5.5.2...v5.5.3) (2024-05-30)
 
 

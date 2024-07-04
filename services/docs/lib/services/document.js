@@ -463,14 +463,15 @@ module.exports.getDocument = async function (resource, filter, query, user, stat
     projection.metadata = 1;
   }
   const match = { ...filter };
-  match[`states.${state}`] = { $exists: true };
-
+  if (resource.defaultState !== state) {
+    match[`states.${state}`] = { $exists: true };
+  }
   if (!resource.isInheritable) {
     const doc = await resource.collection.findOne(match, { projection });
     if (!doc) {
       throw new Error('Document Not Found');
     }
-    if (!doc.states[state]) {
+    if (resource.defaultState !== state && !doc.states[state]) {
       throw new Error('Document Not Found');
     }
     const returnValue = prepareGetDocument({

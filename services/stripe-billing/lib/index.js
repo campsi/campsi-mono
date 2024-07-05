@@ -2,7 +2,7 @@
 const CampsiService = require('../../../lib/service');
 const helpers = require('../../../lib/modules/responseHelpers');
 const crypto = require('crypto');
-const { isEmailValid } = require("../../auth/lib/handlers");
+const { isEmailValid } = require('../../auth/lib/handlers');
 
 const subscriptionExpand = ['latest_invoice', 'latest_invoice.payment_intent', 'pending_setup_intent'];
 const customerExpand = ['tax_ids'];
@@ -38,8 +38,8 @@ const bodyToCustomer = (body, sourcePropertyName, user) => {
     shipping: body.shipping,
     preferred_locales: [...new Set([...(body.preferred_locales ?? []), 'fr-FR'])],
     expand: buildExpandFromBody(body, customerExpand)
-  }
-  if(!customerPayload.default_source) {
+  };
+  if (!customerPayload.default_source) {
     delete customerPayload.default_source; // can't be empty or unset
   }
   return customerPayload;
@@ -52,8 +52,6 @@ const optionsFromQuery = query => {
   }
   return options;
 };
-
-
 
 module.exports = class StripeBillingService extends CampsiService {
   initialize() {
@@ -68,15 +66,14 @@ module.exports = class StripeBillingService extends CampsiService {
     });
 
     const validateRequestAccess = (req, res, next) => {
-      if(req.url === '/webhook') {
+      if (req.url === '/webhook') {
         return next();
       }
-      if(typeof this.options.validateRequestAccess === 'function') {
+      if (typeof this.options.validateRequestAccess === 'function') {
         return this.options.validateRequestAccess(req, res, next);
       }
       return next();
-    }
-
+    };
 
     this.router.all('*', validateRequestAccess);
 
@@ -99,14 +96,14 @@ module.exports = class StripeBillingService extends CampsiService {
       this.emit('webhook', req.body);
     });
 
-    this.router.post('/customers', (req, res) => {
+    this.router.post('/customers', async (req, res) => {
       try {
         this.checkEmailValidity(req.body?.email);
         const params = bodyToCustomer(req.body, 'source', req.user);
         const idempotencyKey = this.createIdempotencyKey(params, 'customers.create');
-        stripe.customers.create(params, { idempotencyKey }, defaultHandler(req, res));
-      }
-      catch (ex) {
+        const customer = await stripe.customers.create(params, { idempotencyKey });
+        res.json(customer);
+      } catch (ex) {
         res.status(400).json(ex);
       }
     });
@@ -120,8 +117,7 @@ module.exports = class StripeBillingService extends CampsiService {
       try {
         this.checkEmailValidity(req?.body.email);
         stripe.customers.update(req.params.id, bodyToCustomer(req.body, 'default_source'), defaultHandler(req, res));
-      }
-      catch(err) {
+      } catch (err) {
         res.status(400).json(err);
       }
     });
@@ -136,7 +132,10 @@ module.exports = class StripeBillingService extends CampsiService {
     });
 
     this.router.get('/customers/:customer/invoices', (req, res) => {
-      stripe.invoices.list(Object.assign({ customer: req.params.customer }, optionsFromQuery(req.query)), defaultHandler(req, res));
+      stripe.invoices.list(
+        Object.assign({ customer: req.params.customer }, optionsFromQuery(req.query)),
+        defaultHandler(req, res)
+      );
     });
 
     this.router.post('/customers/:customer/tax_ids', (req, res) => {
@@ -165,14 +164,13 @@ module.exports = class StripeBillingService extends CampsiService {
         promotion_code: req.body.promotion_code,
         expand: buildExpandFromBody(req.body, subscriptionExpand),
         default_tax_rates: req.body.default_tax_rates,
-        default_source: req.body.default_source,
+        default_source: req.body.default_source
       };
       if (req.body.currency) {
         params.currency = req.body.currency;
       }
       const idempotencyKey = this.createIdempotencyKey(params, 'subscriptions.create');
-      stripe.subscriptions.create(params, { idempotencyKey }, defaultHandler(req, res)
-      );
+      stripe.subscriptions.create(params, { idempotencyKey }, defaultHandler(req, res));
     });
 
     this.router.get('/subscriptions/:id[:]get-next-invoice', async (req, res) => {
@@ -318,8 +316,7 @@ module.exports = class StripeBillingService extends CampsiService {
         metadata: req.body.metadata
       };
       const idempotencyKey = this.createIdempotencyKey(params, 'setupIntents.create');
-      stripe.setupIntents.create(params, { idempotencyKey }, defaultHandler(req, res)
-      );
+      stripe.setupIntents.create(params, { idempotencyKey }, defaultHandler(req, res));
     });
 
     this.router.get('/coupons/:code[:]check-validity', this.checkCouponCodeValidity);
@@ -343,7 +340,7 @@ module.exports = class StripeBillingService extends CampsiService {
         params.payment_method = req.body.payment_method;
       }
       const idempotencyKey = this.createIdempotencyKey(params, 'paymentIntents.create');
-      stripe.paymentIntents.create(params,{ idempotencyKey }, defaultHandler(req, res));
+      stripe.paymentIntents.create(params, { idempotencyKey }, defaultHandler(req, res));
     });
     this.router.patch('/payment_intents/:id', (req, res) => {
       const payload = {
@@ -373,8 +370,8 @@ module.exports = class StripeBillingService extends CampsiService {
   createIdempotencyKey(params, method) {
     return crypto
       .createHash('sha256')
-      .update(JSON.stringify({ ...params, method, now: new Date().toISOString().slice(0,-6) }))
-      .digest('base64')
+      .update(JSON.stringify({ ...params, method, now: new Date().toISOString().slice(0, -6) }))
+      .digest('base64');
   }
 
   /**
@@ -407,11 +404,11 @@ module.exports = class StripeBillingService extends CampsiService {
     return creditNotes;
   };
 
-  checkEmailValidity (email) {
+  checkEmailValidity(email) {
     if (!isEmailValid(email)) {
       throw new Error('Invalid Email');
     }
-  };
+  }
 
   // eslint-disable-next-line
   checkCouponCodeValidity = async (req, res) => {

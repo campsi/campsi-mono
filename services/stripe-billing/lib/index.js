@@ -1,7 +1,8 @@
 /* eslint-disable no-prototype-builtins */
 const CampsiService = require('../../../lib/service');
-const helpers = require('../../../lib/modules/responseHelpers');
 const crypto = require('crypto');
+const helpers = require('../../../lib/modules/responseHelpers');
+const CreateError = require('http-errors');
 const { isEmailValid } = require('../../auth/lib/handlers');
 
 const subscriptionExpand = ['latest_invoice', 'latest_invoice.payment_intent', 'pending_setup_intent'];
@@ -401,7 +402,7 @@ module.exports = class StripeBillingService extends CampsiService {
 
   checkEmailValidity(email) {
     if (!isEmailValid(email)) {
-      throw new Error('Invalid Email');
+      throw new CreateError(400, 'Invalid Email');
     }
   }
 

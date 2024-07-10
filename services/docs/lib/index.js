@@ -23,7 +23,6 @@ format.extend(String.prototype);
 module.exports = class DocsService extends CampsiService {
   initialize() {
     const service = this;
-    const server = this.server;
 
     const validateWriteAccess = (req, res, next) => {
       if (typeof this.options.validateWriteAccess === 'function') {

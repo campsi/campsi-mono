@@ -11,6 +11,7 @@ const debug = require('debug')('campsi:docs');
 const format = require('string-format');
 const csdAssign = require('../../../lib/keywords/csdAssign');
 const csdVisibility = require('../../../lib/keywords/csdVisibility');
+const { createMongoDbIndex } = require('../../../lib/modules/mongoDbHelpers');
 
 /* Todo
  * [ ] filter document fields based on query parameter fields
@@ -69,36 +70,11 @@ module.exports = class DocsService extends CampsiService {
     this.router.delete('/:resource/:id/:state', additionalMiddlewares, handlers.delDoc);
     this.router.delete('/:resource/:id/locks/:lock', additionalMiddlewares, handlers.deleteLock);
 
-    return new Promise(resolve => {
-      const ajvWriter = new Ajv({ allErrors: true, useAssign: true, strictTuples: false, strict: false });
-      ajvErrors(ajvWriter);
-      addFormats(ajvWriter);
-      csdAssign(ajvWriter);
-      const ajvReader = new Ajv({ allErrors: true, useVisibility: true, strictTuples: false, strict: false });
-      ajvErrors(ajvReader);
-      addFormats(ajvReader);
-      csdVisibility(ajvReader);
-      async.eachOf(
-        service.options.resources,
-        function (resource, name, cb) {
-          Object.assign(resource, service.options.classes[resource.class]);
-          resource.collection = server.db.collection('docs.{0}.{1}'.format(service.path, name));
-          $RefParser
-            .dereference(service.config.optionsBasePath + '/', resource.schema, {})
-            .then(function (schema) {
-              resource.schema = schema;
-              resource.validate = ajvWriter.compile(schema);
-              resource.filter = ajvWriter.compile(schema);
-              cb();
-            })
-            .catch(function (error) {
-              debug(error);
-              cb();
-            });
-        },
-        resolve
-      );
-    });
+    this.attachCollectionToResources();
+
+    this.addClassToResources();
+
+    return Promise.all([this.addSchemaValidationToResources(), this.createIndexes(), super.initialize()]);
   }
 
   describe() {
@@ -114,5 +90,80 @@ module.exports = class DocsService extends CampsiService {
       };
     });
     return desc;
+  }
+
+  async createIndexes() {
+    const indexes = [];
+    for (const [resourceName, resource] of Object.entries(this.options.resources)) {
+      if (!resource.createDefaultIndexes) {
+        continue;
+      }
+      const collection = this.db.collection(`docs.${this.path}.${resourceName}`);
+      const resourceClass = this.options.classes[resource.class];
+      const resourceStates = Object.keys(resourceClass?.states || {});
+      resourceStates.forEach(state => {
+        indexes.push(
+          ...[
+            {
+              collection,
+              indexDefinition: {
+                indexSpecs: { [`states.${state}.data.createdAt`]: 1 },
+                options: { sparse: true }
+              }
+            },
+            {
+              collection,
+              indexDefinition: {
+                indexSpecs: { [`states.${state}.data.createdAt`]: 1 },
+                options: { sparse: true }
+              }
+            }
+          ]
+        );
+      });
+      indexes.push(
+        ...[
+          { collection, indexDefinition: { indexSpecs: { 'users.$**': 1 } } },
+          { collection, indexDefinition: { indexSpecs: { groups: 1 } } }
+        ]
+      );
+    }
+
+    if (!indexes.length) {
+      return;
+    }
+
+    for (const { collection, indexDefinition } of indexes) {
+      await createMongoDbIndex(collection, indexDefinition, this.server.logger, this.server.environment);
+    }
+  }
+
+  attachCollectionToResources() {
+    for (const [resourceName, resource] of Object.entries(this.options.resources)) {
+      resource.collection = this.db.collection(`docs.${this.path}.${resourceName}`);
+    }
+  }
+
+  addClassToResources() {
+    for (const resource of Object.values(this.options.resources)) {
+      Object.assign(resource, this.options.classes[resource.class]);
+    }
+  }
+
+  async addSchemaValidationToResources() {
+    const ajvWriter = new Ajv({ allErrors: true, useAssign: true, strictTuples: false, strict: false });
+    ajvErrors(ajvWriter);
+    addFormats(ajvWriter);
+    csdAssign(ajvWriter);
+    const ajvReader = new Ajv({ allErrors: true, useVisibility: true, strictTuples: false, strict: false });
+    ajvErrors(ajvReader);
+    addFormats(ajvReader);
+    csdVisibility(ajvReader);
+    for (const resource of Object.values(this.options.resources)) {
+      const schema = await $RefParser.dereference(this.config.optionsBasePath + '/', resource.schema, {});
+      resource.schema = schema;
+      resource.validate = ajvWriter.compile(schema);
+      resource.filter = ajvWriter.compile(schema);
+    }
   }
 };

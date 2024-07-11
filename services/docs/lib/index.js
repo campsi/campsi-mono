@@ -89,16 +89,42 @@ module.exports = class DocsService extends CampsiService {
     return desc;
   }
 
+  attachCollectionToResources() {
+    for (const [resourceName, resource] of Object.entries(this.options.resources)) {
+      resource.collection = this.db.collection(`docs.${this.path}.${resourceName}`);
+    }
+  }
+
+  addClassToResources() {
+    Object.entries(this.options.resources).forEach(([resourceName, resource]) => {
+      this.options.resources[resourceName] = {
+        ...resource,
+        ...this.options.classes[resource.class]
+      };
+    });
+  }
+
   async createIndexes() {
     const indexes = [];
-    for (const [resourceName, resource] of Object.entries(this.options.resources)) {
+    for (const resource of Object.values(this.options.resources)) {
       if (!resource.createDefaultIndexes) {
         continue;
       }
-      const collection = this.db.collection(`docs.${this.path}.${resourceName}`);
-      const resourceClass = this.options.classes[resource.class];
-      const resourceStates = Object.keys(resourceClass?.states || {});
-      resourceStates.forEach(state => {
+      const collection = resource.collection;
+      indexes.push(
+        ...[
+          { collection, indexDefinition: { indexSpecs: { 'users.$**': 1 } } },
+          { collection, indexDefinition: { indexSpecs: { groups: 1 } } }
+        ]
+      );
+      Object.keys(resource.states || {}).forEach(state => {
+        Object.values(resource.rels || {}).forEach(relation => {
+          indexes.push({
+            collection,
+            indexDefinition: { indexSpecs: { [`states.${state}.data.${relation.path}`]: 1 }, options: { sparse: true } }
+          });
+        });
+
         indexes.push(
           ...[
             {
@@ -118,12 +144,6 @@ module.exports = class DocsService extends CampsiService {
           ]
         );
       });
-      indexes.push(
-        ...[
-          { collection, indexDefinition: { indexSpecs: { 'users.$**': 1 } } },
-          { collection, indexDefinition: { indexSpecs: { groups: 1 } } }
-        ]
-      );
     }
 
     if (!indexes.length) {
@@ -135,21 +155,6 @@ module.exports = class DocsService extends CampsiService {
         createMongoDbIndex(collection, indexDefinition, this.server.logger, this.server.environment)
       )
     );
-  }
-
-  attachCollectionToResources() {
-    for (const [resourceName, resource] of Object.entries(this.options.resources)) {
-      resource.collection = this.db.collection(`docs.${this.path}.${resourceName}`);
-    }
-  }
-
-  addClassToResources() {
-    Object.entries(this.options.resources).forEach(([resourceName, resource]) => {
-      this.options.resources[resourceName] = {
-        ...resource,
-        ...this.options.classes[resource.class]
-      };
-    });
   }
 
   async addSchemaValidationToResources() {

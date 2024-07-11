@@ -114,29 +114,23 @@ module.exports = class DocsService extends CampsiService {
       indexes.push(
         ...[
           { collection, indexDefinition: { indexSpecs: { 'users.$**': 1 } } },
-          { collection, indexDefinition: { indexSpecs: { groups: 1 } } }
+          { collection, indexDefinition: { indexSpecs: { groups: 1 } } },
+          {
+            collection,
+            indexDefinition: {
+              indexSpecs: { [`states.${resource.defaultState}.data.createdAt`]: 1 },
+              options: { sparse: true }
+            }
+          },
+          {
+            collection,
+            indexDefinition: {
+              indexSpecs: { [`states.${resource.defaultState}.data.createdAt`]: 1 },
+              options: { sparse: true }
+            }
+          }
         ]
       );
-      Object.keys(resource.states || {}).forEach(state => {
-        indexes.push(
-          ...[
-            {
-              collection,
-              indexDefinition: {
-                indexSpecs: { [`states.${state}.data.createdAt`]: 1 },
-                options: { sparse: true }
-              }
-            },
-            {
-              collection,
-              indexDefinition: {
-                indexSpecs: { [`states.${state}.data.createdAt`]: 1 },
-                options: { sparse: true }
-              }
-            }
-          ]
-        );
-      });
     }
 
     if (!indexes.length) {

@@ -24,11 +24,9 @@ module.exports.can = function can(user, resource, method) {
       - by role: method dependent
       - or if they share at least one common group
   */
-  const allowedRoles = Object.keys(resource.permissions)
-    .filter(role => {
-      return isAllowedTo(resource.permissions[role], method);
-    })
-    .concat(['owner']);
+  const allowedRoles = [
+    ...new Set([...Object.keys(resource.permissions).filter(role => isAllowedTo(resource.permissions[role], method)), 'owner'])
+  ];
   let filter = {
     [`users.${user._id}.roles`]: { $elemMatch: { $in: allowedRoles } }
   };

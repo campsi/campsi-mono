@@ -5,7 +5,6 @@ const handlers = require('./handlers');
 const Ajv = require('ajv');
 const ajvErrors = require('ajv-errors');
 const $RefParser = require('json-schema-ref-parser');
-const debug = require('debug')('campsi:versioned-docs');
 const csdAssign = require('../../../lib/keywords/csdAssign');
 const csdVisibility = require('../../../lib/keywords/csdVisibility');
 const { createMongoDbIndex } = require('../../../lib/modules/mongoDbHelpers');

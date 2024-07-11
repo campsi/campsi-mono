@@ -1,5 +1,5 @@
 function isAllowedTo(permission, method) {
-  return permission && (permission.includes(method) || permission === '*');
+  return typeof permission === 'string' && (permission.includes(method) || permission === '*');
 }
 
 const PUBLIC_ERR_MESSAGE = 'resource is not public for this state and method';
@@ -30,14 +30,14 @@ module.exports.can = function can(user, resource, method, state) {
       - by role: state and method dependent
       - or if they share at least one common group
    */
-  const allowedRoles = Object.keys(resource.permissions)
-    .filter(role => {
-      return isAllowedTo(resource.permissions[role][state], method);
-    })
-    .concat(['owner']);
-
+  const allowedRoles = [
+    ...new Set([
+      ...Object.keys(resource.permissions).filter(role => isAllowedTo(resource.permissions[role][state], method)),
+      'owner'
+    ])
+  ];
   let filter = {
-    [`users.${user._id}.roles`]: { $elemMatch: { $in: allowedRoles } }
+    [`users.${user._id}.roles`]: allowedRoles.length > 1 ? { $elemMatch: { $in: allowedRoles } } : allowedRoles[0]
   };
 
   if (user.groups && user.groups.length) {

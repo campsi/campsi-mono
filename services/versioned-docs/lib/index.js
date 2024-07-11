@@ -114,11 +114,9 @@ module.exports = class VersionedDocsService extends CampsiService {
       return;
     }
 
-    return Promise.all(
-      indexes.map(({ collection, indexDefinition }) =>
-        createMongoDbIndex(collection, indexDefinition, this.server.logger, this.server.environment)
-      )
-    );
+    for (const { collection, indexDefinition } of indexes) {
+      await createMongoDbIndex(collection, indexDefinition, this.server.logger, this.server.environment);
+    }
   }
 
   async addSchemaValidationToResources() {

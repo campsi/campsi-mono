@@ -114,19 +114,25 @@ module.exports = class DocsService extends CampsiService {
       indexes.push(
         ...[
           { collection, indexDefinition: { indexSpecs: { 'users.$**': 1 } } },
-          { collection, indexDefinition: { indexSpecs: { groups: 1 } } },
+          { collection, indexDefinition: { indexSpecs: { groups: 1 } } }
+        ]
+      );
+      const resourceStates = Object.keys(resource.states || {});
+      const statesOptions = resourceStates.length > 1 ? { sparse: true } : {};
+      indexes.push(
+        ...[
           {
             collection,
             indexDefinition: {
               indexSpecs: { [`states.${resource.defaultState}.data.createdAt`]: 1 },
-              options: { sparse: true }
+              options: statesOptions
             }
           },
           {
             collection,
             indexDefinition: {
-              indexSpecs: { [`states.${resource.defaultState}.data.createdAt`]: 1 },
-              options: { sparse: true }
+              indexSpecs: { [`states.${resource.defaultState}.data.createdBy`]: 1 },
+              options: statesOptions
             }
           }
         ]
@@ -137,11 +143,9 @@ module.exports = class DocsService extends CampsiService {
       return;
     }
 
-    return Promise.all(
-      indexes.map(({ collection, indexDefinition }) =>
-        createMongoDbIndex(collection, indexDefinition, this.server.logger, this.server.environment)
-      )
-    );
+    for (const { collection, indexDefinition } of indexes) {
+      await createMongoDbIndex(collection, indexDefinition, this.server.logger, this.server.environment);
+    }
   }
 
   async addSchemaValidationToResources() {

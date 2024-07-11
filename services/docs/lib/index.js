@@ -118,13 +118,6 @@ module.exports = class DocsService extends CampsiService {
         ]
       );
       Object.keys(resource.states || {}).forEach(state => {
-        Object.values(resource.rels || {}).forEach(relation => {
-          indexes.push({
-            collection,
-            indexDefinition: { indexSpecs: { [`states.${state}.data.${relation.path}`]: 1 }, options: { sparse: true } }
-          });
-        });
-
         indexes.push(
           ...[
             {

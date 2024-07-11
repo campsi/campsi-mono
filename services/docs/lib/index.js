@@ -132,9 +132,11 @@ module.exports = class DocsService extends CampsiService {
       return;
     }
 
-    for (const { collection, indexDefinition } of indexes) {
-      await createMongoDbIndex(collection, indexDefinition, this.server.logger, this.server.environment);
-    }
+    return Promise.all(
+      indexes.map(({ collection, indexDefinition }) =>
+        createMongoDbIndex(collection, indexDefinition, this.server.logger, this.server.environment)
+      )
+    );
   }
 
   attachCollectionToResources() {
@@ -144,9 +146,12 @@ module.exports = class DocsService extends CampsiService {
   }
 
   addClassToResources() {
-    for (const resource of Object.values(this.options.resources)) {
-      Object.assign(resource, this.options.classes[resource.class]);
-    }
+    Object.entries(this.options.resources).forEach(([resourceName, resource]) => {
+      this.options.resources[resourceName] = {
+        ...resource,
+        ...this.options.classes[resource.class]
+      };
+    });
   }
 
   async addSchemaValidationToResources() {

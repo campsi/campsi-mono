@@ -128,15 +128,21 @@ module.exports.putDocState = function (req, res) {
 // modify a doc
 module.exports.putDoc = async (req, res) => {
   try {
-    const originalDoc = await documentService.getDocument(
-      req.resource,
-      req.filter,
-      req.query,
-      req.user,
-      req.state,
-      req.options.resources
-    );
-
+    let originalDoc = {};
+    try {
+      originalDoc = await documentService.getDocument(
+        req.resource,
+        req.filter,
+        req.query,
+        req.user,
+        req.state,
+        req.options.resources
+      );
+    } catch (error) {
+      if (req.resource.defaultState !== req.state && !error.message.includes('Not Found')) {
+        return dispatchError(res, error);
+      }
+    }
     const result = await documentService.setDocument(req.resource, req.filter, req.body, req.state, req.user);
     helpers.json(res, result);
     req.service.emit(

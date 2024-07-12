@@ -1,3 +1,10 @@
+# [5.6.0](https://github.com/campsi/campsi-mono/compare/v5.5.5...v5.6.0) (2024-07-12)
+
+
+### Features
+
+* add default indexes (DEV-6631) ([#298](https://github.com/campsi/campsi-mono/issues/298)) ([f998b9d](https://github.com/campsi/campsi-mono/commit/f998b9d1842192e9c3dfd2a05769952446714988))
+
 ## [5.5.5](https://github.com/campsi/campsi-mono/compare/v5.5.4...v5.5.5) (2024-07-11)
 
 

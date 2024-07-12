@@ -5,14 +5,13 @@ const handlers = require('./handlers');
 const Ajv = require('ajv');
 const ajvErrors = require('ajv-errors');
 const $RefParser = require('json-schema-ref-parser');
-const debug = require('debug')('campsi:versioned-docs');
 const csdAssign = require('../../../lib/keywords/csdAssign');
 const csdVisibility = require('../../../lib/keywords/csdVisibility');
+const { createMongoDbIndex } = require('../../../lib/modules/mongoDbHelpers');
 
 module.exports = class VersionedDocsService extends CampsiService {
   initialize() {
     const service = this;
-    const server = this.server;
 
     const validateWriteAccess = (req, res, next) => {
       if (typeof this.options.validateWriteAccess === 'function') {
@@ -42,43 +41,11 @@ module.exports = class VersionedDocsService extends CampsiService {
     this.router.patch('/:resource/:id', validateWriteAccess, handlers.updateDoc);
     this.router.delete('/:resource/:id', handlers.delDoc);
 
-    const ajvWriter = new Ajv({ allErrors: true, useAssign: true, strict: false });
-    ajvErrors(ajvWriter);
-    csdAssign(ajvWriter);
-    const ajvReader = new Ajv({ allErrors: true, useVisibility: true, strict: false });
-    ajvErrors(ajvReader);
-    csdVisibility(ajvReader);
-    try {
-      return Promise.all(
-        Object.entries(service.options.resources).map(async ([resName, resource]) => {
-          resource = {
-            ...resource,
-            ...service.options.classes[resource.class]
-          };
-          ['current', 'revision', 'version'].map(col => {
-            resource[`${col}Collection`] = server.db.collection(`${service.options.dbPrefix}.${resName}-${col}`);
-          });
-          const relIndexes = Object.entries(resource.rels || {}).map(([, rel]) => {
-            return { key: { [`${rel.path}`]: 1 } };
-          });
-          await resource.currentCollection.createIndexes([{ key: { 'users.$**': 1 } }, { key: { revision: 1 } }, ...relIndexes]);
+    this.attachCollectionToResources();
 
-          await resource.revisionCollection.createIndex({ currentId: 1, revision: 1 }, { unique: true });
+    this.addClassToResources();
 
-          await resource.versionCollection.createIndex({ currentId: 1, version: 1 }, { unique: true });
-          await resource.versionCollection.createIndex({ currentId: 1, revision: 1 }, { unique: true });
-          await resource.versionCollection.createIndex({ currentId: 1, tag: 1 }, { unique: true });
-
-          const schema = await $RefParser.dereference(service.config.optionsBasePath + '/', resource.schema, {});
-          resource.schema = schema;
-          resource.validate = ajvWriter.compile(schema);
-          resource.filter = ajvReader.compile(schema);
-          return (service.options.resources[`${resName}`] = resource);
-        })
-      );
-    } catch (e) {
-      debug(e);
-    }
+    return Promise.all([this.createIndexes(), this.addSchemaValidationToResources(), super.initialize()]);
   }
 
   describe() {
@@ -94,5 +61,77 @@ module.exports = class VersionedDocsService extends CampsiService {
       };
     });
     return desc;
+  }
+
+  attachCollectionToResources() {
+    Object.entries(this.options.resources).forEach(([resourceName, resource]) => {
+      ['current', 'revision', 'version'].forEach(col => {
+        resource[`${col}Collection`] = this.server.db.collection(`${this.options.dbPrefix}.${resourceName}-${col}`);
+      });
+    });
+  }
+
+  addClassToResources() {
+    Object.entries(this.options.resources).forEach(([resourceName, resource]) => {
+      this.options.resources[resourceName] = {
+        ...resource,
+        ...this.options.classes[resource.class]
+      };
+    });
+  }
+
+  async createIndexes() {
+    const indexes = [];
+    Object.entries(this.options.resources).forEach(([resName, resource]) => {
+      Object.values(resource.rels || {}).forEach(relation => {
+        indexes.push({ collection: resource.currentCollection, indexDefinition: { indexSpecs: { [`${relation.path}`]: 1 } } });
+      });
+
+      indexes.push(
+        ...[
+          { collection: resource.currentCollection, indexDefinition: { indexSpecs: { 'users.$**': 1 } } },
+          { collection: resource.currentCollection, indexDefinition: { indexSpecs: { revision: 1 } } },
+          {
+            collection: resource.revisionCollection,
+            indexDefinition: { indexSpecs: { currentId: 1, revision: 1 }, options: { unique: true } }
+          },
+          {
+            collection: resource.versionCollection,
+            indexDefinition: { indexSpecs: { currentId: 1, version: 1 }, options: { unique: true } }
+          },
+          {
+            collection: resource.versionCollection,
+            indexDefinition: { indexSpecs: { currentId: 1, revision: 1 }, options: { unique: true } }
+          },
+          {
+            collection: resource.versionCollection,
+            indexDefinition: { indexSpecs: { currentId: 1, tag: 1 }, options: { unique: true } }
+          }
+        ]
+      );
+    });
+    if (!indexes.length) {
+      return;
+    }
+
+    for (const { collection, indexDefinition } of indexes) {
+      await createMongoDbIndex(collection, indexDefinition, this.server.logger, this.server.environment);
+    }
+  }
+
+  async addSchemaValidationToResources() {
+    const ajvWriter = new Ajv({ allErrors: true, useAssign: true, strict: false });
+    ajvErrors(ajvWriter);
+    csdAssign(ajvWriter);
+    const ajvReader = new Ajv({ allErrors: true, useVisibility: true, strict: false });
+    ajvErrors(ajvReader);
+    csdVisibility(ajvReader);
+
+    for (const resource of Object.values(this.options.resources)) {
+      const schema = await $RefParser.dereference(this.config.optionsBasePath + '/', resource.schema, {});
+      resource.schema = schema;
+      resource.validate = ajvWriter.compile(schema);
+      resource.filter = ajvReader.compile(schema);
+    }
   }
 };

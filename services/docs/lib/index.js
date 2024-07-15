@@ -127,13 +127,6 @@ module.exports = class DocsService extends CampsiService {
               indexSpecs: { [`states.${resource.defaultState}.createdAt`]: 1 },
               options: statesOptions
             }
-          },
-          {
-            collection,
-            indexDefinition: {
-              indexSpecs: { [`states.${resource.defaultState}.createdBy`]: 1 },
-              options: statesOptions
-            }
           }
         ]
       );

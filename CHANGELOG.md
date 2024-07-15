@@ -1,3 +1,10 @@
+# [5.7.0](https://github.com/campsi/campsi-mono/compare/v5.6.2...v5.7.0) (2024-07-15)
+
+
+### Features
+
+* createdBy docs index not useful after all ([#302](https://github.com/campsi/campsi-mono/issues/302)) ([5c3a399](https://github.com/campsi/campsi-mono/commit/5c3a39936b66a52493a7a817c10907082f37037f))
+
 ## [5.6.2](https://github.com/campsi/campsi-mono/compare/v5.6.1...v5.6.2) (2024-07-15)
 
 

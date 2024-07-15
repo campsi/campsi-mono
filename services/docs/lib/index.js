@@ -19,7 +19,7 @@ const { createMongoDbIndex } = require('../../../lib/modules/mongoDbHelpers');
 format.extend(String.prototype);
 
 module.exports = class DocsService extends CampsiService {
-  initialize() {
+  async initialize() {
     const service = this;
 
     const validateWriteAccess = (req, res, next) => {
@@ -71,7 +71,9 @@ module.exports = class DocsService extends CampsiService {
 
     this.addClassToResources();
 
-    return Promise.all([this.addSchemaValidationToResources(), this.createIndexes(), super.initialize()]);
+    await Promise.all([this.addSchemaValidationToResources(), this.createIndexes()]);
+
+    return super.initialize();
   }
 
   describe() {

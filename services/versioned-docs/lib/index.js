@@ -10,7 +10,7 @@ const csdVisibility = require('../../../lib/keywords/csdVisibility');
 const { createMongoDbIndex } = require('../../../lib/modules/mongoDbHelpers');
 
 module.exports = class VersionedDocsService extends CampsiService {
-  initialize() {
+  async initialize() {
     const service = this;
 
     const validateWriteAccess = (req, res, next) => {
@@ -45,7 +45,9 @@ module.exports = class VersionedDocsService extends CampsiService {
 
     this.addClassToResources();
 
-    return Promise.all([this.createIndexes(), this.addSchemaValidationToResources(), super.initialize()]);
+    await Promise.all([this.createIndexes(), this.addSchemaValidationToResources()]);
+
+    return super.initialize();
   }
 
   describe() {

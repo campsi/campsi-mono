@@ -7,9 +7,6 @@ const JournalService = require('./services/journal');
 const Ajv = require('ajv');
 const addFormats = require('ajv-formats');
 const ajvErrors = require('ajv-errors');
-const csdAssign = require('../../lib/keywords/csdAssign');
-const csdVisibility = require('../../lib/keywords/csdVisibility');
-const $RefParser = require('json-schema-ref-parser');
 
 module.exports = class AuditService extends CampsiService {
   async initialize() {
@@ -23,8 +20,7 @@ module.exports = class AuditService extends CampsiService {
 
     this.setupRoutes(service);
 
-    await this.createIndexes();
-    await this.addSchemaValidationToResources();
+    await Promise.all([this.createIndexes(), this.addSchemaValidationToResources()]);
 
     return super.initialize();
   }

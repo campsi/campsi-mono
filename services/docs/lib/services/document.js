@@ -177,7 +177,7 @@ module.exports.lockDocument = async function (resource, state, filter, tokenTime
 module.exports.getDocuments = async function (resource, filter, user, query, state, sort, pagination = {}, resources) {
   const queryBuilderOptions = { resource, user, query, state };
   const filterState = {};
-  filterState[`states.${state}`] = { $exists: true };
+  filterState[`states.${state}.createdAt`] = { $exists: true };
   const filterIds = {};
   if (query.ids) {
     // TODO: $in operator should not have more than 200 elements

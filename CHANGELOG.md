@@ -1,3 +1,10 @@
+## [5.6.2](https://github.com/campsi/campsi-mono/compare/v5.6.1...v5.6.2) (2024-07-15)
+
+
+### Bug Fixes
+
+* wrongly placed doc indexes ([#301](https://github.com/campsi/campsi-mono/issues/301)) ([4ded80f](https://github.com/campsi/campsi-mono/commit/4ded80f501af83d877eb236ec5b940e625e95059))
+
 ## [5.6.1](https://github.com/campsi/campsi-mono/compare/v5.6.0...v5.6.1) (2024-07-15)
 
 

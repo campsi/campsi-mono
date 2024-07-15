@@ -1,3 +1,10 @@
+## [5.6.1](https://github.com/campsi/campsi-mono/compare/v5.6.0...v5.6.1) (2024-07-15)
+
+
+### Bug Fixes
+
+* add indexed prop in getDocuments default filter ([#300](https://github.com/campsi/campsi-mono/issues/300)) ([aa8c7f1](https://github.com/campsi/campsi-mono/commit/aa8c7f1e30285e80be8589fa17f2bcb7c10e66bc))
+
 # [5.6.0](https://github.com/campsi/campsi-mono/compare/v5.5.5...v5.6.0) (2024-07-12)
 
 

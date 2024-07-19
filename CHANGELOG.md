@@ -1,3 +1,10 @@
+# [5.8.0](https://github.com/campsi/campsi-mono/compare/v5.7.0...v5.8.0) (2024-07-19)
+
+
+### Features
+
+* services initialization refactoring ([#303](https://github.com/campsi/campsi-mono/issues/303)) ([9fdc535](https://github.com/campsi/campsi-mono/commit/9fdc5354d522566ce6a2a29922325848e104a518))
+
 # [5.7.0](https://github.com/campsi/campsi-mono/compare/v5.6.2...v5.7.0) (2024-07-15)
 
 

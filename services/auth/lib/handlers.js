@@ -143,20 +143,27 @@ async function patchMe(req, res) {
     return helpers.unauthorized(res);
   }
 
-  const allowedProps = ['displayName', 'data'];
+  const allowedProps = ['displayName', 'firstName', 'lastName', 'data'];
   const update = { $set: {} };
 
   for (const [key, value] of Object.entries(req.body)) {
-    if (allowedProps.filter(prop => key.startsWith(prop)).length && !!value) {
+    if ((allowedProps.includes(key) || key.startsWith('data.')) && !!value) {
       update.$set[key] = value;
     }
   }
+
+  if (!Object.keys(update.$set).length) {
+    return helpers.badRequest(res, new Error('No valid properties to update'));
+  }
+
   try {
     const usersCollection = await getUsersCollection(req.campsi, req.service.path);
     const result = await usersCollection.findOneAndUpdate({ _id: req.user._id }, update, {
       returnDocument: 'after'
     });
     res.json(result);
+
+    req.service.emit('user/patched', { userId: req.user._id, update: update.$set });
   } catch (e) {
     helpers.error(res, e);
   }
@@ -590,6 +597,8 @@ async function softDelete(req, res) {
         $set: {
           email: '',
           displayName: '',
+          firstName: '',
+          lastName: '',
           picture: '',
           data: {},
           identities: {},

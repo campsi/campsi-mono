@@ -143,11 +143,11 @@ async function patchMe(req, res) {
     return helpers.unauthorized(res);
   }
 
-  const allowedProps = ['displayName', 'data'];
+  const allowedProps = ['displayName', 'firstName', 'lastName'];
   const update = { $set: {} };
 
   for (const [key, value] of Object.entries(req.body)) {
-    if (allowedProps.filter(prop => key.startsWith(prop)).length && !!value) {
+    if ((allowedProps.includes(key) || key.startsWith('data.')) && !!value) {
       update.$set[key] = value;
     }
   }

@@ -6,7 +6,7 @@ const async = require('async');
 const request = require('request');
 
 class WebhooksService extends CampsiService {
-  initialize() {
+  async initialize() {
     this.options = Object.assign(WebhooksService.defaults, this.options);
     this.collection = this.db.collection(`webhooks.${this.path}`);
     this.router.use((req, res, next) => {
@@ -21,7 +21,7 @@ class WebhooksService extends CampsiService {
     this.router.delete('/:id', this.deleteWebhook.bind(this));
     this.server.on(`${this.options.channel || 'webhooks'}/#`, this.handleEvent.bind(this));
     debug(`service initialized, listening to channel "${this.options.channel}"`);
-    this.collection.createIndex({ uri: 1, event: 1 }, { unique: true });
+    await this.collection.createIndex({ uri: 1, event: 1 }, { unique: true });
     return super.initialize();
   }
 

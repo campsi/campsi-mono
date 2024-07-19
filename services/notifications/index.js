@@ -12,10 +12,9 @@ const async = require('async');
 const param = require('./param');
 
 module.exports = class NotificationsService extends CampsiService {
-  initialize() {
+  async initialize() {
     debug('initialize Notifications service');
     const service = this;
-    const server = this.server;
 
     this.router.use('/', (req, _res, next) => {
       req.options = service.options;
@@ -33,37 +32,33 @@ module.exports = class NotificationsService extends CampsiService {
     this.router.patch('/:resource/:id', handlers.patchNotification);
     this.router.delete('/:resource/:id', handlers.deleteNotification);
 
-    return new Promise(resolve => {
-      const ajvWriter = new Ajv({ allErrors: true, useAssign: true, strictTuples: false, strict: false });
-      ajvErrors(ajvWriter);
-      csdAssign(ajvWriter);
-      addFormats(ajvWriter);
-      const ajvReader = new Ajv({ allErrors: true, useVisibility: true, strictTuples: false, strict: false });
-      ajvErrors(ajvReader);
-      csdVisibility(ajvReader);
-      addFormats(ajvReader);
+    this.attachCollectionToResources();
+    await this.addSchemaValidationToResources();
 
-      async.eachOf(
-        service.options.resources,
-        function (resource, name, cb) {
-          Object.assign(resource, service.options.classes[resource.class]);
-          resource.collection = server.db.collection(`notifications.${service.path}`);
-          $RefParser
-            .dereference(service.config.optionsBasePath + '/', resource.schema, {})
-            .then(function (schema) {
-              resource.schema = schema;
-              resource.validate = ajvWriter.compile(schema);
-              resource.filter = ajvWriter.compile(schema);
-              cb();
-            })
-            .catch(function (error) {
-              debug(error);
-              cb();
-            });
-        },
-        resolve
-      );
-    });
+    return super.initialize();
+  }
+
+  attachCollectionToResources() {
+    for (const resource of Object.values(this.options.resources)) {
+      resource.collection = this.db.collection(`notifications.${this.path}`);
+    }
+  }
+
+  async addSchemaValidationToResources() {
+    const ajvWriter = new Ajv({ allErrors: true, useAssign: true, strictTuples: false, strict: false });
+    ajvErrors(ajvWriter);
+    csdAssign(ajvWriter);
+    addFormats(ajvWriter);
+    const ajvReader = new Ajv({ allErrors: true, useVisibility: true, strictTuples: false, strict: false });
+    ajvErrors(ajvReader);
+    csdVisibility(ajvReader);
+    addFormats(ajvReader);
+    for (const resource of Object.values(this.options.resources)) {
+      const schema = await $RefParser.dereference(this.config.optionsBasePath + '/', resource.schema, {});
+      resource.schema = schema;
+      resource.validate = ajvWriter.compile(schema);
+      resource.filter = ajvWriter.compile(schema);
+    }
   }
 
   describe() {

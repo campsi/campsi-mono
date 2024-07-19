@@ -1,3 +1,10 @@
+# [5.10.0](https://github.com/campsi/campsi-mono/compare/v5.9.0...v5.10.0) (2024-07-19)
+
+
+### Features
+
+* refactor billing service without stripe callback syntax (DEV-6256) ([#297](https://github.com/campsi/campsi-mono/issues/297)) ([3505f3b](https://github.com/campsi/campsi-mono/commit/3505f3b1bce7cd02437574c1e94850de71af55b0))
+
 # [5.9.0](https://github.com/campsi/campsi-mono/compare/v5.8.0...v5.9.0) (2024-07-19)
 
 

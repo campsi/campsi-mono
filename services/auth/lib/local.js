@@ -17,6 +17,8 @@ function dispatchUserSignupEvent(req, user) {
     id: user._id,
     email: user.email,
     username: user.displayName,
+    firstName: user.firstName,
+    lastName: user.lastName,
     token: user.identities.local.validationToken,
     data: user.data,
     authProvider: 'local',
@@ -182,6 +184,8 @@ const signup = async function (req, res) {
     .then(async encryptedPassword => {
       const user = {
         displayName: req.body.displayName,
+        firstName: req.body.firstName,
+        lastName: req.body.lastName,
         email,
         data: req.body.data,
         createdAt: new Date(),

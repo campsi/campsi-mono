@@ -143,7 +143,7 @@ async function patchMe(req, res) {
     return helpers.unauthorized(res);
   }
 
-  const allowedProps = ['displayName', 'firstName', 'lastName'];
+  const allowedProps = ['displayName', 'firstName', 'lastName', 'data'];
   const update = { $set: {} };
 
   for (const [key, value] of Object.entries(req.body)) {
@@ -157,6 +157,8 @@ async function patchMe(req, res) {
       returnDocument: 'after'
     });
     res.json(result);
+
+    req.service.emit('user/patched', { userId: req.user._id, update });
   } catch (e) {
     helpers.error(res, e);
   }
@@ -590,6 +592,8 @@ async function softDelete(req, res) {
         $set: {
           email: '',
           displayName: '',
+          firstName: '',
+          lastName: '',
           picture: '',
           data: {},
           identities: {},

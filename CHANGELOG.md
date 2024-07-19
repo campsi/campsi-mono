@@ -1,3 +1,10 @@
+# [5.9.0](https://github.com/campsi/campsi-mono/compare/v5.8.0...v5.9.0) (2024-07-19)
+
+
+### Features
+
+* allow new props for user update (DEV-6651) ([#304](https://github.com/campsi/campsi-mono/issues/304)) ([43025bf](https://github.com/campsi/campsi-mono/commit/43025bf7fc1be79248bd0390e870ccf300ca92cf))
+
 # [5.8.0](https://github.com/campsi/campsi-mono/compare/v5.7.0...v5.8.0) (2024-07-19)
 
 

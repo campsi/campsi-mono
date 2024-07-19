@@ -158,7 +158,7 @@ async function patchMe(req, res) {
     });
     res.json(result);
 
-    req.service.emit('user/patched', { userId: req.user._id, update });
+    req.service.emit('user/patched', { userId: req.user._id, update: update.$set });
   } catch (e) {
     helpers.error(res, e);
   }

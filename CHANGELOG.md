@@ -1,3 +1,10 @@
+# [5.12.0](https://github.com/campsi/campsi-mono/compare/v5.11.0...v5.12.0) (2024-07-22)
+
+
+### Features
+
+* add user to user update/patch event payload ([#306](https://github.com/campsi/campsi-mono/issues/306)) ([37a007f](https://github.com/campsi/campsi-mono/commit/37a007f7f8e465051bfa20da9a5457e5ae6cf108))
+
 # [5.11.0](https://github.com/campsi/campsi-mono/compare/v5.10.0...v5.11.0) (2024-07-22)
 
 

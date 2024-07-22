@@ -139,7 +139,7 @@ async function updateMe(req, res) {
     res.json(result);
 
     delete update.$set.identities?.local?.encryptedPassword;
-    req.service.emit('user/updated', { userId: req.user._id, update: update.$set });
+    req.service.emit('user/updated', { userId: req.user._id, update: update.$set, user: result });
   } catch (e) {
     helpers.error(res, e);
   }
@@ -166,11 +166,12 @@ async function patchMe(req, res) {
   try {
     const usersCollection = await getUsersCollection(req.campsi, req.service.path);
     const result = await usersCollection.findOneAndUpdate({ _id: req.user._id }, update, {
-      returnDocument: 'after'
+      returnDocument: 'after',
+      projection: { 'identities.local.encryptedPassword': 0 }
     });
     res.json(result);
 
-    req.service.emit('user/patched', { userId: req.user._id, update: update.$set });
+    req.service.emit('user/patched', { userId: req.user._id, update: update.$set, user: result });
   } catch (e) {
     helpers.error(res, e);
   }

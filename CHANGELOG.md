@@ -1,3 +1,10 @@
+# [5.11.0](https://github.com/campsi/campsi-mono/compare/v5.10.0...v5.11.0) (2024-07-22)
+
+
+### Features
+
+* new props allowed on user update and event emitted ([#305](https://github.com/campsi/campsi-mono/issues/305)) ([3c5b059](https://github.com/campsi/campsi-mono/commit/3c5b059325144940c512f180661f4acb5c59289f))
+
 # [5.10.0](https://github.com/campsi/campsi-mono/compare/v5.9.0...v5.10.0) (2024-07-19)
 
 

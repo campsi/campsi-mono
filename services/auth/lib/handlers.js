@@ -117,7 +117,7 @@ async function updateMe(req, res) {
     return helpers.unauthorized(res);
   }
 
-  const allowedProps = ['displayName', 'data', 'identities', 'email'];
+  const allowedProps = ['displayName', 'data', 'identities', 'email', 'firstName', 'lastName'];
   const update = { $set: {} };
 
   allowedProps.forEach(prop => {
@@ -126,6 +126,10 @@ async function updateMe(req, res) {
     }
   });
 
+  if (!Object.keys(update.$set).length) {
+    return helpers.badRequest(res, new Error('No valid properties to update'));
+  }
+
   try {
     const usersCollection = await getUsersCollection(req.campsi, req.service.path);
     const result = await usersCollection.findOneAndUpdate({ _id: req.user._id }, update, {
@@ -133,6 +137,9 @@ async function updateMe(req, res) {
       projection: { 'identities.local.encryptedPassword': 0 }
     });
     res.json(result);
+
+    delete update.$set.identities?.local?.encryptedPassword;
+    req.service.emit('user/updated', { userId: req.user._id, update: update.$set });
   } catch (e) {
     helpers.error(res, e);
   }

@@ -1,3 +1,10 @@
+# [5.13.0](https://github.com/campsi/campsi-mono/compare/v5.12.0...v5.13.0) (2024-08-05)
+
+
+### Features
+
+* allow local signup middleware ([#308](https://github.com/campsi/campsi-mono/issues/308)) ([83d28c6](https://github.com/campsi/campsi-mono/commit/83d28c67e270493123245d060c020b2edaa9e846))
+
 # [5.12.0](https://github.com/campsi/campsi-mono/compare/v5.11.0...v5.12.0) (2024-07-22)
 
 

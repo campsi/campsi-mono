@@ -1,3 +1,10 @@
+## [5.13.1](https://github.com/campsi/campsi-mono/compare/v5.13.0...v5.13.1) (2024-08-05)
+
+
+### Bug Fixes
+
+* incomplete condition ([#309](https://github.com/campsi/campsi-mono/issues/309)) ([a99347c](https://github.com/campsi/campsi-mono/commit/a99347c8cc889622fca379313e68097657ed2f20))
+
 # [5.13.0](https://github.com/campsi/campsi-mono/compare/v5.12.0...v5.13.0) (2024-08-05)
 
 

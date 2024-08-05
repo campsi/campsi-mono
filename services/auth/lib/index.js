@@ -41,6 +41,10 @@ module.exports = class AuthService extends CampsiService {
       req.service = this;
       next();
     });
+
+    const localSignupMiddleware = (req, res, next) =>
+      this.options.localSignupMiddleware !== 'function' ? next() : this.options.localSignupMiddleware(req, res, next);
+
     this.router.use(passport.initialize());
     this.router.param('provider', (req, res, next, id) => {
       req.authProvider = providers[id];
@@ -82,7 +86,7 @@ module.exports = class AuthService extends CampsiService {
 
     if (providers.local) {
       router.use('/local', local.middleware(providers.local));
-      router.post('/local/signup', local.signup);
+      router.post('/local/signup', localSignupMiddleware, local.signup);
       router.post('/local/signin', local.signin);
       router.post('/local/reset-password-token', validatePasswordResetUrl, local.createResetPasswordToken);
       router.post('/local/reset-password', local.resetPassword);

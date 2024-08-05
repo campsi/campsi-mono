@@ -43,7 +43,7 @@ module.exports = class AuthService extends CampsiService {
     });
 
     const localSignupMiddleware = (req, res, next) =>
-      this.options.localSignupMiddleware !== 'function' ? next() : this.options.localSignupMiddleware(req, res, next);
+      typeof this.options.localSignupMiddleware !== 'function' ? next() : this.options.localSignupMiddleware(req, res, next);
 
     this.router.use(passport.initialize());
     this.router.param('provider', (req, res, next, id) => {

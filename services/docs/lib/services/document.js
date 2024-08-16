@@ -359,9 +359,8 @@ module.exports.setDocument = async function (resource, filter, data, state, user
 
 module.exports.patchDocument = async (resource, filter, data, state, user) => {
   removeVirtualProperties(resource, data);
-  const update = await builder.patch({ resource, data, state, user });
-
   const originalRawDocument = await resource.collection.findOne(filter);
+  const update = await builder.patch({ resource, data, state, user, originalRawDocument });
   if (!originalRawDocument) {
     throw new Error('Not Found');
   }
@@ -370,7 +369,6 @@ module.exports.patchDocument = async (resource, filter, data, state, user) => {
   if (!updateDoc) {
     throw new Error('Not Found');
   }
-
   try {
     await builder.validatePatchedDocument({
       resource,

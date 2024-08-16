@@ -298,7 +298,8 @@ module.exports.update = function updateDoc(options) {
 
 module.exports.patch = async options => {
   const state = getStateFromOptions(options);
-  await validate(options.resource, sanitizeHTMLFromXSS(options.data), state.validate);
+  await validatePatchedDocument(options);
+  // await validate(options.resource, sanitizeHTMLFromXSS(options.data), state.validate);
 
   const ops = { $set: {}, $unset: {} };
   ops.$set[join('states', state.name, 'modifiedAt')] = new Date();
@@ -322,9 +323,20 @@ module.exports.patch = async options => {
  * @param {String} options.state
  * @returns {Promise<void>}
  */
-module.exports.validatePatchedDocument = async options => {
+const validatePatchedDocument = async options => {
   const state = getStateFromOptions(options);
-  await validate(options.resource, sanitizeHTMLFromXSS(options.data), state.validate);
+  await validate(
+    options.resource,
+    sanitizeHTMLFromXSS(
+      options.originalRawDocument
+        ? {
+            ...options.originalRawDocument.states[state.name].data,
+            ...options.data
+          }
+        : options.data
+    ),
+    state.validate
+  );
 };
 
 module.exports.deleteFilter = function deleteDoc(options) {
@@ -357,4 +369,9 @@ module.exports.setState = function setDocState(options) {
         return resolve(ops);
       });
   });
+};
+
+module.exports = {
+  ...module.exports,
+  validatePatchedDocument
 };

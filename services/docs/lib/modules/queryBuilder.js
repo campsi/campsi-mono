@@ -2,6 +2,7 @@ const debug = require('debug')('campsi:service:docs');
 const { ObjectId } = require('mongodb');
 const ValidationError = require('../../../../lib/errors/ValidationError');
 const sanitizeHTMLFromXSS = require('../../../../lib/modules/sanitize');
+const dot = require('dot-object');
 
 /**
  * Simple utility function that converts a list of arguments
@@ -316,6 +317,15 @@ module.exports.patch = async options => {
   return ops;
 };
 
+module.exports.patchAJsonDoc = (originalJson, patchData) => {
+  // Apply patch using dot notation keys from patchData
+  Object.keys(patchData).forEach(key => {
+    dot.str(key, patchData[key], originalJson); // Patch the original JSON
+  });
+
+  return originalJson;
+};
+
 /**
  * @param {Object}  options
  * @param {Resource} options.resource
@@ -329,10 +339,7 @@ const validatePatchedDocument = async options => {
     options.resource,
     sanitizeHTMLFromXSS(
       options.originalRawDocument
-        ? {
-            ...options.originalRawDocument.states[state.name].data,
-            ...options.data
-          }
+        ? patchAJsonDoc(options.originalRawDocument.states[state.name].data, options.data)
         : options.data
     ),
     state.validate

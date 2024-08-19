@@ -317,10 +317,9 @@ module.exports.patch = async options => {
   return ops;
 };
 
-module.exports.patchAJsonDoc = (originalJson, patchData) => {
-  // Apply patch using dot notation keys from patchData
+const patchAJsonDoc = (originalJson, patchData) => {
   Object.keys(patchData).forEach(key => {
-    dot.str(key, patchData[key], originalJson); // Patch the original JSON
+    dot.str(key, patchData[key], originalJson);
   });
 
   return originalJson;
@@ -380,5 +379,6 @@ module.exports.setState = function setDocState(options) {
 
 module.exports = {
   ...module.exports,
-  validatePatchedDocument
+  validatePatchedDocument,
+  patchAJsonDoc
 };

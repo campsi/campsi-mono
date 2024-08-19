@@ -29,7 +29,14 @@ async function tokenMaintenance(req, res) {
               input: { $objectToArray: '$$ROOT.tokens' },
               as: 'tokens',
               cond: {
-                $lte: ['$$tokens.v.expiration', '$$NOW']
+                $and: [
+                  {
+                    $lte: ['$$tokens.v.expiration', '$$NOW']
+                  },
+                  {
+                    $ne: ['$$tokens.v.doNotDelete', true]
+                  }
+                ]
               }
             }
           }

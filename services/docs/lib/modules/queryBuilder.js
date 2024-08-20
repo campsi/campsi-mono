@@ -2,6 +2,7 @@ const debug = require('debug')('campsi:service:docs');
 const { ObjectId } = require('mongodb');
 const ValidationError = require('../../../../lib/errors/ValidationError');
 const sanitizeHTMLFromXSS = require('../../../../lib/modules/sanitize');
+const dot = require('dot-object');
 
 /**
  * Simple utility function that converts a list of arguments
@@ -298,7 +299,7 @@ module.exports.update = function updateDoc(options) {
 
 module.exports.patch = async options => {
   const state = getStateFromOptions(options);
-  await validate(options.resource, sanitizeHTMLFromXSS(options.data), state.validate);
+  await validatePatchedDocument(options);
 
   const ops = { $set: {}, $unset: {} };
   ops.$set[join('states', state.name, 'modifiedAt')] = new Date();
@@ -315,6 +316,18 @@ module.exports.patch = async options => {
   return ops;
 };
 
+const patchAJsonDoc = (originalJson, patchData) => {
+  Object.keys(patchData).forEach(key => {
+    if (patchData[key] === null) {
+      dot.delete(key, originalJson);
+    } else {
+      dot.str(key, patchData[key], originalJson);
+    }
+  });
+
+  return originalJson;
+};
+
 /**
  * @param {Object}  options
  * @param {Resource} options.resource
@@ -322,9 +335,17 @@ module.exports.patch = async options => {
  * @param {String} options.state
  * @returns {Promise<void>}
  */
-module.exports.validatePatchedDocument = async options => {
+const validatePatchedDocument = async options => {
   const state = getStateFromOptions(options);
-  await validate(options.resource, sanitizeHTMLFromXSS(options.data), state.validate);
+  await validate(
+    options.resource,
+    sanitizeHTMLFromXSS(
+      options.originalRawDocument
+        ? patchAJsonDoc(options.originalRawDocument.states[state.name].data, options.data)
+        : options.data
+    ),
+    state.validate
+  );
 };
 
 module.exports.deleteFilter = function deleteDoc(options) {
@@ -357,4 +378,10 @@ module.exports.setState = function setDocState(options) {
         return resolve(ops);
       });
   });
+};
+
+module.exports = {
+  ...module.exports,
+  validatePatchedDocument,
+  patchAJsonDoc
 };

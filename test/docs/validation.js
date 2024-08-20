@@ -11,6 +11,8 @@ const format = require('string-format');
 const createUser = require('../helpers/createUser');
 const setupBeforeEach = require('../helpers/setupBeforeEach');
 const config = require('config');
+const { expect } = require('chai');
+const { patchAJsonDoc } = require('../../services/docs/lib/modules/queryBuilder');
 
 chai.should();
 format.extend(String.prototype);
@@ -80,6 +82,143 @@ describe('Validation', () => {
             done();
           });
       });
+    });
+  });
+  describe('patchAJsonDoc', function () {
+    it('should patch a single field in the JSON', function () {
+      const originalJson = {
+        name: 'Sample Name',
+        details: {
+          description: 'Old Description',
+          info: {
+            year: 2020,
+            author: 'John Doe'
+          }
+        }
+      };
+
+      const patchData = {
+        'details.description': 'Updated Description'
+      };
+
+      const result = patchAJsonDoc(originalJson, patchData);
+
+      expect(result.details.description).to.equal('Updated Description');
+      expect(result.details.info.year).to.equal(2020); // Ensure other fields remain unchanged
+    });
+
+    it('should patch multiple fields in the JSON', function () {
+      const originalJson = {
+        name: 'Sample Name',
+        details: {
+          description: 'Old Description',
+          info: {
+            year: 2020,
+            author: 'John Doe'
+          }
+        }
+      };
+
+      const patchData = {
+        'details.description': 'Updated Description',
+        'details.info.year': 2023
+      };
+
+      const result = patchAJsonDoc(originalJson, patchData);
+
+      expect(result.details.description).to.equal('Updated Description');
+      expect(result.details.info.year).to.equal(2023);
+      expect(result.details.info.author).to.equal('John Doe'); // Ensure other fields remain unchanged
+    });
+
+    it('should add a new field to the JSON', function () {
+      const originalJson = {
+        name: 'Sample Name',
+        details: {
+          description: 'Old Description',
+          info: {
+            year: 2020,
+            author: 'John Doe'
+          }
+        }
+      };
+
+      const patchData = {
+        'details.newField': 'New Value'
+      };
+
+      const result = patchAJsonDoc(originalJson, patchData);
+
+      expect(result.details.newField).to.equal('New Value');
+      expect(result.details.description).to.equal('Old Description'); // Ensure other fields remain unchanged
+    });
+
+    it('should handle an empty patch data object', function () {
+      const originalJson = {
+        name: 'Sample Name',
+        details: {
+          description: 'Old Description',
+          info: {
+            year: 2020,
+            author: 'John Doe'
+          }
+        }
+      };
+
+      const patchData = {}; // No changes
+
+      const result = patchAJsonDoc(originalJson, patchData);
+
+      expect(result).to.deep.equal(originalJson); // Should remain unchanged
+    });
+
+    it('should handle a deep patch in the JSON', function () {
+      const originalJson = {
+        name: 'Sample Name',
+        details: {
+          description: 'Old Description',
+          info: {
+            year: 2020,
+            author: 'John Doe',
+            meta: {
+              published: false
+            }
+          }
+        }
+      };
+
+      const patchData = {
+        'details.info.meta.published': true
+      };
+
+      const result = patchAJsonDoc(originalJson, patchData);
+
+      expect(result.details.info.meta.published).to.equal(true);
+    });
+    it('should delete value if null', function () {
+      const originalJson = {
+        name: 'Sample Name',
+        details: {
+          description: 'Old Description',
+          info: {
+            year: 2020,
+            author: 'John Doe',
+            meta: {
+              published: false,
+              unpublished: true
+            }
+          }
+        }
+      };
+
+      const patchData = {
+        'details.info.meta.published': null
+      };
+
+      const result = patchAJsonDoc(originalJson, patchData);
+
+      expect(result.details.info.meta).to.not.have.property('published');
+      expect(result.details.info.meta).to.not.be.empty;
     });
   });
 });

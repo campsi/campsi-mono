@@ -359,30 +359,12 @@ module.exports.setDocument = async function (resource, filter, data, state, user
 
 module.exports.patchDocument = async (resource, filter, data, state, user) => {
   removeVirtualProperties(resource, data);
-  const update = await builder.patch({ resource, data, state, user });
-
   const originalRawDocument = await resource.collection.findOne(filter);
   if (!originalRawDocument) {
     throw new Error('Not Found');
   }
-
+  const update = await builder.patch({ resource, data, state, user, originalRawDocument });
   const updateDoc = await resource.collection.findOneAndUpdate(filter, update, { returnDocument: 'after' });
-  if (!updateDoc) {
-    throw new Error('Not Found');
-  }
-
-  try {
-    await builder.validatePatchedDocument({
-      resource,
-      data: updateDoc.states[state].data,
-      state
-    });
-  } catch (e) {
-    const { _id, ...replacement } = originalRawDocument;
-    await resource.collection.replaceOne(filter, replacement);
-    throw e;
-  }
-
   return {
     id: filter._id,
     state,

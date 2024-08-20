@@ -195,5 +195,30 @@ describe('Validation', () => {
 
       expect(result.details.info.meta.published).to.equal(true);
     });
+    it('should delete value if null', function () {
+      const originalJson = {
+        name: 'Sample Name',
+        details: {
+          description: 'Old Description',
+          info: {
+            year: 2020,
+            author: 'John Doe',
+            meta: {
+              published: false,
+              unpublished: true
+            }
+          }
+        }
+      };
+
+      const patchData = {
+        'details.info.meta.published': null
+      };
+
+      const result = patchAJsonDoc(originalJson, patchData);
+
+      expect(result.details.info.meta).to.not.have.property('published');
+      expect(result.details.info.meta).to.not.be.empty;
+    });
   });
 });

@@ -300,7 +300,6 @@ module.exports.update = function updateDoc(options) {
 module.exports.patch = async options => {
   const state = getStateFromOptions(options);
   await validatePatchedDocument(options);
-  // await validate(options.resource, sanitizeHTMLFromXSS(options.data), state.validate);
 
   const ops = { $set: {}, $unset: {} };
   ops.$set[join('states', state.name, 'modifiedAt')] = new Date();

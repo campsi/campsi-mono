@@ -1,3 +1,10 @@
+## [5.14.1](https://github.com/campsi/campsi-mono/compare/v5.14.0...v5.14.1) (2024-08-20)
+
+
+### Bug Fixes
+
+* patch docs with required value in schema ([#310](https://github.com/campsi/campsi-mono/issues/310)) ([6c9c7b6](https://github.com/campsi/campsi-mono/commit/6c9c7b6bc53d9643cc2a378ff8bba2999b437298))
+
 # [5.14.0](https://github.com/campsi/campsi-mono/compare/v5.13.1...v5.14.0) (2024-08-19)
 
 

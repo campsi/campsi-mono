@@ -318,7 +318,11 @@ module.exports.patch = async options => {
 
 const patchAJsonDoc = (originalJson, patchData) => {
   Object.keys(patchData).forEach(key => {
-    dot.str(key, patchData[key], originalJson);
+    if (patchData[key] === null) {
+      dot.delete(key, originalJson);
+    } else {
+      dot.str(key, patchData[key], originalJson);
+    }
   });
 
   return originalJson;

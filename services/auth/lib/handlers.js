@@ -137,6 +137,8 @@ async function updateMe(req, res) {
     return helpers.badRequest(res, new Error('No valid properties to update'));
   }
 
+  update.$set.updatedAt = new Date();
+
   try {
     const usersCollection = await getUsersCollection(req.campsi, req.service.path);
     const result = await usersCollection.findOneAndUpdate({ _id: req.user._id }, update, {
@@ -169,6 +171,8 @@ async function patchMe(req, res) {
   if (!Object.keys(update.$set).length) {
     return helpers.badRequest(res, new Error('No valid properties to update'));
   }
+
+  update.$set.updatedAt = new Date();
 
   try {
     const usersCollection = await getUsersCollection(req.campsi, req.service.path);

@@ -1,3 +1,10 @@
+## [5.14.2](https://github.com/campsi/campsi-mono/compare/v5.14.1...v5.14.2) (2024-08-23)
+
+
+### Bug Fixes
+
+* update user updatedAt on PUT/PATCH on user ([#313](https://github.com/campsi/campsi-mono/issues/313)) ([aa19884](https://github.com/campsi/campsi-mono/commit/aa198844c1405a5c1fdcab06b79111f37a5e3da4))
+
 ## [5.14.1](https://github.com/campsi/campsi-mono/compare/v5.14.0...v5.14.1) (2024-08-20)
 
 

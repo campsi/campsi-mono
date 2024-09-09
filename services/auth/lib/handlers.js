@@ -44,7 +44,7 @@ async function tokenMaintenance(req, res) {
       },
       {
         $match: {
-          'expiredTokens.1': { $exists: true }
+          'expiredTokens.0': { $exists: true }
         }
       },
       {

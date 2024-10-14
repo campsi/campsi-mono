@@ -279,6 +279,7 @@ module.exports.create = function createDoc(options) {
  * @param {Resource} options.resource
  * @param {string} [options.state]
  * @param {object} [options.user]
+ * @param {boolean} [options.isNewState] - if the state is new
  *
  * @returns {Promise}
  */
@@ -289,8 +290,10 @@ module.exports.update = function updateDoc(options) {
       .catch(reject)
       .then(() => {
         const ops = { $set: {} };
-        ops.$set[join('states', state.name, 'modifiedAt')] = new Date();
-        ops.$set[join('states', state.name, 'modifiedBy')] = options.user ? options.user._id : null;
+        ops.$set[join('states', state.name, options.isNewState ? 'createdAt' : 'modifiedAt')] = new Date();
+        ops.$set[join('states', state.name, options.isNewState ? 'createdBy' : 'modifiedBy')] = options.user
+          ? options.user._id
+          : null;
         ops.$set[join('states', state.name, 'data')] = sanitizeHTMLFromXSS(options.data);
         return resolve(ops);
       });

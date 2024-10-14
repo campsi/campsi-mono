@@ -143,7 +143,7 @@ module.exports.putDoc = async (req, res) => {
         return dispatchError(res, error);
       }
     }
-    const result = await documentService.setDocument(req.resource, req.filter, req.body, req.state, req.user);
+    const result = await documentService.setDocument(req.resource, req.filter, req.body, req.state, req.user, originalDoc);
     helpers.json(res, result);
     req.service.emit(
       'document/updated',

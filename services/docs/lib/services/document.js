@@ -336,10 +336,15 @@ module.exports.createDocument = async function (resource, data, state, user, par
   };
 };
 
-module.exports.setDocument = async function (resource, filter, data, state, user) {
+module.exports.setDocument = async function (resource, filter, data, state, user, originalDoc = {}) {
   removeVirtualProperties(resource, data);
-  const update = await builder.update({ resource, data, state, user });
-
+  const update = await builder.update({
+    resource,
+    data,
+    state,
+    user,
+    isNewState: !originalDoc.data && resource?.defaultState !== state
+  });
   const result = await resource.collection.updateOne(filter, update);
   // if document not found, must be a permissions issue
   if (result.modifiedCount !== 1) {

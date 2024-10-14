@@ -1,3 +1,10 @@
+## [5.14.4](https://github.com/campsi/campsi-mono/compare/v5.14.3...v5.14.4) (2024-10-14)
+
+
+### Bug Fixes
+
+* Enhance document update functionality by tracking state creation… ([#314](https://github.com/campsi/campsi-mono/issues/314)) ([a2dbbb6](https://github.com/campsi/campsi-mono/commit/a2dbbb67a16a8685ba3a6d905c51418569ce3d0e))
+
 ## [5.14.3](https://github.com/campsi/campsi-mono/compare/v5.14.2...v5.14.3) (2024-09-09)
 
 

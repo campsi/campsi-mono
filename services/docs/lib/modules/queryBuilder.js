@@ -279,6 +279,7 @@ module.exports.create = function createDoc(options) {
  * @param {Resource} options.resource
  * @param {string} [options.state]
  * @param {object} [options.user]
+ * @param {boolean} [options.isNewState] - if the state is new
  *
  * @returns {Promise}
  */

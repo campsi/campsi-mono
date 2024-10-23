@@ -324,7 +324,11 @@ const patchAJsonDoc = (originalJson, patchData) => {
     if (patchData[key] === null) {
       dot.delete(key, originalJson);
     } else {
-      dot.str(key, patchData[key], originalJson);
+      if (Array.isArray(patchData[key])) {
+        dot.set(key, patchData[key], originalJson);
+      } else {
+        dot.str(key, patchData[key], originalJson);
+      }
     }
   });
 

@@ -1,3 +1,10 @@
+## [5.14.5](https://github.com/campsi/campsi-mono/compare/v5.14.4...v5.14.5) (2024-10-23)
+
+
+### Bug Fixes
+
+* trying to redefine non-empty obj ([#315](https://github.com/campsi/campsi-mono/issues/315)) ([6d7a72e](https://github.com/campsi/campsi-mono/commit/6d7a72eda291fca27ec0ccecc9e076465f2b0442))
+
 ## [5.14.4](https://github.com/campsi/campsi-mono/compare/v5.14.3...v5.14.4) (2024-10-14)
 
 

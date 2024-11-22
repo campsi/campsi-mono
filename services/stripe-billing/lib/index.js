@@ -142,6 +142,21 @@ module.exports = class StripeBillingService extends CampsiService {
       res.json(paymentMethod);
     });
 
+    this.router.get('/customers/:customer/payment_methods', async (req, res) => {
+      const paymentMethods = [];
+      const params = {
+        customer: req.params.customer,
+        limit: 100
+      };
+      if (req.query.type) {
+        params.type = req.query.type;
+      }
+      for await (const paymentMethod of stripe.paymentMethods.list(params)) {
+        paymentMethods.push(paymentMethod);
+      }
+      res.json(paymentMethods);
+    });
+
     this.router.delete('/customers/:customer/payment_methods/:id', async (req, res) => {
       const deletion = await stripe.paymentMethods.detach(req.params.id);
       res.json(deletion);

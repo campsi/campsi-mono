@@ -137,6 +137,16 @@ module.exports = class StripeBillingService extends CampsiService {
       res.json(deletion);
     });
 
+    this.router.post('/customers/:customer/payment_methods', async (req, res) => {
+      const paymentMethod = await stripe.paymentMethods.attach(req.body.payment_method, { customer: req.params.customer });
+      res.json(paymentMethod);
+    });
+
+    this.router.delete('/customers/:customer/payment_methods/:id', async (req, res) => {
+      const deletion = await stripe.paymentMethods.detach(req.params.id);
+      res.json(deletion);
+    });
+
     this.router.delete('/customers/:customer/tax_ids/:id', async (req, res) => {
       const deletion = await stripe.customers.deleteTaxId(req.params.customer, req.params.id);
       res.json(deletion);
@@ -211,6 +221,11 @@ module.exports = class StripeBillingService extends CampsiService {
     this.router.get('/sources/:id', async (req, res) => {
       const source = await stripe.sources.retrieve(req.params.id, optionsFromQuery(req.query));
       res.json(source);
+    });
+
+    this.router.get('/payment_methods/:id', async (req, res) => {
+      const paymentMethod = await stripe.paymentMethods.retrieve(req.params.id, optionsFromQuery(req.query));
+      res.json(paymentMethod);
     });
 
     this.router.get('/invoices/:id', async (req, res) => {

@@ -329,9 +329,10 @@ module.exports = class StripeBillingService extends CampsiService {
     this.router.post('/setup_intents', async (req, res) => {
       const params = {
         confirm: true,
-        payment_method: req.body.payment_method,
         customer: req.body.customer,
+        payment_method: req.body.payment_method,
         payment_method_types: ['card', 'sepa_debit'],
+        payment_method_options: req.body.payment_method_options,
         metadata: req.body.metadata
       };
       const idempotencyKey = this.createIdempotencyKey(params, 'setupIntents.create');

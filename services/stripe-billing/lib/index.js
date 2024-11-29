@@ -177,7 +177,8 @@ module.exports = class StripeBillingService extends CampsiService {
         promotion_code: req.body.promotion_code,
         expand: buildExpandFromBody(req.body, subscriptionExpand),
         default_tax_rates: req.body.default_tax_rates,
-        default_source: req.body.default_source
+        default_source: req.body.default_source,
+        default_payment_method: req.body.default_payment_method
       };
       if (req.body.currency) {
         params.currency = req.body.currency;
@@ -222,7 +223,8 @@ module.exports = class StripeBillingService extends CampsiService {
         promotion_code: req.body.promotion_code,
         expand: buildExpandFromBody(req.body, subscriptionExpand),
         default_tax_rates: req.body.default_tax_rates,
-        default_source: req.body.default_source
+        default_source: req.body.default_source,
+        default_payment_method: req.body.default_payment_method
       });
       res.json(subscription);
     });
@@ -335,6 +337,17 @@ module.exports = class StripeBillingService extends CampsiService {
         payment_method_options: req.body.payment_method_options,
         metadata: req.body.metadata
       };
+      if (req.body.payment_method_options?.sepa_debit || req.body.payment_method_type === 'sepa_debit') {
+        params.mandate_data = {
+          customer_acceptance: {
+            type: 'online',
+            online: {
+              ip_address: req.headers['x-forwarded-for'] || req.ip,
+              user_agent: req.headers['user-agent']
+            }
+          }
+        };
+      }
       const idempotencyKey = this.createIdempotencyKey(params, 'setupIntents.create');
       const setupIntent = await stripe.setupIntents.create(params, { idempotencyKey });
       res.json(setupIntent);

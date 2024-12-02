@@ -361,7 +361,24 @@ module.exports = class StripeBillingService extends CampsiService {
     });
 
     this.router.post('/payment_intents/:id[:]confirm', async (req, res) => {
-      const paymentIntentConfirmation = await stripe.paymentIntents.confirm(req.params.id, optionsFromQuery(req.query));
+      const params = optionsFromQuery(req.query);
+      ['payment_method', 'payment_method_options'].forEach(param => {
+        if (req.body[param]) {
+          params[param] = req.body[param];
+        }
+      });
+      if (req.body.payment_method_options?.sepa_debit || req.body.payment_method_type === 'sepa_debit') {
+        params.mandate_data = {
+          customer_acceptance: {
+            type: 'online',
+            online: {
+              ip_address: req.headers['x-forwarded-for'] || req.ip,
+              user_agent: req.headers['user-agent']
+            }
+          }
+        };
+      }
+      const paymentIntentConfirmation = await stripe.paymentIntents.confirm(req.params.id, params);
       res.json(paymentIntentConfirmation);
     });
 
@@ -371,11 +388,22 @@ module.exports = class StripeBillingService extends CampsiService {
         amount: req.body.amount,
         currency: req.body.currency || 'eur',
         payment_method_types: ['card', 'sepa_debit'],
+        payment_method: req.body.payment_method,
+        payment_method_options: req.body.payment_method_options,
         setup_future_usage: req.body.setup_future_usage || 'off_session',
         customer: req.body.customer
       };
-      if (req.body.payment_method) {
-        params.payment_method = req.body.payment_method;
+
+      if ((req.body.payment_method_options?.sepa_debit || req.body.payment_method_type === 'sepa_debit') && params.confirm) {
+        params.mandate_data = {
+          customer_acceptance: {
+            type: 'online',
+            online: {
+              ip_address: req.headers['x-forwarded-for'] || req.ip,
+              user_agent: req.headers['user-agent']
+            }
+          }
+        };
       }
       const idempotencyKey = this.createIdempotencyKey(params, 'paymentIntents.create');
       const paymentIntent = await stripe.paymentIntents.create(params, { idempotencyKey });

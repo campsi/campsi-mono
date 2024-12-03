@@ -245,6 +245,17 @@ module.exports = class StripeBillingService extends CampsiService {
       res.json(paymentMethod);
     });
 
+    this.router.patch('/payment_methods/:id', async (req, res) => {
+      const params = {};
+      ['billing_details', 'metadata', 'allow_redisplay'].forEach(param => {
+        if (req.body.hasOwnProperty(param)) {
+          params[param] = req.body[param];
+        }
+      });
+      const paymentMethod = await stripe.paymentMethods.update(req.params.id, params);
+      res.json(paymentMethod);
+    });
+
     this.router.get('/invoices/:id', async (req, res) => {
       const invoice = await stripe.invoices.retrieve(req.params.id, optionsFromQuery(req.query));
       res.json(invoice);
@@ -347,6 +358,9 @@ module.exports = class StripeBillingService extends CampsiService {
             }
           }
         };
+      }
+      if (req.body.expand) {
+        params.expand = buildExpandFromBody(req.body);
       }
       const idempotencyKey = this.createIdempotencyKey(params, 'setupIntents.create');
       const setupIntent = await stripe.setupIntents.create(params, { idempotencyKey });

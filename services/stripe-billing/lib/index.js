@@ -137,6 +137,31 @@ module.exports = class StripeBillingService extends CampsiService {
       res.json(deletion);
     });
 
+    this.router.post('/customers/:customer/payment_methods', async (req, res) => {
+      const paymentMethod = await stripe.paymentMethods.attach(req.body.payment_method, { customer: req.params.customer });
+      res.json(paymentMethod);
+    });
+
+    this.router.get('/customers/:customer/payment_methods', async (req, res) => {
+      const paymentMethods = [];
+      const params = {
+        customer: req.params.customer,
+        limit: 100
+      };
+      if (req.query.type) {
+        params.type = req.query.type;
+      }
+      for await (const paymentMethod of stripe.paymentMethods.list(params)) {
+        paymentMethods.push(paymentMethod);
+      }
+      res.json(paymentMethods);
+    });
+
+    this.router.delete('/customers/:customer/payment_methods/:id', async (req, res) => {
+      const deletion = await stripe.paymentMethods.detach(req.params.id);
+      res.json(deletion);
+    });
+
     this.router.delete('/customers/:customer/tax_ids/:id', async (req, res) => {
       const deletion = await stripe.customers.deleteTaxId(req.params.customer, req.params.id);
       res.json(deletion);
@@ -152,7 +177,8 @@ module.exports = class StripeBillingService extends CampsiService {
         promotion_code: req.body.promotion_code,
         expand: buildExpandFromBody(req.body, subscriptionExpand),
         default_tax_rates: req.body.default_tax_rates,
-        default_source: req.body.default_source
+        default_source: req.body.default_source,
+        default_payment_method: req.body.default_payment_method
       };
       if (req.body.currency) {
         params.currency = req.body.currency;
@@ -197,7 +223,8 @@ module.exports = class StripeBillingService extends CampsiService {
         promotion_code: req.body.promotion_code,
         expand: buildExpandFromBody(req.body, subscriptionExpand),
         default_tax_rates: req.body.default_tax_rates,
-        default_source: req.body.default_source
+        default_source: req.body.default_source,
+        default_payment_method: req.body.default_payment_method
       });
       res.json(subscription);
     });
@@ -211,6 +238,22 @@ module.exports = class StripeBillingService extends CampsiService {
     this.router.get('/sources/:id', async (req, res) => {
       const source = await stripe.sources.retrieve(req.params.id, optionsFromQuery(req.query));
       res.json(source);
+    });
+
+    this.router.get('/payment_methods/:id', async (req, res) => {
+      const paymentMethod = await stripe.paymentMethods.retrieve(req.params.id, optionsFromQuery(req.query));
+      res.json(paymentMethod);
+    });
+
+    this.router.patch('/payment_methods/:id', async (req, res) => {
+      const params = {};
+      ['billing_details', 'metadata', 'allow_redisplay'].forEach(param => {
+        if (req.body.hasOwnProperty(param)) {
+          params[param] = req.body[param];
+        }
+      });
+      const paymentMethod = await stripe.paymentMethods.update(req.params.id, params);
+      res.json(paymentMethod);
     });
 
     this.router.get('/invoices/:id', async (req, res) => {
@@ -299,11 +342,26 @@ module.exports = class StripeBillingService extends CampsiService {
     this.router.post('/setup_intents', async (req, res) => {
       const params = {
         confirm: true,
-        payment_method: req.body.payment_method,
         customer: req.body.customer,
+        payment_method: req.body.payment_method,
         payment_method_types: ['card', 'sepa_debit'],
+        payment_method_options: req.body.payment_method_options,
         metadata: req.body.metadata
       };
+      if (req.body.payment_method_options?.sepa_debit || req.body.payment_method_type === 'sepa_debit') {
+        params.mandate_data = {
+          customer_acceptance: {
+            type: 'online',
+            online: {
+              ip_address: req.headers['x-forwarded-for'] || req.ip,
+              user_agent: req.headers['user-agent']
+            }
+          }
+        };
+      }
+      if (req.body.expand) {
+        params.expand = buildExpandFromBody(req.body);
+      }
       const idempotencyKey = this.createIdempotencyKey(params, 'setupIntents.create');
       const setupIntent = await stripe.setupIntents.create(params, { idempotencyKey });
       res.json(setupIntent);
@@ -317,7 +375,24 @@ module.exports = class StripeBillingService extends CampsiService {
     });
 
     this.router.post('/payment_intents/:id[:]confirm', async (req, res) => {
-      const paymentIntentConfirmation = await stripe.paymentIntents.confirm(req.params.id, optionsFromQuery(req.query));
+      const params = optionsFromQuery(req.query);
+      ['payment_method', 'payment_method_options'].forEach(param => {
+        if (req.body[param]) {
+          params[param] = req.body[param];
+        }
+      });
+      if (req.body.payment_method_options?.sepa_debit || req.body.payment_method_type === 'sepa_debit') {
+        params.mandate_data = {
+          customer_acceptance: {
+            type: 'online',
+            online: {
+              ip_address: req.headers['x-forwarded-for'] || req.ip,
+              user_agent: req.headers['user-agent']
+            }
+          }
+        };
+      }
+      const paymentIntentConfirmation = await stripe.paymentIntents.confirm(req.params.id, params);
       res.json(paymentIntentConfirmation);
     });
 
@@ -327,11 +402,22 @@ module.exports = class StripeBillingService extends CampsiService {
         amount: req.body.amount,
         currency: req.body.currency || 'eur',
         payment_method_types: ['card', 'sepa_debit'],
+        payment_method: req.body.payment_method,
+        payment_method_options: req.body.payment_method_options,
         setup_future_usage: req.body.setup_future_usage || 'off_session',
         customer: req.body.customer
       };
-      if (req.body.payment_method) {
-        params.payment_method = req.body.payment_method;
+
+      if ((req.body.payment_method_options?.sepa_debit || req.body.payment_method_type === 'sepa_debit') && params.confirm) {
+        params.mandate_data = {
+          customer_acceptance: {
+            type: 'online',
+            online: {
+              ip_address: req.headers['x-forwarded-for'] || req.ip,
+              user_agent: req.headers['user-agent']
+            }
+          }
+        };
       }
       const idempotencyKey = this.createIdempotencyKey(params, 'paymentIntents.create');
       const paymentIntent = await stripe.paymentIntents.create(params, { idempotencyKey });

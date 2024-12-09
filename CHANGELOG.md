@@ -1,3 +1,10 @@
+# [5.15.0](https://github.com/campsi/campsi-mono/compare/v5.14.5...v5.15.0) (2024-12-09)
+
+
+### Features
+
+* improve payment_method usage ([#316](https://github.com/campsi/campsi-mono/issues/316)) ([0177a62](https://github.com/campsi/campsi-mono/commit/0177a626fac78f456ee1cd614a6126a642ffb4c1))
+
 ## [5.14.5](https://github.com/campsi/campsi-mono/compare/v5.14.4...v5.14.5) (2024-10-23)
 
 

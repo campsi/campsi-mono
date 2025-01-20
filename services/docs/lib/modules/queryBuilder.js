@@ -324,10 +324,10 @@ const patchAJsonDoc = (originalJson, patchData) => {
     if (patchData[key] === null) {
       dot.delete(key, originalJson);
     } else {
-      if (Array.isArray(patchData[key])) {
-        dot.set(key, patchData[key], originalJson);
-      } else {
+      if (typeof patchData[key] === 'string') {
         dot.str(key, patchData[key], originalJson);
+      } else {
+        dot.set(key, patchData[key], originalJson);
       }
     }
   });

@@ -1,3 +1,10 @@
+## [5.15.2](https://github.com/campsi/campsi-mono/compare/v5.15.1...v5.15.2) (2025-01-21)
+
+
+### Bug Fixes
+
+* improve documentation. ([#319](https://github.com/campsi/campsi-mono/issues/319)) ([a5504de](https://github.com/campsi/campsi-mono/commit/a5504deeb36387205b83fee0c99fd80ea64aa5ca))
+
 ## [5.15.1](https://github.com/campsi/campsi-mono/compare/v5.15.0...v5.15.1) (2025-01-21)
 
 

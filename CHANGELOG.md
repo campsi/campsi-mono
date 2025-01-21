@@ -1,3 +1,10 @@
+## [5.15.1](https://github.com/campsi/campsi-mono/compare/v5.15.0...v5.15.1) (2025-01-21)
+
+
+### Bug Fixes
+
+* patching whole object ([#318](https://github.com/campsi/campsi-mono/issues/318)) ([92c9a3c](https://github.com/campsi/campsi-mono/commit/92c9a3c116cd517c3c2afa7cc7f99b28e9eaa114))
+
 # [5.15.0](https://github.com/campsi/campsi-mono/compare/v5.14.5...v5.15.0) (2024-12-09)
 
 

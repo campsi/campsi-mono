@@ -8,6 +8,11 @@ Manage and expose **document-oriented** content through a configurable RESTful *
 - Create schemas with [_campsi_/**architect**](https://github.com/campsi/architect).
 - Talk to the API with [_campsi_/**admin**](https://github.com/campsi/admin).
 
+## Developers
+
+- follow conventional commit to manage versioning on
+  merge to master: https://www.conventionalcommits.org/en/v1.0.0/
+
 ## Features
 
 #### API

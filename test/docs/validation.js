@@ -153,6 +153,29 @@ describe('Validation', () => {
       expect(result.details.description).to.equal('Old Description'); // Ensure other fields remain unchanged
     });
 
+    it('should update a field with an object', function () {
+      const originalJson = {
+        name: 'Sample Name',
+        details: {
+          description: 'Old Description',
+          info: {
+            year: 2020,
+            author: 'John Doe'
+          }
+        }
+      };
+
+      const patchData = {
+        'details.info': { year: 2025 }
+      };
+
+      const result = patchAJsonDoc(originalJson, patchData);
+
+      expect(result.details.info.year).to.equal(2025);
+      expect(result.details.info.author).to.equal(undefined);
+      expect(result.details.description).to.equal('Old Description'); // Ensure other fields remain unchanged
+    });
+
     it('should handle an empty patch data object', function () {
       const originalJson = {
         name: 'Sample Name',

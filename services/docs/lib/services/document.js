@@ -301,7 +301,7 @@ module.exports.getDocuments = async function (resource, filter, user, query, sta
     }
 
     addVirtualProperties(resource, returnData.data);
-
+    callPlugins(resource, returnData.data);
     return returnData;
   });
   await embedDocs.many(resource, query.embed, user, result.docs, resources);
@@ -310,6 +310,7 @@ module.exports.getDocuments = async function (resource, filter, user, query, sta
 
 module.exports.createDocument = async function (resource, data, state, user, parentId) {
   removeVirtualProperties(resource, data);
+  callPlugins(resource, data);
   const doc = await builder.create({ resource, data, state, user, parentId });
 
   if (doc.parentId) {
@@ -338,6 +339,7 @@ module.exports.createDocument = async function (resource, data, state, user, par
 
 module.exports.setDocument = async function (resource, filter, data, state, user, originalDoc = {}) {
   removeVirtualProperties(resource, data);
+  callPlugins(resource, data);
   const update = await builder.update({
     resource,
     data,
@@ -664,6 +666,7 @@ const prepareGetDocument = settings => {
   const allowedStates = permissions.getAllowedStatesFromDocForUser(user, resource, 'GET', doc);
 
   addVirtualProperties(resource, currentState.data);
+  callPlugins(resource, currentState.data);
 
   const returnedDoc = {
     id: doc._id,
@@ -691,5 +694,13 @@ const removeVirtualProperties = (resource, data) => {
 const addVirtualProperties = (resource, data) => {
   if (resource.virtualProperties && data) {
     Object.entries(resource.virtualProperties).map(([prop, compute]) => (data[prop] = compute(data)));
+  }
+};
+
+const callPlugins = (resource, data) => {
+  if (resource?.documentPlugins) {
+    for (const plugin of resource.documentPlugins) {
+      plugin(data);
+    }
   }
 };

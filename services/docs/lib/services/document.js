@@ -535,6 +535,27 @@ module.exports.getDocumentUsers = async function (resource, filter) {
   return getDocUsersList(doc);
 };
 
+module.exports.isDocumentUserInRole = function (document, userId, role) {
+  if (!document) {
+    throw new Error('Document is null');
+  }
+  if (!userId) {
+    throw new Error('userId is null');
+  }
+  if (!document.users) {
+    return false;
+  }
+  if (!document.users.hasOwnProperty(userId)) {
+    return false;
+  }
+  for (const documentUserRole of document.users[userId]?.roles ?? []) {
+    if (documentUserRole === role) {
+      return true;
+    }
+  }
+  return false;
+};
+
 module.exports.addUserToDocument = async function (resource, filter, userDetails) {
   const document = await resource.collection.findOne(filter);
   if (!document) {

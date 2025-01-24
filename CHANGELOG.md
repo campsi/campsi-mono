@@ -1,3 +1,10 @@
+## [5.15.3](https://github.com/campsi/campsi-mono/compare/v5.15.2...v5.15.3) (2025-01-24)
+
+
+### Bug Fixes
+
+* (not for production) add a delete endpoint for deleting ([#321](https://github.com/campsi/campsi-mono/issues/321)) ([26ccfd0](https://github.com/campsi/campsi-mono/commit/26ccfd0dde9fc0538fe4e5d3079916f8538e9fe1))
+
 ## [5.15.2](https://github.com/campsi/campsi-mono/compare/v5.15.1...v5.15.2) (2025-01-21)
 
 

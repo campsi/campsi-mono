@@ -188,6 +188,22 @@ async function patchMe(req, res) {
   }
 }
 
+async function deleteMe(req, res) {
+  if (!req.user) {
+    return helpers.unauthorized(res);
+  }
+
+  try {
+    const usersCollection = await getUsersCollection(req.campsi, req.service.path);
+    const result = await usersCollection.deleteOne({ _id: req.user._id });
+    res.json(result);
+
+    req.service.emit('user/deleted', { userId: req.user._id });
+  } catch (e) {
+    helpers.error(res, e);
+  }
+}
+
 async function createAnonymousUser(req, res) {
   const token = builder.genBearerToken(100);
   const insert = {
@@ -691,6 +707,7 @@ module.exports = {
   me,
   updateMe,
   patchMe,
+  deleteMe,
   createAnonymousUser,
   logout,
   inviteUser,

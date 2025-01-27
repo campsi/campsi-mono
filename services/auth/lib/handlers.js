@@ -10,6 +10,7 @@ const { deleteExpiredTokens } = require('./tokens');
 const { getUsersCollection } = require('./modules/authCollections');
 const createObjectId = require('../../../lib/modules/createObjectId');
 const disposableDomains = require('disposable-email-domains');
+const { serviceNotAvailableRetryAfterSeconds } = require('../../../lib/modules/responseHelpers');
 
 async function tokenMaintenance(req, res) {
   if (!req?.user?.isAdmin) {
@@ -243,6 +244,60 @@ function getProviders(req, res) {
   res.json(ret);
 }
 
+const passwordRateLimitImplementation = (passwordRateLimits, req, res, err, next) => {
+  // check rate limit on failed passwords.
+  //
+  // note: this works with passwordRateLimitMiddleware to stop passwords before
+  // they get to the endpoint for verification.
+  //
+  const e = err ?? (!req?.user ? createError(401, 'unable to authentify user') : null);
+  if (e !== null && passwordRateLimits !== undefined) {
+    // apply password error rate limits
+    const { key, wrongPassword, wrongPasswordBlockForSeconds } = passwordRateLimits;
+    const ipaddress = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    const rateLimiterKey = key + ':' + ipaddress;
+    const redis = req.campsi.redis;
+    const ifNotExists = {
+      failures: 0,
+      remaining: wrongPassword + 1,
+      nextWait: wrongPasswordBlockForSeconds / 2,
+      blockUntil: null
+    };
+    redis.setnx(rateLimiterKey, JSON.stringify(ifNotExists)).then(() => {
+      redis.get(rateLimiterKey).then(value => {
+        const settings = JSON.parse(value);
+        let block = false;
+        let newExpire = settings.failures === 0 ? settings.nextWait * 2 : null;
+        settings.remaining--;
+        settings.failures++;
+        if (settings.remaining <= 0) {
+          settings.remaining = wrongPassword;
+          settings.nextWait *= 2;
+          newExpire = settings.nextWait;
+          block = true;
+          // eslint-disable-next-line prettier/prettier
+          settings.blockUntil = new Date().getTime() + (newExpire * 1000); // milliseconds
+        }
+        redis.set(rateLimiterKey, JSON.stringify(settings)).then(() => {
+          redis.expire(rateLimiterKey, 24 * 3600).then(() => {
+            if (block) {
+              if (newExpire) {
+                serviceNotAvailableRetryAfterSeconds(res, newExpire);
+              } else {
+                serviceNotAvailableRetryAfterSeconds(res, settings.nextWait / 2);
+              }
+            } else {
+              next();
+            }
+          });
+        });
+      });
+    });
+  } else {
+    next();
+  }
+};
+
 async function callback(req, res, next) {
   let { redirectURI } = state.get(req);
   const redirectUriFromState = !!redirectURI;
@@ -254,38 +309,51 @@ async function callback(req, res, next) {
     session: false,
     failWithError: true
   })(req, res, err => {
-    if (err) {
-      return redirectWithError(req, res, err, next);
-    }
-    if (!req.user) {
-      return redirectWithError(req, res, createError(401, 'unable to authentify user'), next);
-    }
-    if (!redirectURI) {
-      try {
-        res.json({ token: req.authBearerToken });
-      } catch (err) {
-        debug('Catching headers', err);
+    const loginFlow = (req, res, err) => {
+      if (err) {
+        return redirectWithError(req, res, err, next);
       }
-    } else {
-      if (req.authProvider.options?.validateRedirectURI && !req.authProvider.options.validateRedirectURI(redirectURI)) {
-        delete req.query.redirectURI;
-        return redirectWithError(req, res, createError(400, 'invalid redirectURI'), next);
+      if (!req?.user) {
+        return redirectWithError(req, res, createError(401, 'unable to authentify user'), next);
       }
-      if (req.method === 'GET' || redirectUriFromState) {
-        res.redirect(
-          editURL(redirectURI, obj => {
-            obj.query.access_token = req.authBearerToken;
-          })
-        );
+      if (!redirectURI) {
+        try {
+          res.json({ token: req.authBearerToken });
+        } catch (err) {
+          debug('Catching headers', err);
+        }
       } else {
-        res.json({ token: req.authBearerToken, redirectURI });
+        if (req.authProvider.options?.validateRedirectURI && !req.authProvider.options.validateRedirectURI(redirectURI)) {
+          delete req.query.redirectURI;
+          return redirectWithError(req, res, createError(400, 'invalid redirectURI'), next);
+        }
+        if (req.method === 'GET' || redirectUriFromState) {
+          res.redirect(
+            editURL(redirectURI, obj => {
+              obj.query.access_token = req.authBearerToken;
+            })
+          );
+        } else {
+          res.json({ token: req.authBearerToken, redirectURI });
+        }
       }
-    }
-    if (req.session) {
-      req.session.destroy(() => {
-        debug('session destroyed');
-      });
-    }
+      if (req.session) {
+        req.session.destroy(() => {
+          debug('session destroyed');
+        });
+      }
+    };
+    passwordRateLimitImplementation(
+      req.authProvider.options?.passwordRateLimits ?? {
+        key: 'password-local',
+        wrongPassword: 5,
+        wrongPasswordBlockForSeconds: 30
+      },
+      req,
+      res,
+      err,
+      () => loginFlow(req, res, err)
+    );
   });
 }
 

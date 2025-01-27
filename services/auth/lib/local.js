@@ -42,8 +42,8 @@ const rateLimitMiddleware = function (rateLimits) {
     const ipaddress = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
     const rateLimiterKey = rateLimits.key + ':' + ipaddress;
     const redis = req.campsi.redis;
-    const rpm = rateLimits.requestsPerSecond ?? 5;
-    redis.setnx(rateLimiterKey, rpm + 1).then(ignore1 => {
+    const rps = rateLimits.requestsPerSecond ?? 5;
+    redis.setnx(rateLimiterKey, rps + 1).then(ignore1 => {
       redis.expire(rateLimiterKey, 1).then(ignore2 => {
         redis.get(rateLimiterKey).then(ignore3 => {
           redis.decr(rateLimiterKey).then(n => {
@@ -55,6 +55,27 @@ const rateLimitMiddleware = function (rateLimits) {
           });
         });
       });
+    });
+  };
+};
+
+const passwordRateLimitMiddleware = function (passwordRateLimits) {
+  return (req, res, next) => {
+    const ipaddress = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    const rateLimiterKey = passwordRateLimits.key + ':' + ipaddress;
+    const redis = req.campsi.redis;
+    redis.get(rateLimiterKey).then(value => {
+      if (value) {
+        const settings = JSON.parse(value);
+        const now = new Date().getTime();
+        if (settings.blockUntil && now < settings.blockUntil) {
+          serviceNotAvailableRetryAfterSeconds(res, Math.ceil((settings.blockUntil - now) / 1000));
+        } else {
+          next();
+        }
+      } else {
+        next();
+      }
     });
   };
 };
@@ -515,6 +536,7 @@ const updatePassword = async function (req, res) {
 module.exports = {
   localAuthMiddleware,
   rateLimitMiddleware,
+  passwordRateLimitMiddleware,
   signin,
   callback,
   encryptPassword,

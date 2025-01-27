@@ -259,7 +259,7 @@ const passwordRateLimitImplementation = (passwordRateLimits, req, res, err, next
     const redis = req.campsi.redis;
     const ifNotExists = {
       failures: 0,
-      remaining: wrongPassword + 1,
+      remaining: wrongPassword,
       nextWait: wrongPasswordBlockForSeconds / 2,
       blockUntil: null
     };
@@ -271,7 +271,7 @@ const passwordRateLimitImplementation = (passwordRateLimits, req, res, err, next
         settings.remaining--;
         settings.failures++;
         if (settings.remaining <= 0) {
-          settings.remaining = wrongPassword;
+          settings.remaining = 1; // one more login attempt before a new ban
           settings.nextWait *= 2;
           newExpire = settings.nextWait;
           block = true;

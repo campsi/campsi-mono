@@ -43,8 +43,8 @@ const rateLimitMiddleware = function (rateLimits) {
     const rateLimiterKey = rateLimits.key + ':' + ipaddress;
     const redis = req.campsi.redis;
     const rps = rateLimits.requestsPerSecond ?? 5;
-    redis.setnx(rateLimiterKey, rps + 1).then(ignore1 => {
-      redis.expire(rateLimiterKey, 1).then(ignore2 => {
+    redis.setnx(rateLimiterKey, rps + 1).then(newKey => {
+      const getAndDecr = ignore2 => {
         redis.get(rateLimiterKey).then(ignore3 => {
           redis.decr(rateLimiterKey).then(n => {
             if (n <= 0) {
@@ -54,7 +54,12 @@ const rateLimitMiddleware = function (rateLimits) {
             }
           });
         });
-      });
+      };
+      if (newKey) {
+        redis.expire(rateLimiterKey, 1 /* for testing: * 60 */).then(getAndDecr);
+      } else {
+        getAndDecr();
+      }
     });
   };
 };

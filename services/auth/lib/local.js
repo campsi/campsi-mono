@@ -514,7 +514,7 @@ const updatePassword = async function (req, res) {
 
 module.exports = {
   localAuthMiddleware,
-  rateLimitMiddleware: rateLimitMiddleware,
+  rateLimitMiddleware,
   signin,
   callback,
   encryptPassword,

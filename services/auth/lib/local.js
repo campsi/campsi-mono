@@ -42,13 +42,13 @@ const rateLimitMiddleware = function (rateLimits) {
     const ipaddress = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
     const rateLimiterKey = rateLimits.key + ':' + ipaddress;
     const redis = req.campsi.redis;
-    const rpm = rateLimits.requestsPerMinute ?? 5;
+    const rpm = rateLimits.requestsPerSecond ?? 5;
     redis.setnx(rateLimiterKey, rpm + 1).then(ignore1 => {
-      redis.expire(rateLimiterKey, 60).then(ignore2 => {
+      redis.expire(rateLimiterKey, 1).then(ignore2 => {
         redis.get(rateLimiterKey).then(ignore3 => {
           redis.decr(rateLimiterKey).then(n => {
             if (n <= 0) {
-              serviceNotAvailableRetryAfterSeconds(res, 60);
+              serviceNotAvailableRetryAfterSeconds(res, 1);
             } else {
               next();
             }

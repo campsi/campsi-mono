@@ -76,6 +76,10 @@ module.exports = class AuthService extends CampsiService {
     router.get('/me', validateRedirectURI, handlers.me);
     router.put('/me', handlers.updateMe);
     router.patch('/me', handlers.patchMe);
+    if (process.env.NODE_ENV !== 'production') {
+      // used by end-to-end tests
+      router.delete('/me', handlers.deleteMe);
+    }
     router.get('/anonymous', handlers.createAnonymousUser);
     router.get('/logout', handlers.logout);
     router.post('/invitations', handlers.inviteUser);

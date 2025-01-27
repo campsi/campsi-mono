@@ -89,7 +89,10 @@ module.exports = class AuthService extends CampsiService {
     router.put('/tokens', handlers.tokenMaintenance);
 
     if (providers.local) {
-      router.use('/local', local.middleware(providers.local));
+      router.use('/local',
+        local.localAuthMiddleware(providers.local),
+        local.rateLimitMiddleware(providers.local?.rateLimits ?? { key: 'auth-local', requestsPerMinute: 5 })
+      );
       router.post('/local/signup', localSignupMiddleware, local.signup);
       router.post('/local/signin', local.signin);
       router.post('/local/reset-password-token', validatePasswordResetUrl, local.createResetPasswordToken);

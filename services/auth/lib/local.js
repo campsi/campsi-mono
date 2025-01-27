@@ -6,6 +6,7 @@ const bcrypt = require('bcryptjs');
 const { getUsersCollection } = require('./modules/authCollections');
 const { isEmailValid } = require('./handlers');
 const editURL = require('edit-url');
+const { serviceNotAvailableRetryAfterSeconds } = require('../../../lib/modules/responseHelpers');
 const debug = require('debug')('campsi:auth:local');
 
 function getMissingParameters(payload, parameters) {
@@ -28,11 +29,33 @@ function dispatchUserSignupEvent(req, user) {
   });
 }
 
-const middleware = function (localProvider) {
+const localAuthMiddleware = function (localProvider) {
   return (req, res, next) => {
     req.authProvider = localProvider;
     state.serialize(req);
     next();
+  };
+};
+
+const rateLimitMiddleware = function (rateLimits) {
+  return (req, res, next) => {
+    const ipaddress = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    const rateLimiterKey = rateLimits.key + ':' + ipaddress;
+    const redis = req.campsi.redis;
+    const rpm = rateLimits.requestsPerMinute ?? 5;
+    redis.setnx(rateLimiterKey, rpm + 1).then(ignore1 => {
+      redis.expire(rateLimiterKey, 60).then(ignore2 => {
+        redis.get(rateLimiterKey).then(ignore3 => {
+          redis.decr(rateLimiterKey).then(n => {
+            if (n <= 0) {
+              serviceNotAvailableRetryAfterSeconds(res, 60);
+            } else {
+              next();
+            }
+          });
+        });
+      });
+    });
   };
 };
 
@@ -490,7 +513,8 @@ const updatePassword = async function (req, res) {
 };
 
 module.exports = {
-  middleware,
+  localAuthMiddleware,
+  rateLimitMiddleware: rateLimitMiddleware,
   signin,
   callback,
   encryptPassword,

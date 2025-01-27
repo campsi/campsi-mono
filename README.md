@@ -35,12 +35,12 @@ Manage and expose **document-oriented** content through a configurable RESTful *
 - [x] Role-Based Access-Control
 - [x] Generate invitation tokens by role
 - [x] PassportJS integration
-- [x] Custom authentification providers
+- [x] Custom authentication providers
     - [x] [Local Database](lib/modules/auth/auth-local.js)
     - [x] [Facebook](lib/modules/auth/facebook.js)
     - [x] [Github](lib/modules/auth/github.js)
     - [x] [Google](lib/modules/auth/google.js)
-- [ ] Rate limiter
+- [x] Rate limiter
 
 #### Other
 - [ ] Swagger / API doc generation

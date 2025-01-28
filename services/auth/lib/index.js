@@ -1,5 +1,6 @@
 const CampsiService = require('../../../lib/service');
 const local = require('./local');
+const libRateLimit = require('../../../lib/middlewares/rateLimit');
 const passportMiddleware = require('./passportMiddleware');
 const passport = require('@passport-next/passport');
 const helpers = require('../../../lib/modules/responseHelpers');
@@ -92,7 +93,7 @@ module.exports = class AuthService extends CampsiService {
       router.use(
         '/local',
         local.localAuthMiddleware(providers.local),
-        local.rateLimitMiddleware(providers.local.options?.rateLimits ?? { key: 'auth-local', requestsPerSecond: 5 })
+        libRateLimit.rateLimitMiddleware(providers.local.options?.rateLimits ?? { key: 'auth-local', requestsPerSecond: 5 })
       );
       router.post('/local/signup', localSignupMiddleware, local.signup);
       router.post(

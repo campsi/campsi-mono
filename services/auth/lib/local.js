@@ -37,33 +37,6 @@ const localAuthMiddleware = function (localProvider) {
   };
 };
 
-const rateLimitMiddleware = function (rateLimits) {
-  return (req, res, next) => {
-    const ipaddress = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-    const rateLimiterKey = rateLimits.key + ':' + ipaddress;
-    const redis = req.campsi.redis;
-    const rps = rateLimits.requestsPerSecond ?? 5;
-    redis.setnx(rateLimiterKey, rps + 1).then(newKey => {
-      const getAndDecr = ignore2 => {
-        redis.get(rateLimiterKey).then(ignore3 => {
-          redis.decr(rateLimiterKey).then(n => {
-            if (n <= 0) {
-              serviceNotAvailableRetryAfterSeconds(res, 1);
-            } else {
-              next();
-            }
-          });
-        });
-      };
-      if (newKey) {
-        redis.expire(rateLimiterKey, 1 /* for testing: * 60 */).then(getAndDecr);
-      } else {
-        getAndDecr();
-      }
-    });
-  };
-};
-
 // note: this works with passwordRateLimitImplementation to provide a rate
 // limit on password *FAILURES*.
 //
@@ -550,7 +523,6 @@ const updatePassword = async function (req, res) {
 
 module.exports = {
   localAuthMiddleware,
-  rateLimitMiddleware,
   passwordRateLimitMiddleware,
   signin,
   callback,

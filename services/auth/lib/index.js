@@ -1,5 +1,6 @@
 const CampsiService = require('../../../lib/service');
 const local = require('./local');
+const libRateLimit = require('../../../lib/middlewares/rateLimit');
 const passportMiddleware = require('./passportMiddleware');
 const passport = require('@passport-next/passport');
 const helpers = require('../../../lib/modules/responseHelpers');
@@ -89,9 +90,23 @@ module.exports = class AuthService extends CampsiService {
     router.put('/tokens', handlers.tokenMaintenance);
 
     if (providers.local) {
-      router.use('/local', local.middleware(providers.local));
+      router.use(
+        '/local',
+        local.localAuthMiddleware(providers.local),
+        libRateLimit.rateLimitMiddleware(providers.local.options?.rateLimits ?? { key: 'auth-local', requests: 5, window: 1 })
+      );
       router.post('/local/signup', localSignupMiddleware, local.signup);
-      router.post('/local/signin', local.signin);
+      router.post(
+        '/local/signin',
+        local.passwordRateLimitMiddleware(
+          providers.local.options?.passwordRateLimits ?? {
+            key: 'password-local',
+            wrongPassword: 5,
+            wrongPasswordBlockForSeconds: 30
+          }
+        ),
+        local.signin
+      );
       router.post('/local/reset-password-token', validatePasswordResetUrl, local.createResetPasswordToken);
       router.post('/local/reset-password', local.resetPassword);
       router.get('/local/validate', local.validate);

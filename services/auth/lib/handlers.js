@@ -282,9 +282,9 @@ const passwordRateLimitImplementation = (passwordRateLimits, req, res, err, next
           redis.expire(rateLimiterKey, 24 * 3600).then(() => {
             if (block) {
               if (newExpire) {
-                serviceNotAvailableRetryAfterSeconds(res, newExpire);
+                serviceNotAvailableRetryAfterSeconds(res, newExpire, null, key);
               } else {
-                serviceNotAvailableRetryAfterSeconds(res, settings.nextWait / 2);
+                serviceNotAvailableRetryAfterSeconds(res, settings.nextWait / 2, null, key);
               }
             } else {
               next();

@@ -50,7 +50,7 @@ const passwordRateLimitMiddleware = function (passwordRateLimits) {
         const settings = JSON.parse(value);
         const now = new Date().getTime();
         if (settings.blockUntil && now < settings.blockUntil) {
-          serviceNotAvailableRetryAfterSeconds(res, Math.ceil((settings.blockUntil - now) / 1000));
+          serviceNotAvailableRetryAfterSeconds(res, Math.ceil((settings.blockUntil - now) / 1000), null, passwordRateLimits.key);
         } else {
           next();
         }

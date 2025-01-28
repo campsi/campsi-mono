@@ -93,7 +93,7 @@ module.exports = class AuthService extends CampsiService {
       router.use(
         '/local',
         local.localAuthMiddleware(providers.local),
-        libRateLimit.rateLimitMiddleware(providers.local.options?.rateLimits ?? { key: 'auth-local', requestsPerSecond: 5 })
+        libRateLimit.rateLimitMiddleware(providers.local.options?.rateLimits ?? { key: 'auth-local', requests: 5, window: 1 })
       );
       router.post('/local/signup', localSignupMiddleware, local.signup);
       router.post(

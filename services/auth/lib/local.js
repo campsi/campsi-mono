@@ -64,6 +64,9 @@ const rateLimitMiddleware = function (rateLimits) {
   };
 };
 
+// note: this works with passwordRateLimitImplementation to provide a rate
+// limit on password *FAILURES*.
+//
 const passwordRateLimitMiddleware = function (passwordRateLimits) {
   return (req, res, next) => {
     const ipaddress = req.headers['x-forwarded-for'] || req.socket.remoteAddress;

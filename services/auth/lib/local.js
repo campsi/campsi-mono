@@ -210,7 +210,12 @@ const signup = async function (req, res) {
             .map(([key, value]) => key);
 
           if (existingProvidersIdentities.length) {
-            return helpers.badRequest(res, new Error('A user already exists with that email'));
+            const err = new Error('A user already exists with that email');
+            req.campsi.logger.error(err, `[${this.constructor.name}] ${err.message}`);
+            // we need to reply with a new, generic, error: F-2025-0572 - Account oracle
+            // we cannot reply with a fresh auth token, which would be the normal
+            // success reply.
+            return helpers.badRequest(res, new Error('Bad Request'));
           }
 
           // user has been created, through invitation, but doesn't have any identity provider => we can update it
@@ -318,7 +323,9 @@ const createResetPasswordToken = async (req, res) => {
       email: new RegExp('^' + req.body.email.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$', 'i')
     });
     if (!user) {
-      return helpers.notFound(res, new Error('User not found'));
+      const err = new Error('User not found');
+      req.campsi.logger.error(err, `[${this.constructor.name}] ${err.message}`);
+      return res.json({ success: true }); // we always reply success F-2025-0572 - Account oracle
     }
 
     if (!user.identities?.local?.id) {

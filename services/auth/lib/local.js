@@ -70,7 +70,7 @@ const callback = async function localCallback(req, username, password, done) {
     debug('signin passport callback', username, user.identities.local.encryptedPassword, filter);
     bcrypt.compare(password, user.identities.local.encryptedPassword, function (err, isMatch) {
       if (err) {
-        debug('bcrypt password compare error', err, password, user.identities.local.encryptedPassword);
+        debug('bcrypt password compare error', err, user.identities.local.encryptedPassword);
       }
       if (isMatch) {
         user.identity = user.identities.local;
@@ -452,7 +452,7 @@ const resetPassword = async function (req, res) {
  * @return {*}
  */
 const updatePassword = async function (req, res) {
-  const missingParams = getMissingParameters(req.body, ['new', 'confirm']);
+  const missingParams = getMissingParameters(req.body, ['current', 'new', 'confirm']);
   const passwordRegex = new RegExp(req.authProvider.options.passwordRegex ?? '.*');
   if (!passwordRegex.test(req.body.new)) {
     return helpers.error(
@@ -466,6 +466,24 @@ const updatePassword = async function (req, res) {
 
   if (req.body.new !== req.body.confirm) {
     return helpers.error(res, new Error('new and confirmation password do not match'));
+  }
+
+  try {
+    const isMatch = await new Promise((resolve, reject) =>
+      bcrypt.compare(req.body.current, req.user.identities.local.encryptedPassword, function (err, isMatch) {
+        if (err) {
+          debug('bcrypt password compare error', err, req.user.identities.local.encryptedPassword);
+          reject(err);
+        } else {
+          resolve(isMatch);
+        }
+      })
+    );
+    if (!isMatch) {
+      return helpers.error(res, new Error('current password does not match'));
+    }
+  } catch (err) {
+    return helpers.error(res, new Error('current password does not match'));
   }
 
   try {

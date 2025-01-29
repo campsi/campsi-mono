@@ -244,12 +244,14 @@ function getProviders(req, res) {
   res.json(ret);
 }
 
+/**
+ *  check rate limit on failed passwords.
+ *
+ * note: this works with passwordRateLimitMiddleware to stop passwords before
+ * they get to the endpoint for verification.
+ *
+ */
 const passwordRateLimitImplementation = (passwordRateLimits, req, res, err, next) => {
-  // check rate limit on failed passwords.
-  //
-  // note: this works with passwordRateLimitMiddleware to stop passwords before
-  // they get to the endpoint for verification.
-  //
   const e = err ?? (!req?.user ? createError(401, 'unable to authentify user') : null);
   if (e !== null && passwordRateLimits !== undefined) {
     // apply password error rate limits
@@ -263,7 +265,8 @@ const passwordRateLimitImplementation = (passwordRateLimits, req, res, err, next
       nextWait: wrongPasswordBlockForSeconds / 2,
       blockUntil: null
     };
-    redis.setnx(rateLimiterKey, JSON.stringify(ifNotExists)).then(() => {
+    const ttl = 24 * 3600;
+    redis.set(rateLimiterKey, JSON.stringify(ifNotExists), 'NX', 'EX', ttl).then(() => {
       redis.get(rateLimiterKey).then(value => {
         const settings = JSON.parse(value);
         let block = false;
@@ -278,18 +281,16 @@ const passwordRateLimitImplementation = (passwordRateLimits, req, res, err, next
           // eslint-disable-next-line prettier/prettier
           settings.blockUntil = new Date().getTime() + (newExpire * 1000); // milliseconds
         }
-        redis.set(rateLimiterKey, JSON.stringify(settings)).then(() => {
-          redis.expire(rateLimiterKey, 24 * 3600).then(() => {
-            if (block) {
-              if (newExpire) {
-                serviceNotAvailableRetryAfterSeconds(res, newExpire, null, key);
-              } else {
-                serviceNotAvailableRetryAfterSeconds(res, settings.nextWait / 2, null, key);
-              }
+        redis.set(rateLimiterKey, JSON.stringify(settings), 'EX', ttl).then(() => {
+          if (block) {
+            if (newExpire) {
+              serviceNotAvailableRetryAfterSeconds(res, newExpire, null, key);
             } else {
-              next();
+              serviceNotAvailableRetryAfterSeconds(res, settings.nextWait / 2, null, key);
             }
-          });
+          } else {
+            next();
+          }
         });
       });
     });

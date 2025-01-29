@@ -11,6 +11,7 @@ const { getUsersCollection } = require('./modules/authCollections');
 const createObjectId = require('../../../lib/modules/createObjectId');
 const disposableDomains = require('disposable-email-domains');
 const { serviceNotAvailableRetryAfterSeconds } = require('../../../lib/modules/responseHelpers');
+const { passwordRateLimitDefaults } = require('./defaults');
 
 async function tokenMaintenance(req, res) {
   if (!req?.user?.isAdmin) {
@@ -251,9 +252,10 @@ function getProviders(req, res) {
  * they get to the endpoint for verification.
  *
  */
-const passwordRateLimitImplementation = (passwordRateLimits, req, res, err, next) => {
+const passwordRateLimitImplementation = (_passwordRateLimits, req, res, err, next) => {
+  const passwordRateLimits = passwordRateLimitDefaults(_passwordRateLimits);
   const e = err ?? (!req?.user ? createError(401, 'unable to authentify user') : null);
-  if (e !== null && passwordRateLimits !== undefined) {
+  if (e !== null) {
     // apply password error rate limits
     const { key, wrongPassword, wrongPasswordBlockForSeconds } = passwordRateLimits;
     const ipaddress = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
@@ -344,17 +346,7 @@ async function callback(req, res, next) {
         });
       }
     };
-    passwordRateLimitImplementation(
-      req.authProvider.options?.passwordRateLimits ?? {
-        key: 'password-local',
-        wrongPassword: 5,
-        wrongPasswordBlockForSeconds: 30
-      },
-      req,
-      res,
-      err,
-      () => loginFlow(req, res, err)
-    );
+    passwordRateLimitImplementation(req.authProvider.options?.passwordRateLimits, req, res, err, () => loginFlow(req, res, err));
   });
 }
 

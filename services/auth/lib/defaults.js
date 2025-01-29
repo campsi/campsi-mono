@@ -1,14 +1,21 @@
 /**
+ * @typedef {Object} PasswordRateLimits
+ * @property {string} key - key prefix for redis, like limit's name
+ * @property {number} wrongPassword - number of password failures to allow
+ * @property {number} wrongPasswordBlockForSeconds - initial number of seconds to block, doubles each subsequent failure
+ */
+
+/**
  * Apply defaults consistently to passwordRateLimits incoming
  * data.
- *
  * ensures key, wrongPassword, wrongPasswordBlockForSeconds are set.
- * defaults:
- *  key: 'password-local'
- *  wrongPassword: 5
- *  wrongPasswordBlockForSeconds: 30
+ *  @param {PasswordRateLimits?} [passwordRateLimits]
+ *  @param {string} [passwordRateLimits.key = 'password-local'] redis key prefix
+ *  @param {number} [passwordRateLimits.wrongPassword = 5] number or allowed failures
+ *  @param {number} [passwordRateLimits.wrongPasswordBlockForSeconds = 30] initial block time
+ *  @return {PasswordRateLimits}
  */
-const passwordRateLimitDefaults = (passwordRateLimits) => {
+const passwordRateLimitDefaults = passwordRateLimits => {
   const settings = passwordRateLimits ? { ...passwordRateLimits } : {};
   if (!settings.key) {
     settings.key = 'password-local';

@@ -6,6 +6,8 @@ const bcrypt = require('bcryptjs');
 const { getUsersCollection } = require('./modules/authCollections');
 const { isEmailValid } = require('./handlers');
 const editURL = require('edit-url');
+const { serviceNotAvailableRetryAfterSeconds } = require('../../../lib/modules/responseHelpers');
+const { passwordRateLimitDefaults } = require('./defaults');
 const debug = require('debug')('campsi:auth:local');
 
 function getMissingParameters(payload, parameters) {
@@ -28,11 +30,37 @@ function dispatchUserSignupEvent(req, user) {
   });
 }
 
-const middleware = function (localProvider) {
+const localAuthMiddleware = function (localProvider) {
   return (req, res, next) => {
     req.authProvider = localProvider;
     state.serialize(req);
     next();
+  };
+};
+
+/**
+ * note: this works with passwordRateLimitImplementation to provide a rate
+ * limit on password *FAILURES*.
+ */
+const passwordRateLimitMiddleware = function (_passwordRateLimits) {
+  const passwordRateLimits = passwordRateLimitDefaults(_passwordRateLimits);
+  return (req, res, next) => {
+    const ipaddress = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    const rateLimiterKey = passwordRateLimits.key + ':' + ipaddress;
+    const redis = req.campsi.redis;
+    redis.get(rateLimiterKey).then(value => {
+      if (value) {
+        const settings = JSON.parse(value);
+        const now = new Date().getTime();
+        if (settings.blockUntil && now < settings.blockUntil) {
+          serviceNotAvailableRetryAfterSeconds(res, Math.ceil((settings.blockUntil - now) / 1000), null, passwordRateLimits.key);
+        } else {
+          next();
+        }
+      } else {
+        next();
+      }
+    });
   };
 };
 
@@ -515,7 +543,8 @@ const updatePassword = async function (req, res) {
 };
 
 module.exports = {
-  middleware,
+  localAuthMiddleware,
+  passwordRateLimitMiddleware,
   signin,
   callback,
   encryptPassword,

@@ -318,7 +318,6 @@ const passwordRateLimitImplementation = (_passwordRateLimits, req, res, err, nex
 
 const passwordRateLimitReturnAwaitImplementation = async (_passwordRateLimits, req, res, err, next) => {
   const passwordRateLimits = passwordRateLimitDefaults(_passwordRateLimits);
-  console.error('in implementation', passwordRateLimits, err);
   const e = err ?? (!req?.user ? createError(401, 'unable to authentify user') : null);
   const serviceNotAvailableRetryAfterSeconds = (res, seconds, message, key) => {
     res.header('Retry-After', seconds);
@@ -356,7 +355,6 @@ const passwordRateLimitReturnAwaitImplementation = async (_passwordRateLimits, r
       settings.blockUntil = new Date().getTime() + (newExpire * 1000); // milliseconds
     }
     await redis.set(rateLimiterKey, JSON.stringify(settings), 'EX', ttl);
-    console.error('HERE!!!');
     if (block) {
       if (newExpire) {
         return serviceNotAvailableRetryAfterSeconds(res, newExpire, null, key);

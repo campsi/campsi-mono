@@ -4,7 +4,7 @@ const helpers = require('../../../lib/modules/responseHelpers');
 const state = require('./state');
 const bcrypt = require('bcryptjs');
 const { getUsersCollection } = require('./modules/authCollections');
-const { isEmailValid } = require('./handlers');
+const { isEmailValid, clearPasswordRateLimit, passwordRateLimitReturnAwaitImplementation } = require('./handlers');
 const editURL = require('edit-url');
 const { serviceNotAvailableRetryAfterSeconds } = require('../../../lib/modules/responseHelpers');
 const { passwordRateLimitDefaults } = require('./defaults');
@@ -459,6 +459,8 @@ const resetPassword = async function (req, res) {
       // the request is forwarded to the passport local callback and will
       // authorize the user with the new password
       req.body.username = result.identities.local.username || result.email;
+      // reset the lock on failed password attempts
+      await handlers.clearPasswordRateLimit(req.authProvider.options?.passwordRateLimits, req);
       return handlers.callback(req, res);
     } catch (e) {
       handlers.redirectWithError(req, res, e);
@@ -508,7 +510,15 @@ const updatePassword = async function (req, res) {
       })
     );
     if (!isMatch) {
-      return helpers.error(res, new Error('current password does not match'));
+      const error = new Error('current password does not match.');
+      const err = await passwordRateLimitReturnAwaitImplementation(
+        req.authProvider.options?.passwordRateLimits,
+        req,
+        res,
+        error,
+        () => error
+      );
+      return helpers.error(res, err);
     }
   } catch (err) {
     return helpers.error(res, new Error('current password does not match'));

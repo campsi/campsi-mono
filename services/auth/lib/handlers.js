@@ -367,10 +367,13 @@ async function callback(req, res, next) {
   };
 
   // noinspection JSUnresolvedFunction
-  await /* forever */ passport.authenticate(req.authProvider.name, {
+  await passport.authenticate(req.authProvider.name, {
     session: false,
     failWithError: true
   })(req, res, err => _callback(err).then());
+  // the await here is needed in order to keep the http response open
+  // for completion in the callbacks.  passport.authenticate doesn't
+  // return a promise.
 }
 
 function redirectWithError(req, res, err, next) {

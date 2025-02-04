@@ -499,16 +499,7 @@ const updatePassword = async function (req, res) {
   }
 
   try {
-    const isMatch = await new Promise((resolve, reject) =>
-      bcrypt.compare(req.body.current, req.user.identities.local.encryptedPassword, function (err, isMatch) {
-        if (err) {
-          debug('bcrypt password compare error', err, req.user.identities.local.encryptedPassword);
-          reject(err);
-        } else {
-          resolve(isMatch);
-        }
-      })
-    );
+    const isMatch = bcrypt.compareSync(req.body.current, req.user.identities.local.encryptedPassword);
     if (!isMatch) {
       const error = new Error('current password does not match.');
       const err = await passwordRateLimitReturnAwaitImplementation(

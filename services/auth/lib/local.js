@@ -4,7 +4,7 @@ const helpers = require('../../../lib/modules/responseHelpers');
 const state = require('./state');
 const bcrypt = require('bcryptjs');
 const { getUsersCollection } = require('./modules/authCollections');
-const { isEmailValid, clearPasswordRateLimit, passwordRateLimitReturnAwaitImplementation } = require('./handlers');
+const { isEmailValid, clearPasswordRateLimit, passwordRateLimiter } = require('./handlers');
 const editURL = require('edit-url');
 const { serviceNotAvailableRetryAfterSeconds } = require('../../../lib/modules/responseHelpers');
 const { passwordRateLimitDefaults } = require('./defaults');
@@ -39,7 +39,7 @@ const localAuthMiddleware = function (localProvider) {
 };
 
 /**
- * note: this works with passwordRateLimitImplementation to provide a rate
+ * note: this works with passwordRateLimiter to provide a rate
  * limit on password *FAILURES*.
  */
 const passwordRateLimitMiddleware = function (_passwordRateLimits) {
@@ -460,7 +460,7 @@ const resetPassword = async function (req, res) {
       // authorize the user with the new password
       req.body.username = result.identities.local.username || result.email;
       // reset the lock on failed password attempts
-      await handlers.clearPasswordRateLimit(req.authProvider.options?.passwordRateLimits, req);
+      await clearPasswordRateLimit(req.authProvider.options?.passwordRateLimits, req);
       return handlers.callback(req, res);
     } catch (e) {
       handlers.redirectWithError(req, res, e);
@@ -502,13 +502,7 @@ const updatePassword = async function (req, res) {
     const isMatch = bcrypt.compareSync(req.body.current, req.user.identities.local.encryptedPassword);
     if (!isMatch) {
       const error = new Error('current password does not match.');
-      const err = await passwordRateLimitReturnAwaitImplementation(
-        req.authProvider.options?.passwordRateLimits,
-        req,
-        res,
-        error,
-        () => error
-      );
+      const err = await passwordRateLimiter(req.authProvider.options?.passwordRateLimits, req, res, error, () => error);
       return helpers.error(res, err);
     }
   } catch (err) {

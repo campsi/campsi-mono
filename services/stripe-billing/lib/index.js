@@ -207,11 +207,13 @@ module.exports = class StripeBillingService extends CampsiService {
 
     this.router.delete('/subscriptions/:id', async (req, res) => {
       const params = {};
-      if (req.body.invoice_now) {
-        params.invoice_now = req.body.invoice_now;
-      }
-      const deletion = await stripe.subscriptions.del(req.params.id, params);
-      res.json(deletion);
+      ['invoice_now', 'prorate', 'cancellation_details', 'expand'].forEach(param => {
+        if (req.body.hasOwnProperty(param)) {
+          params[param] = req.body[param];
+        }
+      });
+      const canceledSubscription = await stripe.subscriptions.del(req.params.id, params);
+      res.json(canceledSubscription);
     });
 
     this.router.put('/subscriptions/:id', async (req, res) => {

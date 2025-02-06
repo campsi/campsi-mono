@@ -6,14 +6,13 @@
  */
 
 /**
- * Apply defaults consistently to passwordRateLimits incoming
- * data.
+ * Apply defaults consistently to passwordRateLimits incoming data.
  * ensures key, wrongPassword, wrongPasswordBlockForSeconds are set.
  *  @param {PasswordRateLimits?} [passwordRateLimits]
  *  @param {string} [passwordRateLimits.key = 'password-local'] redis key prefix
  *  @param {number} [passwordRateLimits.wrongPassword = 5] number or allowed failures
  *  @param {number} [passwordRateLimits.wrongPasswordBlockForSeconds = 30] initial block time
- *  @return {PasswordRateLimits}
+ *  @returns {PasswordRateLimits}
  */
 const passwordRateLimitDefaults = passwordRateLimits => {
   const settings = passwordRateLimits ? { ...passwordRateLimits } : {};

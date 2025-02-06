@@ -49,14 +49,13 @@ const passwordRateLimitMiddleware = function (_passwordRateLimits) {
     const rateLimiterKey = passwordRateLimits.key + ':' + ipaddress;
     const redis = req.campsi.redis;
     redis.get(rateLimiterKey).then(value => {
-      if (value) {
-        const settings = JSON.parse(value);
-        const now = new Date().getTime();
-        if (settings.blockUntil && now < settings.blockUntil) {
-          serviceNotAvailableRetryAfterSeconds(res, Math.ceil((settings.blockUntil - now) / 1000), null, passwordRateLimits.key);
-        } else {
-          next();
-        }
+      if (!value) {
+        return next();
+      }
+      const settings = JSON.parse(value);
+      const now = new Date().getTime();
+      if (settings.blockUntil && now < settings.blockUntil) {
+        serviceNotAvailableRetryAfterSeconds(res, Math.ceil((settings.blockUntil - now) / 1000), null, passwordRateLimits.key);
       } else {
         next();
       }

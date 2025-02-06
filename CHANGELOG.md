@@ -1,3 +1,10 @@
+## [5.17.1](https://github.com/campsi/campsi-mono/compare/v5.17.0...v5.17.1) (2025-02-06)
+
+
+### Bug Fixes
+
+* wrongly formed expand in subscription cancellation ([#327](https://github.com/campsi/campsi-mono/issues/327)) ([a3fe77d](https://github.com/campsi/campsi-mono/commit/a3fe77d23ad071e41ce2bd2e181e49cd211b4743))
+
 # [5.17.0](https://github.com/campsi/campsi-mono/compare/v5.16.0...v5.17.0) (2025-02-06)
 
 

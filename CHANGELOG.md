@@ -1,3 +1,10 @@
+# [5.16.0](https://github.com/campsi/campsi-mono/compare/v5.15.3...v5.16.0) (2025-02-06)
+
+
+### Features
+
+* security improvements with authentication ([#325](https://github.com/campsi/campsi-mono/issues/325)) ([85e9005](https://github.com/campsi/campsi-mono/commit/85e9005b0444731531b79a6055b2f08c08ba3a77))
+
 ## [5.15.3](https://github.com/campsi/campsi-mono/compare/v5.15.2...v5.15.3) (2025-01-24)
 
 

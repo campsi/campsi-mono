@@ -1,3 +1,10 @@
+# [5.17.0](https://github.com/campsi/campsi-mono/compare/v5.16.0...v5.17.0) (2025-02-06)
+
+
+### Features
+
+* allow more infos in stripe subscription cancellation ([#326](https://github.com/campsi/campsi-mono/issues/326)) ([f2c9ec6](https://github.com/campsi/campsi-mono/commit/f2c9ec61c43369e6a719b823cdebd2fcb7e4dbfd))
+
 # [5.16.0](https://github.com/campsi/campsi-mono/compare/v5.15.3...v5.16.0) (2025-02-06)
 
 

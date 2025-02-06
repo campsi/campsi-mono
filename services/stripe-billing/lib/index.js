@@ -212,6 +212,9 @@ module.exports = class StripeBillingService extends CampsiService {
           params[param] = req.body[param];
         }
       });
+      if (params.expand) {
+        params.expand = buildExpandFromBody(req.body, subscriptionExpand);
+      }
       const canceledSubscription = await stripe.subscriptions.del(req.params.id, params);
       res.json(canceledSubscription);
     });

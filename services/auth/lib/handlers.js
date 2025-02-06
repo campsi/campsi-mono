@@ -10,6 +10,8 @@ const { deleteExpiredTokens } = require('./tokens');
 const { getUsersCollection } = require('./modules/authCollections');
 const createObjectId = require('../../../lib/modules/createObjectId');
 const disposableDomains = require('disposable-email-domains');
+const { serviceNotAvailableRetryAfterSeconds } = require('../../../lib/modules/responseHelpers');
+const { passwordRateLimitDefaults } = require('./defaults');
 
 async function tokenMaintenance(req, res) {
   if (!req?.user?.isAdmin) {
@@ -243,23 +245,89 @@ function getProviders(req, res) {
   res.json(ret);
 }
 
+/**
+ * clear rate limit on failed passwords on login, for example
+ * after reset password success.
+ *
+ * @Returns{Promise}
+ */
+const clearPasswordRateLimit = (_passwordRateLimits, req) => {
+  const passwordRateLimits = passwordRateLimitDefaults(_passwordRateLimits);
+  const { key } = passwordRateLimits;
+  const ipaddress = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+  const rateLimiterKey = key + ':' + ipaddress;
+  const redis = req.campsi.redis;
+  return redis.del(rateLimiterKey);
+};
+
+/**
+ *  check rate limit on failed passwords.
+ *
+ * note: this works with passwordRateLimitMiddleware to stop passwords before
+ * they get to the endpoint for verification.
+ *
+ */
+const passwordRateLimiter = async (_passwordRateLimits, req, res, err, next) => {
+  const passwordRateLimits = passwordRateLimitDefaults(_passwordRateLimits);
+  const e = err ?? (!req?.user ? createError(401, 'unable to authentify user') : null);
+  if (e === null) {
+    return next();
+  }
+
+  const serviceNotAvailableRetryAfterSeconds = (res, seconds, message, key) => {
+    res.header('Retry-After', seconds);
+    if (key) {
+      res.header('X-Rate-Limiter', key);
+    }
+    return createError(503, message ?? 'service unavailable');
+  };
+
+  // apply password error rate limits
+  const { key, wrongPassword, wrongPasswordBlockForSeconds } = passwordRateLimits;
+  const ipaddress = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+  const rateLimiterKey = key + ':' + ipaddress;
+  const redis = req.campsi.redis;
+  const ifNotExists = {
+    failures: 0,
+    remaining: wrongPassword,
+    nextWait: wrongPasswordBlockForSeconds / 2,
+    blockUntil: null
+  };
+  const ttl = 24 * 3600;
+  await redis.set(rateLimiterKey, JSON.stringify(ifNotExists), 'NX', 'EX', ttl);
+  const value = await redis.get(rateLimiterKey);
+  const settings = JSON.parse(value);
+  let block = false;
+  let newExpire = settings.failures === 0 ? settings.nextWait * 2 : null;
+  settings.remaining--;
+  settings.failures++;
+  if (settings.remaining <= 0) {
+    settings.remaining = 1; // one more login attempt before a new ban
+    settings.nextWait *= 2;
+    newExpire = settings.nextWait;
+    block = true;
+    // eslint-disable-next-line prettier/prettier
+    settings.blockUntil = new Date().getTime() + (newExpire * 1000); // milliseconds
+  }
+  await redis.set(rateLimiterKey, JSON.stringify(settings), 'EX', ttl);
+  if (block) {
+    if (newExpire) {
+      return next(serviceNotAvailableRetryAfterSeconds(res, newExpire, null, key));
+    } else {
+      return next(serviceNotAvailableRetryAfterSeconds(res, settings.nextWait / 2, null, key));
+    }
+  } else {
+    return next();
+  }
+};
+
 async function callback(req, res, next) {
   let { redirectURI } = state.get(req);
   const redirectUriFromState = !!redirectURI;
   if (!redirectURI && req.authProvider.name === 'local') {
     redirectURI = req.query.redirectURI;
   }
-  // noinspection JSUnresolvedFunction
-  await passport.authenticate(req.authProvider.name, {
-    session: false,
-    failWithError: true
-  })(req, res, err => {
-    if (err) {
-      return redirectWithError(req, res, err, next);
-    }
-    if (!req.user) {
-      return redirectWithError(req, res, createError(401, 'unable to authentify user'), next);
-    }
+  const onSuccess = (req, res, err, next) => {
     if (!redirectURI) {
       try {
         res.json({ token: req.authBearerToken });
@@ -286,7 +354,28 @@ async function callback(req, res, next) {
         debug('session destroyed');
       });
     }
-  });
+  };
+  const _callback = async err => {
+    try {
+      if (err || !req.user) {
+        return await passwordRateLimiter(req.authProvider.options?.passwordRateLimits, req, res, err, () =>
+          redirectWithError(req, res, err, next)
+        );
+      }
+      return onSuccess(req, res, err, next);
+    } catch (exception) {
+      return redirectWithError(req, res, createError(500, 'server error'), next);
+    }
+  };
+
+  // noinspection JSUnresolvedFunction
+  await passport.authenticate(req.authProvider.name, {
+    session: false,
+    failWithError: true
+  })(req, res, err => _callback(err).then());
+  // the await here is needed in order to keep the http response open
+  // for completion in the callbacks.  passport.authenticate doesn't
+  // return a promise.
 }
 
 function redirectWithError(req, res, err, next) {
@@ -716,5 +805,7 @@ module.exports = {
   tokenMaintenance,
   extractUserPersonalData,
   softDelete,
-  getUserByInvitationToken
+  getUserByInvitationToken,
+  clearPasswordRateLimit,
+  passwordRateLimiter
 };

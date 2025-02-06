@@ -4,8 +4,10 @@ const helpers = require('../../../lib/modules/responseHelpers');
 const state = require('./state');
 const bcrypt = require('bcryptjs');
 const { getUsersCollection } = require('./modules/authCollections');
-const { isEmailValid } = require('./handlers');
+const { isEmailValid, clearPasswordRateLimit, passwordRateLimiter } = require('./handlers');
 const editURL = require('edit-url');
+const { serviceNotAvailableRetryAfterSeconds } = require('../../../lib/modules/responseHelpers');
+const { passwordRateLimitDefaults } = require('./defaults');
 const debug = require('debug')('campsi:auth:local');
 
 function getMissingParameters(payload, parameters) {
@@ -28,11 +30,36 @@ function dispatchUserSignupEvent(req, user) {
   });
 }
 
-const middleware = function (localProvider) {
+const localAuthMiddleware = function (localProvider) {
   return (req, res, next) => {
     req.authProvider = localProvider;
     state.serialize(req);
     next();
+  };
+};
+
+/**
+ * note: this works with passwordRateLimiter to provide a rate
+ * limit on password *FAILURES*.
+ */
+const passwordRateLimitMiddleware = function (_passwordRateLimits) {
+  const passwordRateLimits = passwordRateLimitDefaults(_passwordRateLimits);
+  return (req, res, next) => {
+    const ipaddress = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    const rateLimiterKey = passwordRateLimits.key + ':' + ipaddress;
+    const redis = req.campsi.redis;
+    redis.get(rateLimiterKey).then(value => {
+      if (!value) {
+        return next();
+      }
+      const settings = JSON.parse(value);
+      const now = new Date().getTime();
+      if (settings.blockUntil && now < settings.blockUntil) {
+        serviceNotAvailableRetryAfterSeconds(res, Math.ceil((settings.blockUntil - now) / 1000), null, passwordRateLimits.key);
+      } else {
+        next();
+      }
+    });
   };
 };
 
@@ -70,7 +97,7 @@ const callback = async function localCallback(req, username, password, done) {
     debug('signin passport callback', username, user.identities.local.encryptedPassword, filter);
     bcrypt.compare(password, user.identities.local.encryptedPassword, function (err, isMatch) {
       if (err) {
-        debug('bcrypt password compare error', err, password, user.identities.local.encryptedPassword);
+        debug('bcrypt password compare error', err, user.identities.local.encryptedPassword);
       }
       if (isMatch) {
         user.identity = user.identities.local;
@@ -210,7 +237,12 @@ const signup = async function (req, res) {
             .map(([key, value]) => key);
 
           if (existingProvidersIdentities.length) {
-            return helpers.badRequest(res, new Error('A user already exists with that email'));
+            const err = new Error('A user already exists with that email');
+            req.campsi.logger.error(err, `[${this.constructor.name}] ${err.message}`);
+            // we need to reply with a new, generic, error: F-2025-0572 - Account oracle
+            // we cannot reply with a fresh auth token, which would be the normal
+            // success reply.
+            return helpers.badRequest(res, new Error('Bad Request'));
           }
 
           // user has been created, through invitation, but doesn't have any identity provider => we can update it
@@ -318,7 +350,9 @@ const createResetPasswordToken = async (req, res) => {
       email: new RegExp('^' + req.body.email.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$', 'i')
     });
     if (!user) {
-      return helpers.notFound(res, new Error('User not found'));
+      const err = new Error('User not found');
+      req.campsi.logger.error(err, `[${this.constructor.name}] ${err.message}`);
+      return res.json({ success: true }); // we always reply success F-2025-0572 - Account oracle
     }
 
     if (!user.identities?.local?.id) {
@@ -424,6 +458,8 @@ const resetPassword = async function (req, res) {
       // the request is forwarded to the passport local callback and will
       // authorize the user with the new password
       req.body.username = result.identities.local.username || result.email;
+      // reset the lock on failed password attempts
+      await clearPasswordRateLimit(req.authProvider.options?.passwordRateLimits, req);
       return handlers.callback(req, res);
     } catch (e) {
       handlers.redirectWithError(req, res, e);
@@ -445,7 +481,7 @@ const resetPassword = async function (req, res) {
  * @return {*}
  */
 const updatePassword = async function (req, res) {
-  const missingParams = getMissingParameters(req.body, ['new', 'confirm']);
+  const missingParams = getMissingParameters(req.body, ['current', 'new', 'confirm']);
   const passwordRegex = new RegExp(req.authProvider.options.passwordRegex ?? '.*');
   if (!passwordRegex.test(req.body.new)) {
     return helpers.error(
@@ -459,6 +495,17 @@ const updatePassword = async function (req, res) {
 
   if (req.body.new !== req.body.confirm) {
     return helpers.error(res, new Error('new and confirmation password do not match'));
+  }
+
+  try {
+    const isMatch = bcrypt.compareSync(req.body.current, req.user.identities.local.encryptedPassword);
+    if (!isMatch) {
+      const error = new Error('current password does not match.');
+      const err = await passwordRateLimiter(req.authProvider.options?.passwordRateLimits, req, res, error, () => error);
+      return helpers.error(res, err);
+    }
+  } catch (err) {
+    return helpers.error(res, new Error('current password does not match'));
   }
 
   try {
@@ -490,7 +537,8 @@ const updatePassword = async function (req, res) {
 };
 
 module.exports = {
-  middleware,
+  localAuthMiddleware,
+  passwordRateLimitMiddleware,
   signin,
   callback,
   encryptPassword,

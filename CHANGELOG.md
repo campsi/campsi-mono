@@ -1,3 +1,10 @@
+# [5.18.0](https://github.com/campsi/campsi-mono/compare/v5.17.1...v5.18.0) (2025-02-10)
+
+
+### Features
+
+* allow rate limiters to be bypassed e.g. from unit test ([#329](https://github.com/campsi/campsi-mono/issues/329)) ([0bf79f7](https://github.com/campsi/campsi-mono/commit/0bf79f7b3b6780d48f1dec5ba097b672418859f6))
+
 ## [5.17.1](https://github.com/campsi/campsi-mono/compare/v5.17.0...v5.17.1) (2025-02-06)
 
 

@@ -12,6 +12,7 @@ const createObjectId = require('../../../lib/modules/createObjectId');
 const disposableDomains = require('disposable-email-domains');
 const { serviceNotAvailableRetryAfterSeconds } = require('../../../lib/modules/responseHelpers');
 const { passwordRateLimitDefaults } = require('./defaults');
+const { skipRateLimiter } = require('../../../lib/middlewares/rateLimit');
 
 async function tokenMaintenance(req, res) {
   if (!req?.user?.isAdmin) {
@@ -271,6 +272,9 @@ const passwordRateLimiter = async (_passwordRateLimits, req, res, err, next) => 
   const passwordRateLimits = passwordRateLimitDefaults(_passwordRateLimits);
   const e = err ?? (!req?.user ? createError(401, 'unable to authentify user') : null);
   if (e === null) {
+    return next();
+  }
+  if (skipRateLimiter(passwordRateLimits, req)) {
     return next();
   }
 

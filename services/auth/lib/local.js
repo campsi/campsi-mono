@@ -8,6 +8,7 @@ const { isEmailValid, clearPasswordRateLimit, passwordRateLimiter } = require('.
 const editURL = require('edit-url');
 const { serviceNotAvailableRetryAfterSeconds } = require('../../../lib/modules/responseHelpers');
 const { passwordRateLimitDefaults } = require('./defaults');
+const { skipRateLimiter } = require('../../../lib/middlewares/rateLimit');
 const debug = require('debug')('campsi:auth:local');
 
 function getMissingParameters(payload, parameters) {
@@ -45,6 +46,9 @@ const localAuthMiddleware = function (localProvider) {
 const passwordRateLimitMiddleware = function (_passwordRateLimits) {
   const passwordRateLimits = passwordRateLimitDefaults(_passwordRateLimits);
   return (req, res, next) => {
+    if (skipRateLimiter(passwordRateLimits, req)) {
+      return next();
+    }
     const ipaddress = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
     const rateLimiterKey = passwordRateLimits.key + ':' + ipaddress;
     const redis = req.campsi.redis;
